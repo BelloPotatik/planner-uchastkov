@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Планировщик участков — производство</title>
+<style>
+  :root{
+    --green:#1e7145; --green-dark:#175c38; --green-light:#e7f4ec;
+    --red:#c0392b; --red-light:#fdeceb;
+    --amber:#b7791f; --amber-light:#fdf6e3;
+    --line:#d9dee3; --bg:#f4f6f8; --card:#ffffff; --ink:#1f2933; --muted:#6b7683;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:13px/1.45 "Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+  /* ---------- header ---------- */
+  header{background:var(--green);color:#fff;padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  header .logo{font-size:16px;font-weight:700;white-space:nowrap}
+  header select,header button{font:13px "Segoe UI",system-ui,Arial,sans-serif;border-radius:6px;border:1px solid rgba(0,0,0,.2);padding:5px 10px;background:#fff;color:var(--ink);cursor:pointer}
+  header button.ghost{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)}
+  header button.ghost:hover{background:rgba(255,255,255,.25)}
+  header button.danger{background:rgba(192,57,43,.85);color:#fff;border-color:transparent}
+  .spacer{flex:1}
+  /* ---------- subbar ---------- */
+  .subbar{background:#fff;border-bottom:1px solid var(--line);padding:7px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .kpis{display:flex;gap:8px;flex-wrap:wrap}
+  .kpi{background:var(--green-light);border:1px solid #cfe8d8;border-radius:8px;padding:4px 10px;white-space:nowrap}
+  .kpi b{font-size:14px}
+  .kpi span{color:var(--muted);font-size:11px;display:block}
+  .kpi.warn{background:var(--amber-light);border-color:#ecdcb5}
+  .kpi.bad{background:var(--red-light);border-color:#f2c4bf}
+  .subbar input[type=date],.subbar input[type=search],.subbar input[type=number]{font:13px "Segoe UI",system-ui,Arial,sans-serif;padding:5px 8px;border:1px solid var(--line);border-radius:6px}
+  .subbar label{display:flex;align-items:center;gap:5px;color:var(--muted);white-space:nowrap}
+  .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:5px 12px;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:var(--green);color:#fff}
+  .btn{font:13px "Segoe UI",system-ui,Arial,sans-serif;border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 12px;cursor:pointer}
+  .btn:hover{background:#eef1f4}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.primary:hover{background:var(--green-dark)}
+  /* ---------- layout ---------- */
+  .layout{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;min-height:calc(100vh - 110px)}
+  aside#dayPanel{width:250px;flex:0 0 250px;background:#fff;border:1px solid var(--line);border-radius:10px;position:sticky;top:12px;max-height:calc(100vh - 140px);display:flex;flex-direction:column}
+  aside#dayPanel h3{margin:0;padding:10px 12px 6px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  #dayList{overflow-y:auto;padding:0 8px 10px}
+  .day-item{border:1px solid var(--line);border-radius:8px;padding:6px 9px;margin-bottom:6px;cursor:pointer}
+  .day-item:hover{border-color:var(--green)}
+  .day-item.sel{border-color:var(--green);background:var(--green-light)}
+  .day-item .d1{display:flex;justify-content:space-between;font-weight:600}
+  .day-item .d2{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+  .mini-bar{height:5px;background:#e9edf1;border-radius:3px;margin-top:5px;overflow:hidden}
+  .mini-bar i{display:block;height:100%;background:var(--green)}
+  .mini-bar i.over{background:var(--red)}
+  .day-item.empty{opacity:.55}
+  /* ---------- board ---------- */
+  main#board{flex:1;overflow-x:auto;padding-bottom:20px}
+  .days{display:flex;gap:10px;align-items:flex-start}
+  .day-col{flex:0 0 236px;background:#fbfcfd;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .day-col.flash{animation:flash 1.2s ease}
+  @keyframes flash{0%,60%{box-shadow:0 0 0 3px var(--green);background:var(--green-light)}100%{box-shadow:none}}
+  .day-col.dragover{outline:2px dashed var(--green);outline-offset:-2px;background:var(--green-light)}
+  .day-col.nodate{flex-basis:200px;border-style:dashed}
+  .day-head{background:var(--green);color:#fff;padding:7px 10px}
+  .day-col.nodate .day-head{background:#8a97a5}
+  .day-head .dt{font-weight:700;font-size:13px}
+  .day-head .dt small{font-weight:400;opacity:.85;margin-left:6px}
+  .loadbar{height:6px;background:rgba(255,255,255,.3);border-radius:3px;margin:6px 0 4px;overflow:hidden}
+  .loadbar i{display:block;height:100%;background:#fff}
+  .day-col.over .loadbar i{background:#ffd3cd}
+  .day-head .di{font-size:11px;opacity:.92}
+  .day-body{min-height:120px;padding:6px}
+  .day-col.over .day-body{background:var(--red-light)}
+  .day-empty{color:#aeb8c2;font-size:11px;text-align:center;padding:14px 4px}
+  /* ---------- card ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-left:4px solid #9aa7b4;border-radius:7px;padding:6px 8px;margin-bottom:6px;cursor:grab;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .card:active{cursor:grabbing}
+  .card:hover{border-color:#b7c2cd}
+  .card.st-red{border-left-color:var(--red)}
+  .card.st-amber{border-left-color:#e0a800}
+  .card.st-green{border-left-color:var(--green)}
+  .card-top{display:flex;justify-content:space-between;gap:6px;font-weight:600;font-size:12px}
+  .card-min{white-space:nowrap;color:var(--muted);font-weight:400}
+  .card-prod{font-size:12px;margin:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card-meta{font-size:11px;color:var(--muted)}
+  .badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+  .badge{font-size:10px;border-radius:4px;padding:1px 5px;background:#eef1f4;color:var(--muted)}
+  .badge.split{background:#e8f0fe;color:#1a56db}
+  .badge.tdg{background:var(--red-light);color:var(--red)}
+  .badge.ok{background:var(--green-light);color:var(--green)}
+  /* ---------- list view ---------- */
+  #listView{padding:12px 14px}
+  .l-day{margin-bottom:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .l-head{background:var(--green);color:#fff;padding:7px 12px;display:flex;gap:16px;align-items:center;font-weight:600}
+  .l-head .lh-sub{font-weight:400;font-size:12px;opacity:.92}
+  .l-head.over{background:var(--red)}
+  table.l-table{width:100%;border-collapse:collapse;font-size:12px}
+  table.l-table th{background:#eef3f0;color:var(--muted);font-weight:600;text-align:left;padding:5px 10px;border-bottom:1px solid var(--line);position:sticky;top:0}
+  table.l-table td{padding:5px 10px;border-bottom:1px solid #eef1f4;vertical-align:top}
+  table.l-table tr:last-child td{border-bottom:0}
+  tr.l-row-red td{background:var(--red-light)}
+  tr.l-row-amber td{background:var(--amber-light)}
+  td.num{white-space:nowrap}
+  .l-prod{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* ---------- modal ---------- */
+  .modal-wrap{position:fixed;inset:0;background:rgba(15,23,32,.45);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal-wrap.open{display:flex}
+  .modal{background:#fff;border-radius:12px;width:640px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .modal h2{margin:0;padding:14px 18px 10px;font-size:16px;border-bottom:1px solid var(--line)}
+  .modal .mbody{padding:14px 18px;overflow-y:auto}
+  .modal .mfoot{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+  .fld{margin-bottom:12px}
+  .fld label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .fld input[type=text],.fld input[type=url],.fld input[type=number],.fld select{width:100%;font:13px "Segoe UI",system-ui,Arial,sans-serif;padding:7px 9px;border:1px solid var(--line);border-radius:6px}
+  .days-check{display:flex;gap:8px;flex-wrap:wrap}
+  .days-check label{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ink)}
+  table.chg{width:100%;border-collapse:collapse;font-size:12px}
+  table.chg th{text-align:left;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--line)}
+  table.chg td{padding:4px 8px;border-bottom:1px solid #f0f2f5}
+  .chg .old{color:var(--red);text-decoration:line-through}
+  .chg .new{color:var(--green);font-weight:600}
+  .note{background:var(--amber-light);border:1px solid #ecdcb5;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:10px}
+  /* ---------- toast ---------- */
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#22303c;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;display:none;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  .hint{color:var(--muted);font-size:12px}
+  textarea{width:100%;box-sizing:border-box;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff}
+  .mini{border:1px solid var(--line);background:#fff;border-radius:6px;font-size:11px;padding:0 5px;cursor:pointer;line-height:16px}
+  .mini:hover{background:var(--amber-light)}
+  @media(max-width:900px){aside#dayPanel{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📋 Планировщик участков</div>
+  <select id="siteSelect" title="Участок"></select>
+  <button class="ghost" id="btnAddSite" title="Добавить участок">＋ Участок</button>
+  <button class="ghost" id="btnRefresh" title="Обновить активный участок из Google Sheets">⟳ Обновить</button>
+  <button class="ghost" id="btnExport" title="Скачать CSV с текущими датами">⤓ CSV</button>
+  <button class="ghost" id="btnAutoplan" title="Автоматически распланировать участок">⚙ Автоплан</button>
+  <span id="syncStatus" title="Состояние синхронизации с Google Sheets"></span>
+  <div class="spacer"></div>
+  <button class="danger" id="btnDelSite" title="Удалить активный участок">✕</button>
+</header>
+
+<div class="subbar">
+  <div class="kpis" id="kpis"></div>
+  <div class="spacer"></div>
+  <label title="Ресурс участка: сборщики × норма на человека; для УПКП — общая норма бригады в секциях">Ресурс: <input type="number" id="workersInput" min="1" step="1" style="width:52px"> <span id="resMul">сбор. × <input type="number" id="perWorkerInput" min="1" step="15" style="width:70px"> мин/чел =</span> <input type="number" id="fondTotalInput" min="1" step="10" style="width:84px"> <span id="fondUnit"></span></label>
+  <input type="search" id="searchInput" placeholder="Поиск: заказ, изделие, контрагент…" style="width:230px">
+  <label><input type="checkbox" id="onlyBad"> только проблемные</label>
+  <label>Дата <input type="date" id="datePick"></label>
+  <button class="btn" id="btnGo">Перейти</button>
+  <button class="btn" id="btnToday">Сегодня</button>
+  <div class="seg">
+    <button id="viewBoard" class="on">Доска</button>
+    <button id="viewList">Список дней</button>
+  </div>
+</div>
+
+<div class="layout" id="boardLayout">
+  <aside id="dayPanel">
+    <h3>Дни загрузки</h3>
+    <div id="dayList"></div>
+  </aside>
+  <main id="board"><div class="days" id="daysRow"></div></main>
+</div>
+<div id="listView" hidden></div>
+
+<!-- modal: add site -->
+<div class="modal-wrap" id="siteModal">
+  <div class="modal">
+    <h2>Новый участок</h2>
+    <div class="mbody">
+      <div class="fld"><label>Название участка</label><input type="text" id="nsName" placeholder="например: УПКП ОП-6В"></div>
+      <div class="fld"><label>Источник данных — Google Sheets (ссылка на таблицу или лист)</label>
+        <input type="url" id="nsUrl" placeholder="https://docs.google.com/spreadsheets/d/…/edit?gid=…"></div>
+      <div class="fld"><label>…или CSV-файл (Файл → Скачать → CSV из Google Sheets)</label>
+        <input type="file" id="nsFile" accept=".csv,text/csv"></div>
+      <div class="fld"><label>Ресурс участка: сборщиков</label><input type="number" id="nsWorkers" value="4" min="1" step="1"></div>
+      <div class="fld"><label>Норма в день (мин; для УПКП — секций)</label><input type="number" id="nsPerWorker" value="450" min="1" step="15"></div>
+      <div class="fld"><label><input type="checkbox" id="nsTeam"> норма указана на бригаду целиком (не на человека), как у УПКП</label></div>
+      <div class="fld"><label>Рабочие дни</label>
+        <div class="days-check" id="nsDays"></div>
+      </div>
+      <div class="hint">Таблица должна содержать колонки: «Заказ покупателя», «Продукция», «Количество», «Дата операции», «всего» (минуты), «Заказ на производство», «ТДГ». Для автообновления откройте доступ к таблице «по ссылке» (просмотр).</div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" id="nsCancel">Отмена</button>
+      <button class="btn primary" id="nsCreate">Создать участок</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal: autoplan -->
+<div class="modal-wrap" id="planModal">
+  <div class="modal">
+    <h2 id="planTitle">Автопланирование</h2>
+    <div class="mbody">
+      <div class="fld"><label>Примечания и пожелания (учитывает автопланировщик)</label>
+        <textarea id="planNotes" rows="3" placeholder="Примеры строк:&#10;2615 -&gt; 25.10        (заказ точно на дату)&#10;Састэнт после 22.10  (не раньше даты)&#10;не позже 30.10: 339  (дедлайн)&#10;сначала: 904, Брестская СПМК-9"></textarea></div>
+      <div class="fld"><label><input type="checkbox" id="planStrict" checked> строго последовательно — один договор за раз, следующий заказ со следующего рабочего дня</label></div>
+      <div id="planHint" class="hint"></div>
+      <div id="planBody"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" id="planCancel">Отмена</button>
+      <button class="btn primary" id="planApply">Применить план</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal: split position -->
+<div class="modal-wrap" id="splitModal">
+  <div class="modal">
+    <h2>Разбить позицию на части</h2>
+    <div class="mbody" id="splitBody"></div>
+    <div class="mfoot">
+      <button class="btn" id="splitCancel">Отмена</button>
+      <button class="btn primary" id="splitCreate">Разбить</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script type="application/json" id="snapshot-data">{
+ "generatedAt": "2026-10-15",
+ "contracts": {
+  "2081": {
+   "customer": "ОАО \"Шени-агропродукт\"",
+   "tdg": "2026-08-10",
+   "contractDate": "2026-08-01",
+   "mdg": null
+  },
+  "1957": {
+   "customer": "УП \"Брестская СПМК-9\"",
+   "tdg": "2026-08-20",
+   "contractDate": "2026-08-18",
+   "mdg": null
+  },
+  "1793": {
+   "customer": "ОАО \"Солигорская птицефабрика\"",
+   "tdg": "2026-08-21",
+   "contractDate": "2026-08-23",
+   "mdg": null
+  },
+  "2064": {
+   "customer": "ОАО \"Агро-сад Рассвет\"",
+   "tdg": "2026-08-25",
+   "contractDate": "2026-08-24",
+   "mdg": null
+  },
+  "2101": {
+   "customer": "ОАО \"Журавлиное\"",
+   "tdg": "2026-08-27",
+   "contractDate": "2026-08-25",
+   "mdg": null
+  },
+  "2025": {
+   "customer": "УП \"Ивацевичская ПМК-11\"",
+   "tdg": "2026-08-28",
+   "contractDate": "2026-08-26",
+   "mdg": null
+  },
+  "22": {
+   "customer": "ООО \"ВКТ Монтаж\"",
+   "tdg": "2026-08-18",
+   "contractDate": "2026-08-26",
+   "mdg": null
+  },
+  "2057": {
+   "customer": "ОАО ПРОМЖИЛСТРОЙ",
+   "tdg": "2026-08-28",
+   "contractDate": "2026-08-29",
+   "mdg": null
+  },
+  "1809": {
+   "customer": "СУП \"Савушкин-Луч\"",
+   "tdg": "2026-08-31",
+   "contractDate": "2026-08-29",
+   "mdg": null
+  },
+  "2233": {
+   "customer": "ОАО \"Птицефабрика \"Дружба\"",
+   "tdg": "2026-08-25",
+   "contractDate": "2026-08-30",
+   "mdg": null
+  },
+  "2241": {
+   "customer": "Филиал \"СУ-138\" ОАО \"Стройтрест № 2\"",
+   "tdg": "2026-10-17",
+   "contractDate": "2026-10-17",
+   "mdg": null
+  },
+  "2249": {
+   "customer": "ООО\"Экологические материалы\"",
+   "tdg": "2026-10-12",
+   "contractDate": "2026-10-12",
+   "mdg": null
+  },
+  "2269": {
+   "customer": "ОАО \"Птицефабрика \"Дружба\"",
+   "tdg": "2026-10-03",
+   "contractDate": "2026-10-03",
+   "mdg": null
+  },
+  "2283": {
+   "customer": "Фермерское хозяйство «Новицких»",
+   "tdg": "2026-10-14",
+   "contractDate": "2026-10-14",
+   "mdg": null
+  },
+  "2313": {
+   "customer": "ЗАО \"КАТЭК\"",
+   "tdg": "2026-10-12",
+   "contractDate": "2026-10-12",
+   "mdg": null
+  },
+  "2321": {
+   "customer": "ЗАО \"Белтепломашстрой\"",
+   "tdg": "2026-10-12",
+   "contractDate": "2026-10-12",
+   "mdg": null
+  },
+  "339": {
+   "customer": "УВСР ОАО \"Стройтрест № 1\"",
+   "tdg": "2026-09-28",
+   "contractDate": "2026-09-28",
+   "mdg": null
+  },
+  "904": {
+   "customer": "ООО \"ПолесьеСпецСтрой\"",
+   "tdg": "2026-10-18",
+   "contractDate": "2026-10-18",
+   "mdg": null
+  },
+  "2261": {
+   "customer": "ООО «Мониторинговая компания»",
+   "tdg": "2026-10-03",
+   "contractDate": "2026-10-03",
+   "mdg": null
+  },
+  "2303": {
+   "customer": "ООО «Мониторинговая компания»",
+   "tdg": "2026-10-19",
+   "contractDate": "2026-10-19",
+   "mdg": null
+  },
+  "2615": {
+   "customer": "ИП Жишко Максим Игоревич",
+   "tdg": "2026-10-13",
+   "contractDate": null,
+   "mdg": null
+  },
+  "2593": {
+   "customer": "ООО \"АЯКС-эйр\"",
+   "tdg": "2026-11-13",
+   "contractDate": null,
+   "mdg": "2027-01-20"
+  },
+  "130": {
+   "customer": "ООО «Састэнт»",
+   "tdg": "2026-02-06",
+   "contractDate": null,
+   "mdg": "2026-02-09"
+  },
+  "1292": {
+   "customer": "ООО \"Белтехком\"",
+   "tdg": "2026-05-25",
+   "contractDate": null,
+   "mdg": "2026-05-29"
+  }
+ },
+ "opsUrl": "https://docs.google.com/spreadsheets/d/1HqJgkDrjt0TDTpUup5t3GPmgAOb8y_wzJjOVsax6tEc/gviz/tq?tqx=out:csv",
+ "upkpUrl": "https://docs.google.com/spreadsheets/d/151Jv-hENePKFZooeBQd0Pv_fhDLKmtFX5Y0y0BieW9E/gviz/tq?tqx=out:csv",
+ "op": [],
+ "sau": [],
+ "bv": [],
+ "upkp": []
+}</script>
+<script>
+'use strict';
+/* ================= data ================= */
+const SNAP = JSON.parse(document.getElementById('snapshot-data').textContent);
+const CONTRACTS = SNAP.contracts || {};
+const LS_KEY = 'planner_sites_v2';
+const WD = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const state = { sites: [], activeId: null, view: 'board', selectedDate: null };
+let pendingPlan = null;
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+function fmtD(iso){ if(!iso) return '—'; const [y,m,d] = iso.split('-'); return d+'.'+m; }
+function fmtDFull(iso){ if(!iso) return '—'; const [y,m,d] = iso.split('-'); return d+'.'+m+'.'+y; }
+function parseDate(s){
+  if(!s) return null;
+  s = String(s).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return m[1]+'-'+m[2]+'-'+m[3];
+  m = s.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})/);
+  if(m) return m[3]+'-'+pad(m[2])+'-'+pad(m[1]);
+  return null;
+}
+function todayISO(){ const d = new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function addDays(iso, n){ const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function wdOf(iso){ return new Date(iso+'T00:00:00').getDay(); }
+function orderNum(s){
+  s = String(s||'');
+  const groups = s.match(/\d+/g) || [];
+  if(!groups.length) return null;
+  return Number(s.includes('-') ? groups[groups.length-1] : groups[0]);
+}
+function hashStr(s){ let h = 0; for(let i=0;i<s.length;i++) h = (h*31 + s.charCodeAt(i))|0; return (h>>>0).toString(36); }
+function num(v){ const n = parseFloat(String(v??'').replace(/[\s\u00a0]/g,'').replace(',','.')); return isNaN(n)?0:n; }
+function fmtMin(m){ return (Math.round(m)||0).toLocaleString('ru-RU'); }
+function uMin(site, v){ return fmtMin(v) + ' ' + ((site && site.unit) || 'мин'); }
+
+/* ---------- csv ---------- */
+const RU_MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+function curMonthSheet(){
+  const d = new Date();
+  return RU_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+}
+function csvToGrid(text){
+  const rows = [];
+  let cur = [''], q = false, row = cur;
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(q){
+      if(c === '"'){ if(text[i+1] === '"'){ row[row.length-1]+='"'; i++; } else q = false; }
+      else row[row.length-1]+=c;
+    } else if(c === '"') q = true;
+    else if(c === ',') row.push('');
+    else if(c === '\n' || c === '\r'){
+      if(c === '\r' && text[i+1] === '\n') i++;
+      rows.push(row); row = ['']; cur = row;
+    } else row[row.length-1]+=c;
+  }
+  if(row.length > 1 || row[0] !== '') rows.push(row);
+  return rows;
+}
+function parseCSVText(text){
+  const rows = csvToGrid(text);
+  if(!rows.length) return [];
+  const head = rows[0].map(h => h.trim().toLowerCase().replace(/^﻿/,''));
+  const col = re => head.findIndex(h => re.test(h));
+  const cCust = col(/заказ покуп/), cProd = col(/продукц/), cQty = col(/колич/),
+        cDate = col(/дата операц/), cMin = col(/всего|мин.*итог|норма/i),
+        cTdg = col(/тдг/), cComm = col(/коммент/), cPO = col(/заказ на произв/), cSum = col(/сумм/);
+  if(cDate < 0 || cPO < 0) throw new Error('Не найдены колонки «Дата операции» / «Заказ на производство»');
+  const out = [];
+  for(let i=1;i<rows.length;i++){
+    const r = rows[i];
+    const date = parseDate(r[cDate]);
+    const prodOrder = (r[cPO]||'').trim();
+    if(!date && !prodOrder) continue;
+    out.push({
+      custOrder: cCust>=0?(r[cCust]||'').trim():'',
+      prodOrder,
+      prod: cProd>=0?(r[cProd]||'').trim():'',
+      qty: cQty>=0?num(r[cQty]):0,
+      date,
+      minutes: cMin>=0?num(r[cMin]):0,
+      tdg: cTdg>=0?parseDate(r[cTdg]):null,
+      comment: cComm>=0?(r[cComm]||'').trim():'',
+      sum: cSum>=0?num(r[cSum]):0
+    });
+  }
+  return out;
+}
+/* ---------- формат «План УПКП»: дневные блоки, позиции со секциями ---------- */
+function parseUPKP(text){
+  const grid = csvToGrid(text);
+  const out = [];
+  let curDate = null;
+  for(const cells of grid){
+    const c0 = (cells[0] || '').trim();
+    const m = c0.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    if(m){ curDate = parseDate(c0); continue; }
+    if(!curDate || !c0) continue;
+    const product = (cells[11] || '').trim();
+    const qty = num(cells[12]);
+    if(!product || !qty) continue;
+    if(/неделя|^\s*(сб|вс)\s*$/.test(product)) continue;
+    out.push({ custOrder:c0, prodOrder:'', prod:product, qty, date:curDate,
+      minutes:qty, tdg:null, comment:'', sum:num(cells[13])||0 });
+  }
+  return out;
+}
+function detectFormat(text){
+  const first = (text || '').split('\n', 1)[0] || '';
+  return /загрузка упкп/i.test(first) ? 'upkp' : 'ops';
+}
+function parseAny(text, format){
+  if(format === 'upkp') return parseUPKP(text);
+  if(format === 'ops') return parseCSVText(text);
+  return detectFormat(text) === 'upkp' ? parseUPKP(text) : parseCSVText(text);
+}
+function makeRows(raw){
+  const seen = {};
+  return raw.map((r,i) => {
+    let id = 'r' + hashStr([r.prodOrder,r.prod,r.qty,r.date,r.minutes,r.custOrder].join('|'));
+    if(seen[id]) id += '_' + i;
+    seen[id] = 1;
+    const c = CONTRACTS[String(orderNum(r.custOrder))] || {};
+    return { id, custOrder:r.custOrder, prodOrder:r.prodOrder, prod:r.prod, qty:r.qty,
+      date:r.date, minutes:r.minutes, tdg:r.tdg || c.tdg || null,
+      contractDate:c.contractDate||null, mdg:c.mdg||null, customer:c.customer||'',
+      comment:r.comment||'', sum:r.sum||0 };
+  });
+}
+
+/* ---------- sites ---------- */
+function defaultSites(){
+  function opsSite(id, name, sheet, key, workers){
+    const rows = makeRows((SNAP[key]||[]).map(o => ({
+      custOrder:o.order, prodOrder:o.prodOrder, prod:o.product, qty:o.qty,
+      date:o.opDate, minutes:o.norm, tdg:o.tdg, comment:o.comment||'', sum:0
+    })));
+    return { id, name:name + ' (live)', sourceType:'url',
+      sourceUrl:(SNAP.opsUrl||'') + '&sheet=' + encodeURIComponent(sheet),
+      unit:'мин', format:'ops', workers, perWorker:450, fondMin:workers*450,
+      workdays:[1,2,3,4,5], rows, overrides:{} };
+  }
+  const op  = opsSite('s_op',  'ОП',        'ОП',  'op',  4);
+  const sau = opsSite('s_sau', 'Кипиа / САУ','САУ', 'sau', 6);
+  const bv  = opsSite('s_bv',  'БВ',        'БВ',  'bv',  6);
+  const upkpRows = makeRows((SNAP.upkp||[]).map(o => ({
+    custOrder:o.order, prodOrder:o.prodOrder, prod:o.product, qty:o.qty,
+    date:o.opDate, minutes:o.norm, tdg:o.tdg, comment:o.comment||'', sum:o.sum||0
+  })));
+  // УПКП: 30 секций в день — на бригаду из 11 человек ВСЕГО (не на человека)
+  const upkp = { id:'s_upkp', name:'УПКП — план (live)', sourceType:'url', sourceUrl:SNAP.upkpUrl||'',
+    autoMonth:true, format:'upkp', unit:'секц.', workers:11, perWorker:0, teamTotal:true,
+    fondMin:330, workdays:[1,2,3,4,5], rows:upkpRows, overrides:{} };
+  return [op, sau, bv, upkp];
+}
+function loadSites(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      let arr = JSON.parse(raw);
+      if(Array.isArray(arr) && arr.length){
+        const defs = defaultSites();
+        // миграция: убрать старый снимок ОП, добавить недостающие live-участки
+        arr = arr.filter(s => s.id !== 's_snap');
+        defs.forEach(d => { if(!arr.some(s => s.id === d.id)) arr.push(d); });
+        // миграция: ресурсы сборщики×норма и общая норма УПКП
+        arr.forEach(s => {
+          if(s.id === 's_upkp'){ s.workers = 11; s.perWorker = 0; s.teamTotal = true; s.fondMin = 330; }
+          else if(s.workers && s.perWorker){ s.fondMin = s.workers * s.perWorker; }
+          else if(s.id === 's_op'){ s.workers = 4; s.perWorker = 450; s.fondMin = 1800; }
+          else if(s.id === 's_sau' || s.id === 's_bv'){ s.workers = 6; s.perWorker = 450; s.fondMin = 2700; }
+        });
+        return arr;
+      }
+    }
+  }catch(e){}
+  return defaultSites();
+}
+function saveSites(){ localStorage.setItem(LS_KEY, JSON.stringify(state.sites)); }
+function activeSite(){ return state.sites.find(s => s.id === state.activeId) || state.sites[0]; }
+function fondOf(site){
+  if(site.workers && site.perWorker) return site.workers * site.perWorker;
+  return site.fondMin || (site.unit === 'секц.' ? 20 : 480);
+}
+function suggestFond(site){
+  const byDay = {};
+  site.rows.forEach(r => { if(r.date) byDay[r.date] = (byDay[r.date]||0) + (r.minutes||0); });
+  const floor = site.unit === 'секц.' ? 20 : 480;
+  const step = site.unit === 'секц.' ? 5 : 60;
+  const mx = Math.max(floor, ...Object.values(byDay));
+  return Math.ceil(mx/step)*step;
+}
+function effRows(site){
+  const splits = site.splits || {};
+  const keys = new Set(Object.keys(splits));
+  const out = [];
+  for(const r of site.rows){
+    const k = r.prodOrder + '|' + r.prod;
+    if(keys.has(k)) continue; // строки позиции заменены частями разбивки
+    out.push({...r, dateEff: (site.overrides && site.overrides[r.id]) || r.date || null});
+  }
+  for(const k of keys){
+    const s = splits[k];
+    if(!s) continue;
+    for(const p of (s.parts||[])){
+      out.push({ id:p.id, custOrder:s.custOrder, prodOrder:s.prodOrder, prod:s.prod,
+        qty:p.qty, minutes:p.minutes, date:p.date, tdg:s.tdg || null,
+        contractDate:s.contractDate || null, customer:s.customer || '',
+        comment:(s.commentBase || '') + (p.label ? ' · ' + p.label : ''),
+        sum:0, splitPart:true, baseKey:k,
+        dateEff: (site.overrides && site.overrides[p.id]) || p.date || null });
+    }
+  }
+  return out.filter(r => r.prodOrder || r.custOrder);
+}
+/* ---------- split: разбивка позиции на части (напр. 30 шт = 10+10+10) ---------- */
+function findPart(site, id){
+  for(const k of Object.keys(site.splits || {})){
+    const p = (site.splits[k].parts || []).find(x => x.id === id);
+    if(p) return { key:k, part:p };
+  }
+  return null;
+}
+function distributeQty(total, n){
+  // равными долями, остаток распределяем по первым частям: 30/4 -> [8,8,7,7]
+  const base = Math.floor(total / n), rem = total % n;
+  return Array.from({length:n}, (_, i) => base + (i < rem ? 1 : 0));
+}
+function distributeMinutes(total, qtys, totalQty){
+  // минуты пропорционально количеству, погрешность округления — в последнюю часть
+  const parts = qtys.map(q => Math.round(total * q / totalQty));
+  const drift = total - parts.reduce((a,b) => a + b, 0);
+  parts[parts.length-1] += drift;
+  return parts;
+}
+function buildSplitRecord(row, posRows, n){
+  const totalQty = posRows.reduce((a,r) => a + (r.qty||0), 0);
+  const totalMin = posRows.reduce((a,r) => a + (r.minutes||0), 0);
+  const qtys = distributeQty(totalQty, n);
+  const mins = distributeMinutes(totalMin, qtys, totalQty);
+  const key = row.prodOrder + '|' + row.prod;
+  const parts = qtys.map((q, i) => ({
+    id:'sp' + hashStr(key + '|' + i + '|' + q + '|' + mins[i]),
+    qty:q, minutes:mins[i], date:null,
+    label:'часть ' + (i+1) + '/' + n
+  }));
+  return { key, custOrder:row.custOrder, prodOrder:row.prodOrder, prod:row.prod,
+    tdg:row.tdg || null, contractDate:row.contractDate || null, customer:row.customer || '',
+    commentBase:'разбивка ' + totalQty + ' шт', parts };
+}
+/* раскладка частей по дням: минимум подряд идущих рабочих дней от якорной даты */
+function assignSplitDates(site, rec, anchorISO){
+  const fond = fondOf(site);
+  let d = nextWorkDay(site, anchorISO || todayISO());
+  let used = 0;
+  for(const p of rec.parts){
+    if(used > 0 && used + p.minutes > fond){ d = nextWorkDay(site, addDays(d, 1)); used = 0; }
+    p.date = d; used += p.minutes;
+  }
+  return rec;
+}
+function isWorkday(site, iso){ return site.workdays.includes(wdOf(iso)); }
+function nextWorkDay(site, iso){
+  let d = iso;
+  for(let i=0;i<400;i++){
+    if(isWorkday(site, d)) return d;
+    d = addDays(d, 1);
+  }
+  return d;
+}
+
+/* ---------- positions (split detection) ---------- */
+function buildPositions(site){
+  const m = new Map();
+  for(const r of effRows(site)){
+    const k = r.prodOrder + '|' + r.prod;
+    if(!m.has(k)) m.set(k, {key:k, prodOrder:r.prodOrder, prod:r.prod, parts:[]});
+    m.get(k).parts.push(r);
+  }
+  for(const p of m.values()){
+    p.dates = [...new Set(p.parts.map(r => r.dateEff).filter(Boolean))].sort();
+    p.split = p.dates.length > 1;
+    p.totalQty = p.parts.reduce((a,r) => a + (r.qty||0), 0);
+    p.totalMin = p.parts.reduce((a,r) => a + (r.minutes||0), 0);
+  }
+  return m;
+}
+
+/* ---------- days ---------- */
+function computeDays(site){
+  const rows = effRows(site);
+  const map = new Map();
+  const nodate = [];
+  for(const r of rows){
+    if(!r.dateEff){ nodate.push(r); continue; }
+    if(!map.has(r.dateEff)) map.set(r.dateEff, []);
+    map.get(r.dateEff).push(r);
+  }
+  const dates = [...map.keys()].sort();
+  const t = todayISO();
+  let from = dates.length ? dates[0] : t;
+  const minD = t < from ? t : from;
+  let to = dates.length ? dates[dates.length-1] : addDays(t, 10);
+  if(to < t) to = t;
+  let all = [];
+  for(let d = minD; d <= to; d = addDays(d,1)){
+    const rowsD = map.get(d) || [];
+    all.push({ date:d, rows:rowsD, total:rowsD.reduce((a,r)=>a+(r.minutes||0),0),
+      work:isWorkday(site,d), has:map.has(d) });
+  }
+  all = all.filter(d => d.has || d.work); // рабочие дни + дни с данными
+  return { days:all, nodate };
+}
+
+/* ---------- render ---------- */
+function rowStatus(r){
+  if(r.tdg && r.dateEff && r.dateEff > r.tdg) return 'red';
+  if(r.contractDate && r.dateEff && r.dateEff > r.contractDate) return 'amber';
+  return 'green';
+}
+function cardHTML(r, posMap, site){
+  const p = posMap.get(r.prodOrder + '|' + r.prod);
+  const st = rowStatus(r);
+  const hide = filterHide(r);
+  let badges = '';
+  if(p && p.split){
+    const idx = p.dates.indexOf(r.dateEff) + 1;
+    badges += '<span class="badge split" title="' + esc(p.parts.map(x => fmtD(x.dateEff)+' — '+(x.qty||0)+' шт').join('; ')) + '">⤨ позиция на ' + p.dates.length + ' дн. (' + idx + '/' + p.dates.length + ')</span>';
+  }
+  if(r.tdg){
+    const late = r.dateEff && r.dateEff > r.tdg;
+    badges += '<span class="badge ' + (late?'tdg':'') + '">ТДГ ' + fmtD(r.tdg) + '</span>';
+  }
+  if(r.contractDate) badges += '<span class="badge">договор ' + fmtD(r.contractDate) + '</span>';
+  return '<div class="card st-' + st + (hide?'" style="display:none':'') + '" draggable="true" data-id="' + esc(r.id) + '">' +
+    '<div class="card-top"><span>' + esc(r.prodOrder || r.custOrder) + '</span><span class="card-min">' + uMin(site, r.minutes) +
+    (r.splitPart ? '' : ' <button class="mini" data-split="' + esc(r.id) + '" title="Разбить позицию на части">✂</button>') +
+    '</span></div>' +
+    '<div class="card-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</div>' +
+    '<div class="card-meta">' + esc(r.custOrder) + (r.customer?' · ' + esc(r.customer):'') + (r.qty?' · ' + r.qty + ' шт':'') + '</div>' +
+    (badges?'<div class="badges">' + badges + '</div>':'') +
+  '</div>';
+}
+function filterHide(r){
+  const q = ($('searchInput').value || '').trim().toLowerCase();
+  if(q){
+    const hay = [r.prodOrder, r.custOrder, r.prod, r.customer, r.comment].join(' ').toLowerCase();
+    if(!hay.includes(q)) return true;
+  }
+  if($('onlyBad').checked && rowStatus(r) === 'green') return true;
+  return false;
+}
+function renderKPIs(site, daysInfo){
+  const t = todayISO();
+  const rows = effRows(site);
+  const fond = fondOf(site);
+  const todayRows = rows.filter(r => r.dateEff === t);
+  const todayLoad = todayRows.reduce((a,r)=>a+(r.minutes||0),0);
+  const allMin = rows.reduce((a,r)=>a+(r.minutes||0),0);
+  const workDaysAll = daysInfo.days.filter(d => d.work);
+  const periodCap = Math.max(1, workDaysAll.length) * fond;
+  const futureDays = daysInfo.days.filter(d => d.work && d.date >= t);
+  const futureRowsMin = rows.filter(r => r.dateEff >= t).reduce((a,r)=>a+(r.minutes||0),0);
+  const avail = Math.max(0, futureDays.length * fond - futureRowsMin);
+  const posCount = buildPositions(site).size;
+  const chip = (label, val, cls='') => '<div class="kpi ' + cls + '"><b>' + val + '</b><span>' + label + '</span></div>';
+  const unit = site.unit || 'мин';
+  $('kpis').innerHTML =
+    chip('позиций', posCount) +
+    chip('операций', rows.length) +
+    chip('сумма норм, ' + unit, fmtMin(allMin)) +
+    chip('фонд, ' + unit + '/день', fmtMin(fond)) +
+    chip('загрузка сегодня', (todayLoad?Math.round(todayLoad/fond*100):0) + '%' + (todayRows.length?' · ' + uMin(site, todayLoad):''), todayLoad>fond?'bad':'') +
+    chip('загрузка периода', Math.round(allMin/periodCap*100) + '%') +
+    chip('доступный ресурс, ' + unit, fmtMin(avail), avail < 0 ? 'bad' : (avail < fond*3 ? 'warn' : ''));
+}
+function render(){
+  const site = activeSite();
+  if(!site){ return; }
+  const daysInfo = computeDays(site);
+  const posMap = buildPositions(site);
+  renderKPIs(site, daysInfo);
+  renderSiteSelect();
+  renderSyncStatus();
+  const team = !!site.teamTotal;
+  $('workersInput').value = site.workers || '';
+  $('resMul').style.display = team ? 'none' : '';
+  if(!team) $('perWorkerInput').value = site.perWorker || '';
+  $('fondTotalInput').readOnly = !team;
+  $('fondTotalInput').value = fondOf(site);
+  $('fondUnit').textContent = (site.unit || 'мин') + '/день' + (team ? ' (на бригаду)' : '');
+  renderDayPanel(site, daysInfo);
+  if(state.view === 'board') renderBoard(site, daysInfo, posMap);
+  else renderList(site, daysInfo, posMap);
+}
+function renderSiteSelect(){
+  const sel = $('siteSelect');
+  sel.innerHTML = state.sites.map(s => '<option value="' + esc(s.id) + '"' + (s.id === activeSite().id?' selected':'') + '>' + esc(s.name) + '</option>').join('');
+}
+function renderDayPanel(site, daysInfo){
+  const fond = fondOf(site);
+  const el = $('dayList');
+  el.innerHTML = '';
+  for(const d of daysInfo.days){
+    if(!d.has) continue;
+    const pct = Math.round(d.total / fond * 100);
+    const item = document.createElement('div');
+    item.className = 'day-item' + (state.selectedDate === d.date ? ' sel' : '');
+    item.innerHTML = '<div class="d1"><span>' + WD[wdOf(d.date)] + ', ' + fmtD(d.date) + '</span><span>' + pct + '%</span></div>' +
+      '<div class="d2"><span>' + d.rows.length + ' опер.</span><span>' + uMin(site, d.total) + ' / ' + uMin(site, fond) + '</span></div>' +
+      '<div class="mini-bar"><i class="' + (pct>100?'over':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div>';
+    item.addEventListener('click', () => jumpToDate(d.date));
+    el.appendChild(item);
+  }
+  if(daysInfo.nodate.length){
+    const item = document.createElement('div');
+    item.className = 'day-item empty';
+    item.innerHTML = '<div class="d1"><span>Без даты</span><span>' + daysInfo.nodate.length + '</span></div>';
+    item.addEventListener('click', () => jumpToDate('nodate'));
+    el.appendChild(item);
+  }
+}
+function renderBoard(site, daysInfo, posMap){
+  $('boardLayout').style.display = '';
+  $('listView').hidden = true;
+  const row = $('daysRow');
+  row.innerHTML = '';
+  const fond = fondOf(site);
+  const cols = [];
+  if(daysInfo.nodate.length) cols.push({date:'nodate'});
+  cols.push(...daysInfo.days);
+  for(const d of cols){
+    const col = document.createElement('div');
+    if(d.date === 'nodate'){
+      col.className = 'day-col nodate';
+      col.dataset.date = 'nodate';
+      col.innerHTML = '<div class="day-head"><div class="dt">Без даты</div><div class="di">' + daysInfo.nodate.length + ' операций — распределите</div></div>';
+      const body = document.createElement('div');
+      body.className = 'day-body';
+      daysInfo.nodate.forEach(r => body.insertAdjacentHTML('beforeend', cardHTML(r, posMap, site)));
+      col.appendChild(body);
+      row.appendChild(col);
+      continue;
+    }
+    const pct = Math.round(d.total / fond * 100);
+    col.className = 'day-col' + (pct > 100 ? ' over' : '') + (state.selectedDate === d.date ? ' flash' : '');
+    col.dataset.date = d.date;
+    col.innerHTML = '<div class="day-head"><div class="dt">' + fmtD(d.date) + '<small>' + WD[wdOf(d.date)] + (d.work?'':' · вых') + '</small></div>' +
+      '<div class="loadbar"><i style="width:' + Math.min(100,pct) + '%"></i></div>' +
+      '<div class="di">' + uMin(site, d.total) + ' / ' + uMin(site, fond) + ' · ' + d.rows.length + ' опер.' + (pct>100?' · <b>перегруз +' + fmtMin(d.total-fond) + '</b>':'') + '</div></div>';
+    const body = document.createElement('div');
+    body.className = 'day-body';
+    if(!d.rows.length) body.innerHTML = '<div class="day-empty">пусто — перетащите сюда операцию</div>';
+    d.rows.slice().sort((a,b) => (a.prodOrder||'').localeCompare(b.prodOrder||'')).forEach(r => body.insertAdjacentHTML('beforeend', cardHTML(r, posMap, site)));
+    col.appendChild(body);
+    row.appendChild(col);
+  }
+}
+function renderList(site, daysInfo, posMap){
+  $('boardLayout').style.display = 'none';
+  $('listView').hidden = false;
+  const fond = fondOf(site);
+  const lv = $('listView');
+  lv.innerHTML = '';
+  const show = daysInfo.days.filter(d => d.has);
+  if(!show.length) lv.innerHTML = '<div class="hint">Нет операций с датами.</div>';
+  for(const d of show){
+    const pct = Math.round(d.total / fond * 100);
+    const wrap = document.createElement('div');
+    wrap.className = 'l-day' + (state.selectedDate === d.date ? ' flash' : '');
+    let head = '<div class="l-head' + (pct>100?' over':'') + '"><span>' + WD[wdOf(d.date)] + ', ' + fmtDFull(d.date) + '</span>' +
+      '<span class="lh-sub">' + d.rows.length + ' операций</span>' +
+      '<span class="lh-sub">' + uMin(site, d.total) + ' / ' + uMin(site, fond) + ' (' + pct + '%)' + (pct>100?' — ПЕРЕГРУЗ':'') + '</span></div>';
+    let table = '<table class="l-table"><thead><tr><th>Заказ на пр-во</th><th>Заказ покупателя</th><th>Контрагент</th><th>Продукция</th><th>Кол-во</th><th>Норма</th><th>ТДГ</th><th>Договор</th><th>Статус</th></tr></thead><tbody>';
+    for(const r of d.rows.slice().sort((a,b)=>(a.prodOrder||'').localeCompare(b.prodOrder||''))){
+      if(filterHide(r)) continue;
+      const st = rowStatus(r);
+      const p = posMap.get(r.prodOrder + '|' + r.prod);
+      table += '<tr class="' + (st==='red'?'l-row-red':st==='amber'?'l-row-amber':'') + '">' +
+        '<td class="num">' + esc(r.prodOrder) + '</td>' +
+        '<td class="num">' + esc(r.custOrder) + '</td>' +
+        '<td>' + esc(r.customer) + '</td>' +
+        '<td class="l-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</td>' +
+        '<td class="num">' + (r.qty||'') + (p && p.split?' <span class="badge split" title="Позиция разбита на ' + p.dates.length + ' дней: ' + esc(p.dates.map(x=>fmtD(x)).join(', ')) + '">⤨' + p.dates.length + '</span>':'') + '</td>' +
+        '<td class="num">' + fmtMin(r.minutes) + '</td>' +
+        '<td class="num">' + fmtD(r.tdg) + '</td>' +
+        '<td class="num">' + fmtD(r.contractDate) + '</td>' +
+        '<td>' + (st==='red'?'⚠ после ТДГ':st==='amber'?'⚠ после договора':'ок') + '</td></tr>';
+    }
+    table += '</tbody></table>';
+    wrap.innerHTML = head + table;
+    lv.appendChild(wrap);
+  }
+}
+
+/* ---------- drag & drop ---------- */
+let dragId = null;
+document.addEventListener('dragstart', e => {
+  const card = e.target.closest && e.target.closest('.card');
+  if(!card) return;
+  dragId = card.dataset.id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragId);
+});
+document.addEventListener('dragover', e => {
+  const col = e.target.closest && e.target.closest('.day-col');
+  if(col && dragId){ e.preventDefault(); col.classList.add('dragover'); }
+});
+document.addEventListener('dragleave', e => {
+  const col = e.target.closest && e.target.closest('.day-col');
+  if(col) col.classList.remove('dragover');
+});
+document.addEventListener('drop', e => {
+  const col = e.target.closest && e.target.closest('.day-col');
+  document.querySelectorAll('.day-col.dragover').forEach(c => c.classList.remove('dragover'));
+  if(!col || !dragId) return;
+  e.preventDefault();
+  moveRowToDate(dragId, col.dataset.date);
+  dragId = null;
+});
+function moveRowToDate(rowId, dateISO){
+  const site = activeSite();
+  // часть разбивки?
+  const fp = findPart(site, rowId);
+  if(fp){
+    fp.part.date = dateISO === 'nodate' ? null : dateISO;
+    if(site.overrides) delete site.overrides[rowId];
+    saveSites(); render();
+    toast('Перенесено: ' + fp.part.label + ' — ' + (dateISO==='nodate'?'без даты':fmtD(dateISO)));
+    return true;
+  }
+  const r = site.rows.find(x => x.id === rowId);
+  if(!r) return false;
+  const oldD = ((site.overrides||{})[r.id]) || r.date || 'nodate';
+  if(dateISO === 'nodate'){
+    if(!r.date && !(site.overrides||{})[r.id]) return false;
+    delete site.overrides[r.id];
+    r._cleared = true;
+    // чтобы сбросить дату окончательно — сохраняем override null как пустую строку
+    site.overrides[r.id] = '';
+    delete r._cleared;
+  } else {
+    site.overrides[r.id] = dateISO;
+  }
+  saveSites();
+  render();
+  const label = r.prodOrder || r.custOrder;
+  toast('Перенесено: ' + label + ' — ' + (oldD==='nodate'?'без даты':fmtD(oldD)) + ' → ' + (dateISO==='nodate'?'без даты':fmtD(dateISO)));
+  return true;
+}
+
+/* ---------- split modal ---------- */
+let splitCtx = null;
+function openSplitModal(rowId){
+  const site = activeSite();
+  const r = site.rows.find(x => x.id === rowId);
+  if(!r) return;
+  const posRows = effRows(site).filter(x => x.prodOrder === r.prodOrder && x.prod === r.prod);
+  splitCtx = { rowId, posRows };
+  const totalQty = posRows.reduce((a,x) => a + (x.qty||0), 0);
+  const totalMin = posRows.reduce((a,x) => a + (x.minutes||0), 0);
+  let html = '<div class="note">Позиция <b>' + esc(r.prodOrder || r.custOrder) + '</b> — ' + esc(r.prod) +
+    '<br>Всего: <b>' + totalQty + ' шт</b> · ' + uMin(site, totalMin) +
+    (posRows.length > 1 ? '<br>Строк в позиции: ' + posRows.length + ' (уже разнесены по дням)' : '') + '</div>';
+  html += '<div class="fld"><label>На сколько частей разбить</label><input type="number" id="spN" value="3" min="2" max="60" step="1"></div>';
+  html += '<div class="fld"><label>Даты частей</label><select id="spDates">' +
+    '<option value="auto">подряд по дням с даты позиции (минимум дней, без превышения фонда)</option>' +
+    '<option value="keep">оставить без дат — распределит автопланировщик</option></select></div>';
+  html += '<div id="spPreview"></div>';
+  // существующие разбивки
+  const sk = Object.keys(site.splits || {});
+  if(sk.length){
+    html += '<div class="fld"><label>Созданные разбивки на участке</label></div>';
+    for(const k of sk){
+      const s = site.splits[k];
+      html += '<div class="note">✂ ' + esc(s.prodOrder || s.custOrder) + ' — ' + (s.parts||[]).map(p => p.qty + ' шт').join(' + ') +
+        ' <button class="mini" data-unsplit="' + esc(k) + '">вернуть как было</button></div>';
+    }
+  }
+  $('splitBody').innerHTML = html;
+  const upd = () => {
+    const n = Math.max(2, Math.min(60, num($('spN').value) || 3));
+    const qtys = distributeQty(totalQty, n);
+    const mins = distributeMinutes(totalMin, qtys, totalQty);
+    let t = '<table class="chg"><thead><tr><th>Часть</th><th>Кол-во</th><th>Норма</th></tr></thead><tbody>';
+    qtys.forEach((q, i) => {
+      t += '<tr><td>' + (i+1) + '</td><td><input type="number" data-spq="' + i + '" value="' + q + '" min="1" style="width:70px"> шт</td><td>' + uMin(site, mins[i]) + '</td></tr>';
+    });
+    t += '</tbody></table>';
+    $('spPreview').innerHTML = t;
+  };
+  $('spN').addEventListener('input', upd);
+  upd();
+  $('splitModal').classList.add('open');
+}
+function createSplitFromModal(){
+  const site = activeSite();
+  if(!splitCtx) return;
+  const { rowId, posRows } = splitCtx;
+  const row = site.rows.find(x => x.id === rowId);
+  const n = Math.max(2, Math.min(60, num($('spN').value) || 3));
+  const rec = buildSplitRecord(row, posRows, n);
+  // ручная корректировка количеств
+  const qInputs = document.querySelectorAll('[data-spq]');
+  if(qInputs.length){
+    let sum = 0;
+    const qs = [...qInputs].map((inp, i) => { const q = Math.max(1, num(inp.value) || rec.parts[i].qty); sum += q; return q; });
+    const totalQty = posRows.reduce((a,x) => a + (x.qty||0), 0);
+    if(sum !== totalQty){ toast('Сумма частей (' + sum + ') не равна количеству позиции (' + totalQty + ')'); return; }
+    const mins = distributeMinutes(posRows.reduce((a,x) => a + (x.minutes||0), 0), qs, totalQty);
+    rec.parts.forEach((p, i) => { p.qty = qs[i]; p.minutes = mins[i]; });
+  }
+  const mode = $('spDates').value;
+  const anchor = posRows.map(x => x.dateEff).filter(Boolean).sort()[0];
+  if(mode === 'auto') assignSplitDates(site, rec, anchor || todayISO());
+  site.splits = site.splits || {};
+  site.splits[rec.key] = rec;
+  saveSites(); render();
+  $('splitModal').classList.remove('open');
+  splitCtx = null;
+  toast('Разбито на ' + rec.parts.length + ' частей: ' + rec.parts.map(p => p.qty + ' шт').join(' + '));
+}
+function restoreSplit(key){
+  const site = activeSite();
+  if(!site.splits || !site.splits[key]) return;
+  delete site.splits[key];
+  saveSites(); render();
+  toast('Разбивка отменена, исходные строки возвращены');
+}
+
+/* ---------- navigation ---------- */
+function jumpToDate(iso){
+  state.selectedDate = iso === 'nodate' ? null : iso;
+  if(state.view !== 'board') switchView('board');
+  const t = todayISO();
+  if(state.selectedDate){
+    const site = activeSite();
+    const { days } = computeDays(site);
+    if(!days.some(d => d.date === state.selectedDate) && iso !== 'nodate'){
+      // даты нет в диапазоне — просто подсветим ближайший день прокруткой в конец/начало
+    }
+  }
+  render();
+  setTimeout(() => {
+    const cols = document.querySelectorAll('.day-col');
+    let target = null;
+    cols.forEach(c => { if(c.dataset.date === iso) target = c; });
+    if(!target && cols.length) target = cols[cols.length-1];
+    if(target){
+      target.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+      target.classList.add('flash');
+      setTimeout(() => target.classList.remove('flash'), 1300);
+    }
+  }, 60);
+}
+function switchView(v){
+  state.view = v;
+  $('viewBoard').classList.toggle('on', v === 'board');
+  $('viewList').classList.toggle('on', v === 'list');
+  render();
+}
+
+/* ---------- google sheets ---------- */
+function parseGUrl(u){
+  const m = String(u).match(/\/d\/([a-zA-Z0-9-_]{20,})/);
+  if(!m) return null;
+  const gid = (String(u).match(/[#?&]gid=(\d+)/) || [])[1];
+  return { id:m[1], gid };
+}
+function gvizUrl(id, gid, sheetName){
+  let u = 'https://docs.google.com/spreadsheets/d/' + id + '/gviz/tq?tqx=out:csv';
+  if(gid) u += '&gid=' + gid;
+  else if(sheetName) u += '&sheet=' + encodeURIComponent(sheetName);
+  return u;
+}
+async function fetchSiteRows(url, site){
+  let u = String(url || '').trim();
+  if(site && site.autoMonth && !/[?&]sheet=/.test(u)) u += (u.includes('?') ? '&' : '?') + 'sheet=' + encodeURIComponent(curMonthSheet());
+  if(!u.includes('/gviz/')){
+    const g = parseGUrl(u);
+    if(!g) throw new Error('Не получилось разобрать ссылку на Google Sheets');
+    u = gvizUrl(g.id, g.gid, site && site.autoMonth ? curMonthSheet() : '');
+  }
+  const res = await fetch(u, {mode:'cors'});
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  if(/^\s*<html/i.test(text) || /войдите|sign in/i.test(text.slice(0, 500))) throw new Error('Таблица закрыта — откройте доступ «по ссылке» (просмотр)');
+  const fmt = site && site.format ? site.format : detectFormat(text);
+  return { rows: parseAny(text, fmt), format: fmt };
+}
+
+/* ---------- export ---------- */
+function exportCSV(){
+  const site = activeSite();
+  const rows = effRows(site);
+  const q = v => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+  const head = ['Заказ покупателя','Продукция','Количество','Дата операции','всего','ТДГ','Комментарий','Заказ на производство'];
+  const lines = [head.join(',')];
+  for(const r of rows){
+    lines.push([r.custOrder, r.prod, r.qty, r.dateEff ? fmtDFull(r.dateEff) : '', r.minutes, r.tdg || '', r.comment, r.prodOrder].map(q).join(','));
+  }
+  const blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'plan_' + site.name.replace(/[^\wа-яА-ЯёЁ]+/gi,'_') + '_' + todayISO() + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('CSV сохранён');
+}
+
+/* ---------- autoplan v2 ----------
+   Правила:
+   1. Заказ не размазывается по дням — все его операции упакованы в минимум
+      подряд идущих рабочих дней (день заполняется до фонда, остаток — на следующий).
+   2. Договоры выполняются последовательно в порядке срочности (ТДГ/дата договора):
+      при включённом «строго последовательно» следующий заказ начинается со следующего
+      рабочего дня после полного закрытия предыдущего.
+   3. Текстовые пожелания (site.notes) — директивы:
+      «2615 -> 25.10» — заказ точно на дату; «после 22.10» — не раньше;
+      «не позже 30.10» — дедлайн; «сначала: …» — приоритет вне очереди. */
+function parseDateRu(s){
+  const m = String(s || '').match(/(\d{1,2})[.\-/](\d{1,2})(?:[.\-/](\d{2,4}))?/);
+  if(!m) return null;
+  let y = m[3] ? (m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])) : new Date().getFullYear();
+  const d = new Date(y, Number(m[2]) - 1, Number(m[1]));
+  return isNaN(d) ? null : d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+function parseNotes(site){
+  const res = { pins: [], earliest: [], latest: [], first: [] };
+  const lines = String(site.notes || '').split('\n');
+  for(let raw of lines){
+    const line = raw.trim();
+    if(!line) continue;
+    let m;
+    if((m = line.match(/^(?:сначала|приоритет)\s*:?\s*(.+)$/i))){
+      res.first.push(...m[1].split(/[,;]/).map(s => s.trim()).filter(Boolean));
+    } else if((m = line.match(/(.+?)\s*(?:->|=)\s*(\d{1,2}[.\-/]\d{1,2}(?:[.\-/]\d{2,4})?)/))){
+      const d = parseDateRu(m[2]);
+      if(d) res.pins.push({ token: m[1].replace(/^!/, '').trim(), date: d });
+    } else if((m = line.match(/(.+?)\s+после\s+(\d{1,2}[.\-/]\d{1,2}(?:[.\-/]\d{2,4})?)/i))){
+      const d = parseDateRu(m[2]);
+      if(d) res.earliest.push({ token: m[1].trim(), date: d });
+    } else if((m = line.match(/(?:не позже|до)\s+(\d{1,2}[.\-/]\d{1,2}(?:[.\-/]\d{2,4})?)\s*:?\s*(.+)/i))){
+      const d = parseDateRu(m[1]);
+      if(d) res.latest.push({ token: m[2].trim(), date: d });
+    }
+  }
+  return res;
+}
+function posMatches(p, token){
+  const t = String(token || '').toLowerCase();
+  if(!t) return false;
+  const numT = orderNum(t);
+  if(numT !== null && numT !== undefined && !/[а-яa-z]{2,}/i.test(t)){
+    return orderNum(p.custOrder) === numT || orderNum(p.prodOrder) === numT;
+  }
+  return (p.prodOrder || '').toLowerCase().includes(t)
+    || (p.custOrder || '').toLowerCase().includes(t)
+    || (p.customer || '').toLowerCase().includes(t)
+    || p.parts.some(r => (r.prod || '').toLowerCase().includes(t));
+}
+function autoplain(site){
+  const t = todayISO();
+  const fond = fondOf(site);
+  const strict = site.planStrict !== false;
+  const notes = parseNotes(site);
+  const rows = effRows(site);
+  const posMap = buildPositions(site);
+  const positions = [...posMap.values()];
+  for(const p of positions){
+    p.totalMin = p.parts.reduce((a,r) => a + (r.minutes||0), 0);
+    p.deadline = p.parts.map(r => r.tdg || r.contractDate).filter(Boolean).sort()[0] || null;
+    p.pin = notes.pins.find(d => posMatches(p, d.token)) || null;
+    p.early = notes.earliest.filter(d => posMatches(p, d.token)).map(d => d.date).sort().pop() || null;
+    p.late = notes.latest.filter(d => posMatches(p, d.token)).map(d => d.date).sort()[0] || null;
+    if(p.late && p.deadline) p.deadline = p.late < p.deadline ? p.late : p.deadline;
+    else if(p.late) p.deadline = p.late;
+  }
+  const firstIdx = p => {
+    const i = notes.first.findIndex(tok => posMatches(p, tok));
+    return i === -1 ? notes.first.length : i;
+  };
+  positions.sort((a,b) =>
+    (firstIdx(a) - firstIdx(b)) ||
+    ((a.deadline||'9999').localeCompare(b.deadline||'9999')) ||
+    ((orderNum(a.custOrder)||99999) - (orderNum(b.custOrder)||99999)));
+  const plan = {};
+  const load = {};
+  let cursor = t; // строгая последовательность: следующий заказ не раньше этого дня
+  const tooBig = [];
+  for(const p of positions){
+    const parts = p.parts.slice().sort((a,b) => (a.dateEff||'9999').localeCompare(b.dateEff||'9999'));
+    if(p.pin){
+      for(const r of parts) plan[r.id] = p.pin.date;
+      continue;
+    }
+    let start = t;
+    if(p.early && p.early > start) start = p.early;
+    if(strict && cursor > start) start = cursor;
+    let d = nextWorkDay(site, start);
+    let used = strict ? 0 : (load[d] || 0);
+    for(const r of parts){
+      if((r.minutes||0) > fond) tooBig.push(r);
+      let guard = 0;
+      while(used + (r.minutes||0) > fond && guard++ < 800){
+        d = nextWorkDay(site, addDays(d, 1));
+        used = strict ? 0 : (load[d] || 0);
+      }
+      plan[r.id] = d;
+      used += (r.minutes || 0);
+      if(!strict) load[d] = (load[d] || 0) + (r.minutes || 0);
+    }
+    cursor = nextWorkDay(site, addDays(d, 1));
+  }
+  const changes = Object.keys(plan).filter(id => {
+    const cur = rows.find(r => r.id === id);
+    return cur && (cur.dateEff || null) !== plan[id];
+  });
+  return { plan, changes, tooBig, total: rows.length, notes };
+}
+function applyPlanToSite(site, plan){
+  site.overrides = site.overrides || {};
+  for(const [id, d] of Object.entries(plan)){
+    const fp = findPart(site, id);
+    if(fp){ fp.part.date = d; delete site.overrides[id]; }
+    else site.overrides[id] = d;
+  }
+}
+function openAutoplan(){
+  const site = activeSite();
+  site.notes = site.notes || '';
+  site.planStrict = site.planStrict !== false;
+  $('planNotes').value = site.notes;
+  $('planStrict').checked = site.planStrict;
+  runAutoplanPreview();
+  $('planModal').classList.add('open');
+}
+function runAutoplanPreview(){
+  const site = activeSite();
+  const res = autoplain(site);
+  pendingPlan = res;
+  const rows = effRows(site);
+  const byId = id => rows.find(r => r.id === id);
+  const n = res.notes;
+  const dirCount = n.pins.length + n.earliest.length + n.latest.length + n.first.length;
+  let html = '<div class="kpis" style="margin-bottom:10px">' +
+    '<div class="kpi"><b>' + res.total + '</b><span>операций в плане</span></div>' +
+    '<div class="kpi"><b>' + res.changes.length + '</b><span>дат изменится</span></div>' +
+    '<div class="kpi"><b>' + (res.total - res.changes.length) + '</b><span>без изменений</span></div>' +
+    (res.tooBig.length?'<div class="kpi bad"><b>' + res.tooBig.length + '</b><span>норма больше фонда</span></div>':'') +
+  '</div>';
+  $('planHint').innerHTML = 'Правила: минимум дней на заказ · договоры последовательно по ТДГ' +
+    (site.planStrict !== false ? ' · строго: один договор за раз' : ' · компактно: договоры делят дни') +
+    (dirCount ? ' · директив из примечаний: ' + dirCount : '');
+  if(res.changes.length){
+    html += '<table class="chg"><thead><tr><th>Заказ на пр-во</th><th>Продукция</th><th>Кол-во</th><th>Было</th><th>Стало</th></tr></thead><tbody>';
+    for(const id of res.changes.slice(0, 400)){
+      const r = byId(id);
+      if(!r) continue;
+      html += '<tr><td>' + esc(r.prodOrder || r.custOrder) + '</td><td>' + esc(r.prod) + '</td><td>' + (r.qty||'') + '</td>' +
+        '<td class="old">' + fmtD(r.dateEff) + '</td><td class="new">' + fmtD(res.plan[id]) + '</td></tr>';
+    }
+    if(res.changes.length > 400) html += '<tr><td colspan="5">… и ещё ' + (res.changes.length-400) + '</td></tr>';
+    html += '</tbody></table>';
+  } else html += '<div class="hint">Все даты уже соответствуют правилам.</div>';
+  $('planBody').innerHTML = html;
+}
+
+/* ---------- ui wiring ---------- */
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.style.display = 'none', 2600);
+}
+function wire(){
+  $('siteSelect').addEventListener('change', e => { state.activeId = e.target.value; state.selectedDate = null; render(); });
+  $('btnDelSite').addEventListener('click', () => {
+    const site = activeSite();
+    if(state.sites.length <= 1){ toast('Нельзя удалить последний участок'); return; }
+    if(!confirm('Удалить участок «' + site.name + '»?')) return;
+    state.sites = state.sites.filter(s => s.id !== site.id);
+    state.activeId = state.sites[0].id;
+    saveSites(); render();
+  });
+  $('btnAddSite').addEventListener('click', () => { $('siteModal').classList.add('open'); });
+  $('nsCancel').addEventListener('click', () => $('siteModal').classList.remove('open'));
+  const dc = $('nsDays');
+  dc.innerHTML = [1,2,3,4,5,6,0].map(d => '<label><input type="checkbox" value="' + d + '"' + (d>=1&&d<=5?' checked':'') + '> ' + WD[d] + '</label>').join('');
+  $('nsCreate').addEventListener('click', createSiteFromModal);
+  $('btnRefresh').addEventListener('click', refreshActive);
+  $('btnExport').addEventListener('click', exportCSV);
+  $('btnAutoplan').addEventListener('click', openAutoplan);
+  $('planCancel').addEventListener('click', () => { pendingPlan = null; $('planModal').classList.remove('open'); });
+  $('planApply').addEventListener('click', () => {
+    if(!pendingPlan) return;
+    const site = activeSite();
+    applyPlanToSite(site, pendingPlan.plan);
+    saveSites(); render();
+    $('planModal').classList.remove('open');
+    toast('План применён: изменено дат — ' + pendingPlan.changes.length);
+    pendingPlan = null;
+  });
+  $('planNotes').addEventListener('change', () => {
+    const site = activeSite();
+    site.notes = $('planNotes').value;
+    saveSites(); runAutoplanPreview();
+  });
+  $('planStrict').addEventListener('change', () => {
+    const site = activeSite();
+    site.planStrict = $('planStrict').checked;
+    saveSites(); runAutoplanPreview();
+  });
+  $('splitCancel').addEventListener('click', () => { splitCtx = null; $('splitModal').classList.remove('open'); });
+  $('splitCreate').addEventListener('click', createSplitFromModal);
+  // делегированные клики: разбить / вернуть как было (и не дать начаться drag с кнопки)
+  document.addEventListener('click', e => {
+    const uns = e.target.closest && e.target.closest('[data-unsplit]');
+    if(uns){ restoreSplit(uns.dataset.unsplit); return; }
+    const sp = e.target.closest && e.target.closest('[data-split]');
+    if(sp){ openSplitModal(sp.dataset.split); }
+  });
+  document.addEventListener('mousedown', e => {
+    if(e.target.closest && e.target.closest('.mini')) e.preventDefault();
+  });
+  const onResourceChange = () => {
+    const site = activeSite();
+    site.workers = Math.max(1, num($('workersInput').value) || 1);
+    if(site.teamTotal){
+      site.fondMin = Math.max(1, num($('fondTotalInput').value) || 1);
+    } else {
+      site.perWorker = Math.max(1, num($('perWorkerInput').value) || 1);
+      site.fondMin = site.workers * site.perWorker;
+    }
+    saveSites(); render();
+  };
+  $('workersInput').addEventListener('change', onResourceChange);
+  $('perWorkerInput').addEventListener('change', onResourceChange);
+  $('fondTotalInput').addEventListener('change', onResourceChange);
+  $('searchInput').addEventListener('input', render);
+  $('onlyBad').addEventListener('change', render);
+  $('btnGo').addEventListener('click', () => {
+    const v = $('datePick').value;
+    if(v) jumpToDate(v); else toast('Выберите дату');
+  });
+  $('datePick').addEventListener('keydown', e => { if(e.key === 'Enter') $('btnGo').click(); });
+  $('btnToday').addEventListener('click', () => { $('datePick').value = todayISO(); jumpToDate(todayISO()); });
+  $('viewBoard').addEventListener('click', () => switchView('board'));
+  $('viewList').addEventListener('click', () => switchView('list'));
+}
+async function createSiteFromModal(){
+  const name = $('nsName').value.trim() || ('Участок ' + (state.sites.length + 1));
+  const url = $('nsUrl').value.trim();
+  const file = $('nsFile').files && $('nsFile').files[0];
+  const workers = Math.max(1, num($('nsWorkers').value) || 1);
+  const perWorker = Math.max(1, num($('nsPerWorker').value) || 1);
+  const teamTotal = $('nsTeam').checked;
+  const fond = teamTotal ? perWorker : workers * perWorker;
+  const workdays = [...document.querySelectorAll('#nsDays input:checked')].map(i => Number(i.value));
+  try{
+    let raw = null, sourceType = 'manual', sourceUrl = '', fmt = null;
+    if(file){
+      const text = await file.text();
+      fmt = detectFormat(text);
+      raw = parseAny(text, fmt);
+      sourceType = 'csv';
+    } else if(url){
+      const res = await fetchSiteRows(url);
+      raw = res.rows; fmt = res.format;
+      sourceType = 'url'; sourceUrl = url;
+    } else {
+      toast('Укажите ссылку на Google Sheets или выберите CSV-файл');
+      return;
+    }
+    if(!raw.length){ toast('Не удалось прочитать строки операций'); return; }
+    const autoMonth = fmt === 'upkp' && !/[#?&]gid=/.test(url || '');
+    const site = { id:'s' + Date.now().toString(36), name, sourceType, sourceUrl,
+      workers, perWorker: teamTotal ? 0 : perWorker, teamTotal, fondMin:fond, workdays:workdays.length?workdays:[1,2,3,4,5], rows:makeRows(raw), overrides:{},
+      format:fmt, unit:fmt === 'upkp' ? 'секц.' : 'мин', autoMonth };
+    state.sites.push(site);
+    state.activeId = site.id;
+    saveSites(); render();
+    $('siteModal').classList.remove('open');
+    $('nsName').value = ''; $('nsUrl').value = ''; $('nsFile').value = ''; $('nsTeam').checked = false;
+    toast('Участок «' + name + '» создан: ' + raw.length + ' операций');
+  }catch(err){
+    alert('Ошибка загрузки: ' + err.message + '\n\nЕсли таблица закрыта — откройте доступ «по ссылке» (просмотр) или скачайте CSV вручную и загрузите файлом.');
+  }
+}
+async function refreshSite(site){
+  if(site.sourceType !== 'url' || !site.sourceUrl) return false;
+  try{
+    const res = await fetchSiteRows(site.sourceUrl, site);
+    site.rows = makeRows(res.rows);
+    site.format = res.format || site.format;
+    if(!site.unit) site.unit = site.format === 'upkp' ? 'секц.' : 'мин';
+    site.syncOk = true;
+    site.syncAt = new Date().toISOString();
+    site.syncErr = null;
+    saveSites();
+    return true;
+  }catch(err){
+    site.syncOk = false;
+    site.syncErr = String(err && err.message || err);
+    saveSites();
+    throw err;
+  }
+}
+function renderSyncStatus(){
+  const el = $('syncStatus');
+  const site = activeSite();
+  if(!el || !site) return;
+  if(site.sourceType !== 'url'){ el.textContent = ''; return; }
+  if(site.syncOk){
+    const t = site.syncAt ? new Date(site.syncAt) : null;
+    el.textContent = '✓ синхронизировано' + (t ? ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) : '');
+    el.style.color = 'var(--green)';
+  } else {
+    el.textContent = '✗ нет связи с Google Sheets';
+    el.style.color = 'var(--red)';
+    el.title = site.syncErr || 'проверьте интернет и доступ к таблице';
+  }
+}
+async function refreshActive(){
+  const site = activeSite();
+  if(site.sourceType !== 'url' || !site.sourceUrl){ toast('У активного участка нет ссылки на Google Sheets (снимок или CSV)'); return; }
+  try{
+    await refreshSite(site);
+    render();
+    toast('Обновлено из Google Sheets: ' + site.rows.length + ' операций (ручные переносы сохранены, где позиции не изменились)');
+  }catch(err){
+    alert('Не удалось обновить: ' + err.message);
+  }
+}
+
+/* ---------- init ---------- */
+function init(){
+  state.sites = loadSites();
+  state.activeId = state.sites[0].id;
+  wire();
+  render();
+  // тихое обновление всех url-участков при загрузке
+  setTimeout(async () => {
+    let okCount = 0, failCount = 0;
+    await Promise.allSettled(state.sites.filter(s => s.sourceType === 'url' && s.sourceUrl).map(s =>
+      refreshSite(s).then(ok => { if(ok) okCount++; }).catch(() => { failCount++; })
+    ));
+    render();
+    if(failCount && !okCount) toast('Нет связи с Google Sheets — показаны сохранённые данные. Проверьте интернет и откройте страницу по ссылке Kimi (localhost), а не как файл.');
+    else if(okCount) toast('Синхронизировано участков: ' + okCount + (failCount ? ' (не удалось: ' + failCount + ')' : ''));
+  }, 600);
+}
+if(typeof window !== 'undefined'){
+  window.PLANNER = { parseCSVText, parseUPKP, parseAny, detectFormat, curMonthSheet, orderNum, buildPositions, computeDays, moveRowToDate, autoplain, makeRows,
+    state, effRows, parseDate, jumpToDate, nextWorkDay, parseGUrl, suggestFond, fondOf, LS_KEY, loadSites, csvToGrid,
+    parseNotes, distributeQty, distributeMinutes, buildSplitRecord, assignSplitDates, applyPlanToSite, findPart };
+  if(typeof document !== 'undefined' && document.getElementById && typeof window.addEventListener !== 'undefined'){
+    window.addEventListener('DOMContentLoaded', init);
+    if(document.readyState !== 'loading') init();
+  }
+}
+</script>
+</body>
+</html>
