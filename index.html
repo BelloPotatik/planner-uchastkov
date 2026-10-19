@@ -414,7 +414,7 @@ function orderNum(s){
   return Number(s.includes('-') ? groups[groups.length-1] : groups[0]);
 }
 function hashStr(s){ let h = 0; for(let i=0;i<s.length;i++) h = (h*31 + s.charCodeAt(i))|0; return (h>>>0).toString(36); }
-function num(v){ const n = parseFloat(String(v??'').replace(/[\sа0]/g,'').replace(',','.')); return isNaN(n)?0:n; }
+function num(v){ const n = parseFloat(String(v??'').replace(/\s/g,'').replace(',','.')); return isNaN(n)?0:n; }
 function fmtMin(m){ return (Math.round(m)||0).toLocaleString('ru-RU'); }
 function uMin(site, v){ return fmtMin(v) + ' ' + ((site && site.unit) || 'мин'); }
 
@@ -1248,7 +1248,7 @@ function parseDateRu(s){
 function parseNotes(site){
   const res = { pins: [], earliest: [], latest: [], first: [] };
   const lines = String(site.notes || '').split('\n');
-  for(const raw of lines){
+  for(let raw of lines){
     const line = raw.trim();
     if(!line) continue;
     let m;
