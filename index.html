@@ -137,6 +137,7 @@
   <button class="ghost" id="btnRefresh" title="Обновить активный участок из Google Sheets">⟳ Обновить</button>
   <button class="ghost" id="btnExport" title="Скачать CSV с текущими датами">⤓ CSV</button>
   <button class="ghost" id="btnAutoplan" title="Автоматически распланировать участок">⚙ Автоплан</button>
+  <button class="ghost" id="btnShare" title="Совместный доступ: изменения всех пользователей (Google Apps Script)">🔗 Совместно</button>
   <span id="syncStatus" title="Состояние синхронизации с Google Sheets"></span>
   <div class="spacer"></div>
   <button class="danger" id="btnDelSite" title="Удалить активный участок">✕</button>
@@ -560,6 +561,80 @@ function loadSites(){
   return defaultSites();
 }
 function saveSites(){ localStorage.setItem(LS_KEY, JSON.stringify(state.sites)); }
+
+/* ---------- совместный доступ: общие переносы через Google Apps Script ----------
+   В таблице (Extensions → Apps Script) развёрнуто веб-приложение, которое хранит
+   переносы/разбивки/примечания на скрытом листе. Все пользователи планировщика
+   синхронизируются через него: кто последний сохранил — того правки (LWW). */
+function sharedKey(site){
+  if(site.sharedKey) return site.sharedKey;
+  const u = site.sourceUrl || '';
+  let m = u.match(/[?&]sheet=([^&]+)/);
+  if(m) return decodeURIComponent(m[1]);
+  m = u.match(/[?&]gid=(\d+)/);
+  if(m) return 'gid' + m[1];
+  return 'default';
+}
+let sharedPushTimers = {};
+let applyingRemote = false;
+function scheduleSharedPush(site){
+  if(!site || !site.sharedUrl || applyingRemote) return;
+  clearTimeout(sharedPushTimers[site.id]);
+  sharedPushTimers[site.id] = setTimeout(() => pushShared(site), 800);
+}
+async function pushShared(site){
+  if(!site.sharedUrl) return;
+  try{
+    const res = await fetch(site.sharedUrl, { method:'POST', redirect:'follow',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify({ site: sharedKey(site), overrides: site.overrides || {},
+        splits: site.splits || {}, notes: site.notes || '',
+        planStrict: site.planStrict !== false, ts: Date.now() }) });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    site.sharedTs = Date.now();
+    site.sharedOk = true; site.sharedErr = null;
+  }catch(err){
+    site.sharedOk = false; site.sharedErr = String(err && err.message || err);
+  }
+  renderSyncStatus();
+}
+async function pullShared(site){
+  if(!site.sharedUrl) return false;
+  try{
+    const res = await fetch(site.sharedUrl, { redirect:'follow' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    const st = j && j.data && j.data[sharedKey(site)];
+    if(!st || !st.ts) return false;
+    if(st.ts <= (site.sharedTs || 0)) return false; // нет свежих чужих правок
+    site.sharedTs = st.ts;
+    site.overrides = st.overrides || {};
+    site.splits = st.splits || {};
+    if(typeof st.notes === 'string') site.notes = st.notes;
+    site.planStrict = st.planStrict !== false;
+    site.sharedOk = true; site.sharedErr = null;
+    applyingRemote = true;
+    try{ saveSites(); }finally{ applyingRemote = false; }
+    return true;
+  }catch(err){
+    site.sharedOk = false; site.sharedErr = String(err && err.message || err);
+    return false;
+  }
+}
+function enableSharing(){
+  const site = activeSite();
+  const url = prompt('Совместный доступ: укажите URL веб-приложения Google Apps Script,\nпривязанного к таблице этого участка (Extensions → Apps Script → Deploy → Web app).\nПустое значение — отключить совместный режим для участка.',
+    site.sharedUrl || 'https://script.google.com/macros/s/…/exec');
+  if(url === null) return;
+  site.sharedUrl = url.trim();
+  if(site.sharedUrl){
+    site.sharedTs = 0;
+    pushShared(site).then(() => { pullShared(site).then(changed => { render(); toast(changed ? 'Совместный режим включён, применены общие правки' : 'Совместный режим включён: правки видны всем'); }); });
+  } else {
+    render();
+    toast('Совместный режим отключён для этого участка');
+  }
+}
 function activeSite(){ return state.sites.find(s => s.id === state.activeId) || state.sites[0]; }
 function fondOf(site){
   if(site.workers && site.perWorker) return site.workers * site.perWorker;
@@ -908,7 +983,7 @@ function moveRowToDate(rowId, dateISO){
   if(fp){
     fp.part.date = dateISO === 'nodate' ? null : dateISO;
     if(site.overrides) delete site.overrides[rowId];
-    saveSites(); render();
+    saveSites(); scheduleSharedPush(site); render();
     toast('Перенесено: ' + fp.part.label + ' — ' + (dateISO==='nodate'?'без даты':fmtD(dateISO)));
     return true;
   }
@@ -925,7 +1000,7 @@ function moveRowToDate(rowId, dateISO){
   } else {
     site.overrides[r.id] = dateISO;
   }
-  saveSites();
+  saveSites(); scheduleSharedPush(site);
   render();
   const label = r.prodOrder || r.custOrder;
   toast('Перенесено: ' + label + ' — ' + (oldD==='nodate'?'без даты':fmtD(oldD)) + ' → ' + (dateISO==='nodate'?'без даты':fmtD(dateISO)));
@@ -998,7 +1073,7 @@ function createSplitFromModal(){
   if(mode === 'auto') assignSplitDates(site, rec, anchor || todayISO());
   site.splits = site.splits || {};
   site.splits[rec.key] = rec;
-  saveSites(); render();
+  saveSites(); scheduleSharedPush(site); render();
   $('splitModal').classList.remove('open');
   splitCtx = null;
   toast('Разбито на ' + rec.parts.length + ' частей: ' + rec.parts.map(p => p.qty + ' шт').join(' + '));
@@ -1007,7 +1082,7 @@ function restoreSplit(key){
   const site = activeSite();
   if(!site.splits || !site.splits[key]) return;
   delete site.splits[key];
-  saveSites(); render();
+  saveSites(); scheduleSharedPush(site); render();
   toast('Разбивка отменена, исходные строки возвращены');
 }
 
@@ -1275,12 +1350,13 @@ function wire(){
   $('btnRefresh').addEventListener('click', refreshActive);
   $('btnExport').addEventListener('click', exportCSV);
   $('btnAutoplan').addEventListener('click', openAutoplan);
+  $('btnShare').addEventListener('click', enableSharing);
   $('planCancel').addEventListener('click', () => { pendingPlan = null; $('planModal').classList.remove('open'); });
   $('planApply').addEventListener('click', () => {
     if(!pendingPlan) return;
     const site = activeSite();
     applyPlanToSite(site, pendingPlan.plan);
-    saveSites(); render();
+    saveSites(); scheduleSharedPush(site); render();
     $('planModal').classList.remove('open');
     toast('План применён: изменено дат — ' + pendingPlan.changes.length);
     pendingPlan = null;
@@ -1288,12 +1364,12 @@ function wire(){
   $('planNotes').addEventListener('change', () => {
     const site = activeSite();
     site.notes = $('planNotes').value;
-    saveSites(); runAutoplanPreview();
+    saveSites(); scheduleSharedPush(site); runAutoplanPreview();
   });
   $('planStrict').addEventListener('change', () => {
     const site = activeSite();
     site.planStrict = $('planStrict').checked;
-    saveSites(); runAutoplanPreview();
+    saveSites(); scheduleSharedPush(site); runAutoplanPreview();
   });
   $('splitCancel').addEventListener('click', () => { splitCtx = null; $('splitModal').classList.remove('open'); });
   $('splitCreate').addEventListener('click', createSplitFromModal);
@@ -1316,7 +1392,7 @@ function wire(){
       site.perWorker = Math.max(1, num($('perWorkerInput').value) || 1);
       site.fondMin = site.workers * site.perWorker;
     }
-    saveSites(); render();
+    saveSites(); scheduleSharedPush(site); render();
   };
   $('workersInput').addEventListener('change', onResourceChange);
   $('perWorkerInput').addEventListener('change', onResourceChange);
@@ -1395,14 +1471,15 @@ function renderSyncStatus(){
   const site = activeSite();
   if(!el || !site) return;
   if(site.sourceType !== 'url'){ el.textContent = ''; return; }
+  const shared = site.sharedUrl ? (site.sharedOk !== false ? ' · совместно ✓' : ' · совместно ✗') : '';
   if(site.syncOk){
     const t = site.syncAt ? new Date(site.syncAt) : null;
-    el.textContent = '✓ синхронизировано' + (t ? ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) : '');
-    el.style.color = 'var(--green)';
+    el.textContent = '✓ синхронизировано' + (t ? ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) : '') + shared;
+    el.style.color = site.sharedOk === false ? 'var(--red)' : 'var(--green)';
   } else {
-    el.textContent = '✗ нет связи с Google Sheets';
+    el.textContent = '✗ нет связи с Google Sheets' + shared;
     el.style.color = 'var(--red)';
-    el.title = site.syncErr || 'проверьте интернет и доступ к таблице';
+    el.title = site.syncErr || site.sharedErr || 'проверьте интернет и доступ к таблице';
   }
 }
 async function refreshActive(){
@@ -1433,11 +1510,22 @@ function init(){
     if(failCount && !okCount) toast('Нет связи с Google Sheets — показаны сохранённые данные. Проверьте интернет и откройте страницу по ссылке Kimi (localhost), а не как файл.');
     else if(okCount) toast('Синхронизировано участков: ' + okCount + (failCount ? ' (не удалось: ' + failCount + ')' : ''));
   }, 600);
+  // совместный режим: опрос общих правок каждые 20 секунд
+  setInterval(async () => {
+    if(document.hidden) return;
+    let changed = false;
+    for(const s of state.sites){
+      if(!s.sharedUrl) continue;
+      if(await pullShared(s)) changed = true;
+    }
+    if(changed) render();
+  }, 20000);
 }
 if(typeof window !== 'undefined'){
   window.PLANNER = { parseCSVText, parseUPKP, parseAny, detectFormat, curMonthSheet, orderNum, buildPositions, computeDays, moveRowToDate, autoplain, makeRows,
     state, effRows, parseDate, jumpToDate, nextWorkDay, parseGUrl, suggestFond, fondOf, LS_KEY, loadSites, csvToGrid,
-    parseNotes, distributeQty, distributeMinutes, buildSplitRecord, assignSplitDates, applyPlanToSite, findPart };
+    parseNotes, distributeQty, distributeMinutes, buildSplitRecord, assignSplitDates, applyPlanToSite, findPart,
+    sharedKey, pullShared, pushShared };
   if(typeof document !== 'undefined' && document.getElementById && typeof window.addEventListener !== 'undefined'){
     window.addEventListener('DOMContentLoaded', init);
     if(document.readyState !== 'loading') init();
