@@ -623,7 +623,9 @@ async function pushShared(site){
   if(!cfg.token){ site.sharedOk = false; site.sharedErr = 'нет токена GitHub'; renderSyncStatus(); return; }
   const payload = { site: sharedKey(site), overrides: site.overrides || {},
     splits: site.splits || {}, notes: site.notes || '',
-    planStrict: site.planStrict !== false, ts: Date.now() };
+    planStrict: site.planStrict !== false,
+    workers: site.workers || 0, perWorker: site.perWorker || 0,
+    fondMin: site.fondMin || 0, teamTotal: !!site.teamTotal, ts: Date.now() };
   try{
     const f = await ghGetFile(site);
     let res = await ghPut(site, cfg, f.sha, payload);
@@ -655,6 +657,11 @@ async function pullShared(site){
     site.splits = st.splits || {};
     if(typeof st.notes === 'string') site.notes = st.notes;
     site.planStrict = st.planStrict !== false;
+    // ресурс участка — общий: применяем, если в файле он задан
+    if(st.workers){ site.workers = st.workers; }
+    if(typeof st.perWorker === 'number'){ site.perWorker = st.perWorker; }
+    if(st.fondMin){ site.fondMin = st.fondMin; }
+    if(typeof st.teamTotal === 'boolean'){ site.teamTotal = st.teamTotal; }
     site.sharedOk = true; site.sharedErr = null;
     applyingRemote = true;
     try{ saveSites(); }finally{ applyingRemote = false; }
