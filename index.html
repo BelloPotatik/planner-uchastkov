@@ -78,10 +78,12 @@
   .subbar input[type=date],.subbar input[type=search],.subbar input[type=number]{font:12.5px var(--font);padding:6px 10px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;transition:border-color .16s var(--ease),box-shadow .16s var(--ease)}
   .subbar input:focus{border-color:var(--green-bright);box-shadow:0 0 0 4px rgba(16,185,129,.15);outline:none}
   .subbar label{display:flex;align-items:center;gap:5px;color:var(--muted);white-space:nowrap;font-size:12px}
-  .seg{display:flex;background:#e9eef4;border-radius:999px;padding:3px;gap:2px}
-  .seg button{border:0;background:transparent;padding:5px 14px;border-radius:999px;cursor:pointer;color:var(--muted);font-weight:600;font-size:12px;transition:all .18s var(--ease)}
+  .seg{display:flex;background:#e9eef4;border-radius:999px;padding:3px;gap:2px;position:relative}
+  .seg .pill{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:999px;background:#fff;box-shadow:var(--shadow-sm);transition:transform .3s var(--ease),width .3s var(--ease);pointer-events:none}
+  html[data-theme="dark"] .seg .pill{background:var(--card)}
+  .seg button{border:0;background:transparent;padding:5px 14px;border-radius:999px;cursor:pointer;color:var(--muted);font-weight:600;font-size:12px;transition:color .18s var(--ease);position:relative;z-index:1}
   .seg button:hover{color:var(--ink)}
-  .seg button.on{background:#fff;color:var(--green-deep);box-shadow:var(--shadow-sm)}
+  .seg button.on{color:var(--green-deep)}
   .btn{font:12.5px var(--font);border:1px solid var(--line-strong);background:#fff;border-radius:10px;padding:6px 13px;cursor:pointer;font-weight:600;color:var(--ink);transition:all .16s var(--ease)}
   .btn:hover{background:#f1f5f9;border-color:#c3cfdb}
   .btn:active{transform:scale(.96)}
@@ -159,10 +161,10 @@
   td.num{white-space:nowrap;font-variant-numeric:tabular-nums}
   .l-prod{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* ================= modal ================= */
-  .modal-wrap{position:fixed;inset:0;background:rgba(6,12,26,.58);backdrop-filter:blur(8px) saturate(1.2);display:none;align-items:center;justify-content:center;z-index:80;padding:16px}
-  .modal-wrap.open{display:flex}
-  .modal{background:#fff;border-radius:var(--r-xl);width:660px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.65);animation:modalIn .24s var(--ease)}
-  @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.965)}to{opacity:1;transform:none}}
+  .modal-wrap{position:fixed;inset:0;background:rgba(6,12,26,0);display:flex;align-items:center;justify-content:center;z-index:80;padding:16px;opacity:0;visibility:hidden;transition:opacity .26s var(--ease),background-color .26s var(--ease),visibility 0s linear .26s}
+  .modal-wrap.open{opacity:1;visibility:visible;background:rgba(6,12,26,.58);backdrop-filter:blur(8px) saturate(1.2);transition:opacity .26s var(--ease),background-color .26s var(--ease),visibility 0s}
+  .modal{background:#fff;border-radius:var(--r-xl);width:660px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.65);transform:translateY(18px) scale(.955);opacity:0;transition:transform .34s var(--ease),opacity .24s var(--ease)}
+  .modal-wrap.open .modal{transform:none;opacity:1}
   .modal h2{margin:0;padding:16px 22px 13px;font-size:17px;font-weight:800;letter-spacing:-.3px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#f8fafc,#fff);border-radius:var(--r-xl) var(--r-xl) 0 0}
   .modal .mbody{padding:16px 22px;overflow-y:auto}
   .modal .mfoot{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;background:#f8fafc;border-radius:0 0 var(--r-xl) var(--r-xl)}
@@ -362,6 +364,44 @@
   @keyframes viewIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
   /* ячейки теплокарты: чётче и с дисплейными цифрами */
   .lcell .lc-p{font-family:var(--font-d);font-size:10px}
+  /* ================= v6: люксовая плавность ================= */
+  /* стаггер-появление колонок/дней при смене вида (только transform/opacity — без фризов) */
+  @keyframes colIn{from{opacity:0;transform:translateY(14px) scale(.975)}to{opacity:1;transform:none}}
+  .enter-anim .days > .day-col,.enter-anim > .l-day,.enter-anim > .shift-day,.enter-anim > .lane{
+    animation:colIn .42s var(--ease) both;animation-delay:calc(min(var(--i,0),14) * 34ms)}
+  /* виртуализация длинных списков: не рисуем то, что за экраном */
+  .l-day,.shift-day{content-visibility:auto;contain-intrinsic-size:auto 220px}
+  /* аврора — строго на композиторе */
+  header::before{will-change:transform}
+  /* плавная смена темы через View Transitions (где поддерживается) */
+  ::view-transition-old(root),::view-transition-new(root){animation-duration:.4s;animation-timing-function:var(--ease)}
+  /* ---------- кастомный выпадающий список участка ---------- */
+  .sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);opacity:0;pointer-events:none}
+  .cselect{position:relative}
+  .cs-btn{display:flex;align-items:center;gap:8px;max-width:250px;font:12.5px var(--font);font-weight:600;border-radius:999px;border:1px solid rgba(255,255,255,.22);padding:6px 13px;background:rgba(255,255,255,.09);color:#fff;cursor:pointer;backdrop-filter:blur(6px);transition:background .18s var(--ease),transform .18s var(--ease),border-color .18s var(--ease),box-shadow .18s var(--ease)}
+  .cs-btn:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.42);box-shadow:0 6px 16px -6px rgba(0,0,0,.4);transform:translateY(-1px)}
+  .cs-btn:active{transform:scale(.96)}
+  .cs-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cs-btn svg{flex:0 0 auto;transition:transform .28s var(--ease)}
+  .cselect.open .cs-btn svg{transform:rotate(180deg)}
+  .cs-menu{position:fixed;z-index:75;min-width:180px;max-width:330px;max-height:330px;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:5px;opacity:0;visibility:hidden;transform:translateY(-8px) scale(.96);transform-origin:top left;transition:opacity .18s var(--ease),transform .24s var(--ease),visibility 0s linear .24s}
+  .cs-menu.open{opacity:1;visibility:visible;transform:none;transition:opacity .18s var(--ease),transform .24s var(--ease),visibility 0s}
+  .cs-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);font:12.5px var(--font);font-weight:500;padding:8px 11px;border-radius:9px;cursor:pointer;opacity:0;transform:translateY(-5px);
+    transition:background .12s ease 0s,color .12s ease 0s,opacity .2s var(--ease) calc(min(var(--i,0),12) * 26ms),transform .24s var(--ease) calc(min(var(--i,0),12) * 26ms)}
+  .cs-menu.open .cs-item{opacity:1;transform:none}
+  .cs-item:hover{background:var(--hover-bg)}
+  .cs-item.on{background:var(--sel-bg);color:var(--green-deep);font-weight:700}
+  html[data-theme="dark"] .cs-item.on{color:var(--green-bright)}
+  /* ---------- красивые нативные селекты (журнал, разбивка) ---------- */
+  .fld select,.log-ctl select{appearance:none;-webkit-appearance:none;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 11px center;padding-right:32px}
+  /* акцентные чекбоксы */
+  input[type=checkbox]{accent-color:var(--green-bright);width:14px;height:14px;cursor:pointer}
+  /* иконка календаря в тёмной теме */
+  html[data-theme="dark"] input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:pointer}
+  /* тёмная тема: активная кнопка вида — только цвет (фон даёт скользящая плашка) */
+  html[data-theme="dark"] .seg button.on{background:transparent;color:var(--green-bright)}
   /* ================= адаптив ================= */
   @media(max-width:1180px){aside#dayPanel{width:232px;flex-basis:232px}}
   @media(max-width:980px){
@@ -402,7 +442,10 @@
 <div class="topbar">
 <header>
   <div class="logo">📋 Планировщик участков</div>
-  <select id="siteSelect" title="Участок"></select>
+  <div class="cselect" id="siteCSelect">
+    <button type="button" class="cs-btn" id="csBtn" title="Выбрать участок" aria-haspopup="listbox"><span id="csLabel">Участок</span><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  </div>
+  <select id="siteSelect" title="Участок" class="sr-only" tabindex="-1" aria-hidden="true"></select>
   <button class="ghost" id="btnAddSite" title="Добавить участок">＋ Участок</button>
   <button class="ghost" id="btnRefresh" title="Обновить активный участок из Google Sheets">⟳ Обновить</button>
   <button class="ghost" id="btnExport" title="Скачать CSV с текущими датами">⤓ CSV</button>
@@ -429,6 +472,7 @@
   </div>
   <button class="btn" id="btnToday">Сегодня</button>
   <div class="seg">
+    <span class="pill" id="segPill"></span>
     <button id="viewBoard" class="on">Доска</button>
     <button id="viewList">Список дней</button>
     <button id="viewShifts">Сменные</button>
@@ -524,6 +568,7 @@
   </div>
 </div>
 
+<div class="cs-menu" id="csMenu" role="listbox"></div>
 <div id="toast"></div>
 <script type="application/json" id="snapshot-data">{
  "generatedAt": "2026-10-15",
@@ -687,8 +732,10 @@ const SNAP = JSON.parse(document.getElementById('snapshot-data').textContent);
 const CONTRACTS = SNAP.contracts || {};
 const LS_KEY = 'planner_sites_v2';
 const WD = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
-const state = { sites: [], activeId: null, view: 'board', selectedDate: null, rangeFrom: null, rangeTo: null };
+const state = { sites: [], activeId: null, view: 'board', selectedDate: null, rangeFrom: null, rangeTo: null, _enterView: false };
 let pendingPlan = null;
+const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const raf = fn => (typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame(fn) : setTimeout(fn, 16));
 
 /* ---------- тема оформления (светлая / тёмная) ---------- */
 const THEME_KEY = 'planner.theme';
@@ -705,8 +752,13 @@ function applyTheme(theme){
 }
 function toggleTheme(){
   const next = currentTheme() === 'dark' ? 'light' : 'dark';
-  try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
-  applyTheme(next);
+  const apply = () => {
+    try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+    applyTheme(next);
+  };
+  if(typeof document !== 'undefined' && document.startViewTransition && !reducedMotion()){
+    document.startViewTransition(apply); // плавный кроссфейд всей страницы
+  } else apply();
 }
 
 /* ---------- журнал изменений ---------- */
@@ -1286,6 +1338,7 @@ function renderKPIs(site, daysInfo){
 function render(){
   const site = activeSite();
   if(!site){ return; }
+  const entering = state._enterView; state._enterView = false;
   const daysInfo = computeDays(site);
   const posMap = buildPositions(site);
   renderKPIs(site, daysInfo);
@@ -1311,6 +1364,10 @@ function render(){
   else if(state.view === 'list') renderList(site, daysInfo, posMap);
   else if(state.view === 'shifts') renderShifts();
   else if(state.view === 'multi') renderMulti();
+  if(entering){
+    const host = {board:$('boardLayout'), list:$('listView'), shifts:$('shiftsView'), multi:$('multiView')}[state.view];
+    markEnter(host);
+  }
 }
 function showOnly(name){
   $('boardLayout').style.display = name === 'board' ? '' : 'none';
@@ -1318,9 +1375,46 @@ function showOnly(name){
   $('shiftsView').hidden = name !== 'shifts';
   $('multiView').hidden = name !== 'multi';
 }
+/* стаггер-появление: класс живёт ~1.1 с, потом снимается, чтобы не перезапускать анимации */
+function markEnter(el){
+  if(!el || reducedMotion()) return;
+  el.classList.add('enter-anim');
+  clearTimeout(el._et);
+  el._et = setTimeout(() => el.classList.remove('enter-anim'), 1150);
+}
+/* скользящая плашка переключателя видов */
+function segSync(){
+  const seg = document.querySelector && document.querySelector('.seg');
+  const pill = $('segPill');
+  if(!seg || !pill) return;
+  const on = seg.querySelector('button.on');
+  if(!on){ pill.style.width = '0'; return; }
+  pill.style.width = on.offsetWidth + 'px';
+  pill.style.transform = 'translateX(' + (on.offsetLeft - 3) + 'px)';
+}
 function renderSiteSelect(){
   const sel = $('siteSelect');
   sel.innerHTML = state.sites.map(s => '<option value="' + esc(s.id) + '"' + (s.id === activeSite().id?' selected':'') + '>' + esc(s.name) + '</option>').join('');
+  // кастомный выпадающий список поверх скрытого нативного
+  const label = $('csLabel'), menu = $('csMenu');
+  const act = activeSite();
+  if(label) label.textContent = act ? act.name : 'Участок';
+  if(menu) menu.innerHTML = state.sites.map((s, i) =>
+    '<button type="button" class="cs-item' + (s.id === state.activeId ? ' on' : '') + '" data-site-id="' + esc(s.id) + '" style="--i:' + i + '" role="option">' + esc(s.name) + '</button>').join('');
+}
+function csOpen(open){
+  const wrap = $('siteCSelect');
+  const menu = $('csMenu');
+  if(!wrap || !menu) return;
+  if(open === undefined) open = !menu.classList.contains('open');
+  if(open){
+    const b = $('csBtn').getBoundingClientRect();
+    menu.style.left = b.left + 'px';
+    menu.style.top = (b.bottom + 8) + 'px';
+    menu.style.minWidth = Math.max(b.width, 180) + 'px';
+  }
+  wrap.classList.toggle('open', open); // поворот шеврона
+  menu.classList.toggle('open', open);
 }
 function renderDayPanel(site, daysInfo){
   const fond = fondOf(site);
@@ -1354,8 +1448,10 @@ function renderBoard(site, daysInfo, posMap){
   const cols = [];
   if(daysInfo.nodate.length) cols.push({date:'nodate'});
   cols.push(...daysInfo.days);
+  let colIdx = 0;
   for(const d of cols){
     const col = document.createElement('div');
+    if(col.style && col.style.setProperty) col.style.setProperty('--i', Math.min(colIdx++, 14));
     if(d.date === 'nodate'){
       col.className = 'day-col nodate';
       col.dataset.date = 'nodate';
@@ -1395,9 +1491,11 @@ function renderList(site, daysInfo, posMap){
   lv.innerHTML = '';
   const show = daysInfo.days.filter(d => d.has);
   if(!show.length) lv.innerHTML = '<div class="hint">Нет операций с датами в выбранном периоде.</div>';
+  let listIdx = 0;
   for(const d of show){
     const pct = Math.round(d.total / fond * 100);
     const wrap = document.createElement('div');
+    if(wrap.style && wrap.style.setProperty) wrap.style.setProperty('--i', Math.min(listIdx++, 14));
     wrap.className = 'l-day' + (state.selectedDate === d.date ? ' flash' : '');
     wrap.dataset.date = d.date;
     let head = '<div class="l-head' + (pct>100?' over':'') + '"><span>' + WD[wdOf(d.date)] + ', ' + fmtDFull(d.date) + (d.date === t ? ' <span class="today-chip">сегодня</span>' : '') + '</span>' +
@@ -1443,9 +1541,10 @@ function renderShifts(){
   for(const ps of perSite) for(const d of ps.info.days) if(d.date >= from && (!state.rangeTo || d.date <= state.rangeTo) && (d.has || d.work)) dateSet.add(d.date);
   const dates = [...dateSet].sort();
   if(!dates.length){ el.innerHTML = html + '<div class="hint">В выбранном периоде сменных заданий нет.</div>'; return; }
+  let shiftIdx = 0;
   for(const date of dates){
     const isToday = date === t;
-    let dayHtml = '<div class="shift-day"><div class="l-head"><span>' + WD[wdOf(date)] + ', ' + fmtDFull(date) +
+    let dayHtml = '<div class="shift-day" style="--i:' + Math.min(shiftIdx++, 14) + '"><div class="l-head"><span>' + WD[wdOf(date)] + ', ' + fmtDFull(date) +
       (isToday ? ' <span class="today-chip">сегодня</span>' : '') + '</span></div>';
     let any = false;
     for(const ps of perSite){
@@ -1488,6 +1587,7 @@ function renderMulti(){
     return;
   }
   let html = '';
+  let laneIdx = 0;
   for(const site of sites){
     const info = computeDays(site);
     const fond = fondOf(site);
@@ -1498,7 +1598,7 @@ function renderMulti(){
     const totalMin = info.days.reduce((a,d) => a + d.total, 0);
     const periodPct = workDays.length ? Math.round(totalMin / (workDays.length * fond) * 100) : 0;
     const overDays = info.days.filter(d => d.total > fond).length;
-    html += '<div class="lane"><div class="lane-head">' +
+    html += '<div class="lane" style="--i:' + Math.min(laneIdx++, 14) + '"><div class="lane-head">' +
       '<span class="ln-name">' + esc(site.name) + '</span>' +
       '<span class="ln-res" title="Ресурс участка">⚙ ' + esc(res) + '</span>' +
       '<span class="ln-kpis">' +
@@ -1587,6 +1687,7 @@ function listSectionHTML(site){
 
 /* ---------- drag & drop ---------- */
 let dragId = null;
+let dragoverRaf = 0;
 function dropZoneOf(e){
   return e.target.closest && e.target.closest('.day-col, .l-day');
 }
@@ -1602,8 +1703,14 @@ document.addEventListener('dragover', e => {
   if(!zone || !dragId) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
-  document.querySelectorAll('.day-col.dragover, .l-day.dragover').forEach(c => { if(c !== zone) c.classList.remove('dragover'); });
-  zone.classList.add('dragover'); // подсвечивается весь столбец / весь день, а не только рамка
+  // троттлинг через rAF: dragover стреляет десятки раз в секунду — подсветку
+  // обновляем максимум раз в кадр, чтобы не было микроторможений
+  if(dragoverRaf) return;
+  dragoverRaf = raf(() => {
+    dragoverRaf = 0;
+    document.querySelectorAll('.day-col.dragover, .l-day.dragover').forEach(c => { if(c !== zone) c.classList.remove('dragover'); });
+    zone.classList.add('dragover'); // подсвечивается весь столбец / весь день, а не только рамка
+  });
 });
 document.addEventListener('dragleave', e => {
   const zone = dropZoneOf(e);
@@ -1784,7 +1891,9 @@ function switchView(v){
   $('viewList').classList.toggle('on', v === 'list');
   $('viewShifts').classList.toggle('on', v === 'shifts');
   $('viewMulti').classList.toggle('on', v === 'multi');
+  state._enterView = true; // стаггер-появление колонок нового вида
   render();
+  raf(segSync);
 }
 
 /* ---------- google sheets ---------- */
@@ -2181,6 +2290,23 @@ function wire(){
   $('btnShare').addEventListener('click', enableSharing);
   $('btnShareCfg').addEventListener('click', shareSettings);
   $('btnTheme').addEventListener('click', toggleTheme);
+  // кастомный выпадающий список участка
+  $('csBtn').addEventListener('click', e => { e.stopPropagation(); csOpen(); });
+  $('csMenu').addEventListener('click', e => {
+    const item = e.target.closest && e.target.closest('[data-site-id]');
+    if(!item) return;
+    const sel = $('siteSelect');
+    sel.value = item.dataset.siteId;
+    sel.dispatchEvent(new Event('change'));
+    csOpen(false);
+  });
+  document.addEventListener('pointerdown', e => {
+    const wrap = $('siteCSelect');
+    if(wrap && wrap.classList.contains('open') && !(e.target.closest && e.target.closest('#siteCSelect')) && !(e.target.closest && e.target.closest('.cs-menu'))) csOpen(false);
+  });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') csOpen(false); });
+  window.addEventListener('resize', () => { csOpen(false); segSync(); });
+  window.addEventListener('scroll', () => csOpen(false), true);
   // журнал изменений
   $('btnLog').addEventListener('click', openLogModal);
   $('logClose').addEventListener('click', () => $('logModal').classList.remove('open'));
@@ -2393,7 +2519,11 @@ function init(){
   state.sites = loadSites();
   state.activeId = state.sites[0].id;
   wire();
+  state._enterView = true;
   render();
+  raf(segSync);
+  // после загрузки шрифтов ширины кнопок меняются — пересчитываем плашку
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => segSync());
   // тихое обновление всех url-участков при загрузке
   setTimeout(async () => {
     let okCount = 0, failCount = 0;
