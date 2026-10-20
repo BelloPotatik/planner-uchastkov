@@ -5,21 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Планировщик участков — производство</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-  /* ================= design tokens v3 ================= */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap');
+  /* ================= design tokens v4 (light + dark) ================= */
   :root{
+    color-scheme:light;
     --green:#059669; --green-dark:#047857; --green-deep:#064e3b; --green-bright:#10b981; --green-glow:rgba(16,185,129,.45);
     --red:#e11d48; --red-dark:#be123c; --red-light:#fff1f2;
     --amber:#d97706; --amber-dark:#b45309; --amber-light:#fffbeb;
     --blue:#2563eb; --blue-light:#eff6ff;
     --line:#e6eaf0; --line-strong:#d3dae3;
-    --bg:#f2f5f9; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --faint:#94a3b8;
+    --bg:#f2f5f9; --card:#ffffff; --card2:#f8fafc; --ink:#0f172a; --muted:#64748b; --faint:#94a3b8;
+    --sel-bg:#ecfdf5; --seg-bg:#e9eef4; --hover-bg:#f1f5f9;
     --shadow-sm:0 1px 2px rgba(15,23,42,.05),0 1px 3px rgba(15,23,42,.04);
     --shadow-md:0 6px 16px -6px rgba(15,23,42,.13),0 2px 6px -2px rgba(15,23,42,.06);
     --shadow-lg:0 24px 48px -16px rgba(15,23,42,.30);
     --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
     --ease:cubic-bezier(.2,.8,.2,1);
     --font:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+    --font-d:"Unbounded","Inter",system-ui,sans-serif;
+  }
+  html[data-theme="dark"]{
+    color-scheme:dark;
+    --red-light:rgba(225,29,72,.14);
+    --amber-light:rgba(217,119,6,.14);
+    --blue-light:rgba(37,99,235,.18);
+    --line:#26303e; --line-strong:#374457;
+    --bg:#0b111d; --card:#131c2c; --card2:#0f1725; --ink:#e6edf7; --muted:#93a3b8; --faint:#66788f;
+    --sel-bg:rgba(16,185,129,.12); --seg-bg:#0f1725; --hover-bg:#1b2638;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.35),0 1px 3px rgba(0,0,0,.28);
+    --shadow-md:0 8px 20px -8px rgba(0,0,0,.55),0 2px 6px -2px rgba(0,0,0,.4);
+    --shadow-lg:0 28px 56px -18px rgba(0,0,0,.75);
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
@@ -172,6 +187,181 @@
   textarea:focus{border-color:var(--green-bright);box-shadow:0 0 0 4px rgba(16,185,129,.14);outline:none}
   .mini{border:1px solid var(--line-strong);background:#fff;border-radius:999px;font-size:10.5px;padding:2px 8px;cursor:pointer;line-height:16px;color:var(--muted);font-weight:600;transition:all .14s var(--ease)}
   .mini:hover{background:var(--amber-light);color:var(--ink);border-color:#e8cf9a}
+  /* ================= v4: тёмная тема (переопределения) ================= */
+  html[data-theme="dark"] body{background:
+    radial-gradient(1200px 600px at 88% -12%, rgba(16,185,129,.10), transparent 60%),
+    radial-gradient(900px 520px at -8% -4%, rgba(37,99,235,.10), transparent 55%),
+    var(--bg)}
+  html[data-theme="dark"] ::selection{background:rgba(16,185,129,.35)}
+  html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#2c3a4e;border:2px solid transparent;background-clip:padding-box}
+  html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:#3c4d66;border:2px solid transparent;background-clip:padding-box}
+  html[data-theme="dark"] .subbar{background:rgba(13,19,32,.84);box-shadow:0 10px 26px -20px rgba(0,0,0,.65)}
+  html[data-theme="dark"] .kpi.warn{border-color:rgba(217,119,6,.4)}
+  html[data-theme="dark"] .kpi.bad{border-color:rgba(225,29,72,.4)}
+  html[data-theme="dark"] .subbar input[type=date],html[data-theme="dark"] .subbar input[type=search],html[data-theme="dark"] .subbar input[type=number]{background:var(--card2);color:var(--ink)}
+  html[data-theme="dark"] .seg{background:var(--seg-bg)}
+  html[data-theme="dark"] .seg button.on{background:var(--card);color:var(--green-bright)}
+  html[data-theme="dark"] .btn{background:var(--card);border-color:var(--line-strong);color:var(--ink)}
+  html[data-theme="dark"] .btn:hover{background:var(--hover-bg);border-color:var(--line-strong)}
+  html[data-theme="dark"] aside#dayPanel{background:var(--card)}
+  html[data-theme="dark"] .day-item{background:var(--card2)}
+  html[data-theme="dark"] .day-item.sel{background:linear-gradient(135deg,rgba(16,185,129,.18),rgba(16,185,129,.07))}
+  html[data-theme="dark"] .mini-bar{background:#1c2740}
+  html[data-theme="dark"] .day-col{background:var(--card)}
+  html[data-theme="dark"] .day-col.dragover{background:rgba(16,185,129,.08)}
+  html[data-theme="dark"] .card{background:var(--card2);border-color:var(--line)}
+  html[data-theme="dark"] .card:hover{border-color:var(--line-strong)}
+  html[data-theme="dark"] .card-prod{color:#c4d0e0}
+  html[data-theme="dark"] .badge{background:#1b2638;color:var(--muted)}
+  html[data-theme="dark"] .badge.split{border-color:rgba(37,99,235,.45)}
+  html[data-theme="dark"] .badge.tdg{border-color:rgba(225,29,72,.4)}
+  html[data-theme="dark"] .badge.ok{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.35)}
+  html[data-theme="dark"] .l-day,html[data-theme="dark"] .shift-day,html[data-theme="dark"] .lane{background:var(--card)}
+  html[data-theme="dark"] table.l-table th{background:var(--card2)}
+  html[data-theme="dark"] table.l-table td{border-bottom-color:var(--line)}
+  html[data-theme="dark"] table.l-table tbody tr:hover td{background:var(--hover-bg)}
+  html[data-theme="dark"] .modal{background:var(--card);border-color:var(--line-strong)}
+  html[data-theme="dark"] .modal h2{background:linear-gradient(180deg,var(--card2),var(--card))}
+  html[data-theme="dark"] .modal .mfoot{background:var(--card2)}
+  html[data-theme="dark"] .fld input[type=text],html[data-theme="dark"] .fld input[type=url],html[data-theme="dark"] .fld input[type=number],html[data-theme="dark"] .fld select{background:var(--card2);color:var(--ink)}
+  html[data-theme="dark"] textarea{background:var(--card2);color:var(--ink)}
+  html[data-theme="dark"] table.chg td{border-bottom-color:var(--line)}
+  html[data-theme="dark"] .note{border-color:rgba(217,119,6,.4)}
+  html[data-theme="dark"] .mini{background:var(--card);color:var(--muted)}
+  html[data-theme="dark"] header select option{color:#0f172a;background:#fff}
+  html[data-theme="dark"] #toast{background:rgba(20,28,44,.97)}
+  /* ================= v4: столбец «сегодня» ================= */
+  .day-col.today{box-shadow:0 0 0 2px var(--green-bright),0 14px 30px -14px var(--green-glow)}
+  .day-col.today .day-head{background:linear-gradient(135deg,#022c1f 0%,#065f46 55%,#059669 130%)}
+  .day-head .today-chip{background:#fff;color:var(--green-deep);font-weight:800;border-radius:999px;padding:1.5px 8px;font-size:9.5px;text-transform:uppercase;letter-spacing:.6px}
+  /* ================= v4: выбор периода ================= */
+  .period{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;white-space:nowrap}
+  .period input[type=date]{font:12.5px var(--font);padding:6px 9px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;color:var(--ink);transition:border-color .16s var(--ease),box-shadow .16s var(--ease)}
+  html[data-theme="dark"] .period input[type=date]{background:var(--card2)}
+  .period input[type=date]:focus{border-color:var(--green-bright);box-shadow:0 0 0 4px rgba(16,185,129,.15);outline:none}
+  .period .clear{border:0;background:transparent;color:var(--faint);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:8px}
+  .period .clear:hover{color:var(--red);background:var(--red-light)}
+  /* ================= v4: сменные задания ================= */
+  #shiftsView,#multiView{padding:16px 18px}
+  .shift-day{margin-bottom:16px;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--card);box-shadow:var(--shadow-sm)}
+  .shift-site{border-top:1px solid var(--line)}
+  .shift-site:first-of-type{border-top:0}
+  .ss-head{display:flex;gap:12px;align-items:center;padding:8px 15px;background:var(--card2);font-weight:700;font-size:12.5px}
+  .ss-head .ss-load{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
+  .ss-bar{flex:0 0 130px;height:6px;background:var(--seg-bg);border-radius:999px;overflow:hidden}
+  .ss-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green-bright),var(--green));border-radius:999px}
+  .ss-bar i.over{background:linear-gradient(90deg,#fb7185,var(--red))}
+  /* ================= v4: сводный вид участков ================= */
+  .lane{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);margin-bottom:14px;overflow:hidden}
+  .lane-head{display:flex;align-items:center;gap:12px;padding:11px 15px 9px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+  .lane-head .ln-name{font-weight:800;font-size:14px;letter-spacing:-.2px}
+  .lane-head .ln-res{color:var(--muted);font-size:12px}
+  .lane-head .ln-kpis{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .lane-head .ln-kpis .kpi{padding:4px 11px}
+  .lane-cells{display:flex;gap:5px;overflow-x:auto;padding:11px 14px 13px}
+  .lcell{flex:0 0 48px;border-radius:10px;border:1px solid var(--line);background:var(--card2);padding:5px 4px 6px;text-align:center;cursor:pointer;transition:transform .14s var(--ease),box-shadow .14s var(--ease)}
+  .lcell:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+  .lcell .lc-d{font-size:10px;color:var(--faint);font-weight:700}
+  .lcell .lc-p{font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+  .lcell .lc-n{font-size:9.5px;color:var(--muted)}
+  .lcell.off{opacity:.38;cursor:default}
+  .lcell.l0 .lc-p{color:var(--faint)}
+  .lcell.l1{background:linear-gradient(180deg,#d9f7e8,#ecfdf5);border-color:#b7ecd3}
+  .lcell.l2{background:linear-gradient(180deg,#fef3c7,#fffbeb);border-color:#f3e3bd}
+  .lcell.l3{background:linear-gradient(180deg,#ffe4e6,#fff1f2);border-color:#f8c9d2}
+  .lcell.l3 .lc-p{color:var(--red)}
+  html[data-theme="dark"] .lcell.l1{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4)}
+  html[data-theme="dark"] .lcell.l2{background:rgba(217,119,6,.15);border-color:rgba(217,119,6,.4)}
+  html[data-theme="dark"] .lcell.l3{background:rgba(225,29,72,.15);border-color:rgba(225,29,72,.4)}
+  .lcell.today{box-shadow:0 0 0 2px var(--green-bright)}
+  /* ================= v4: журнал изменений ================= */
+  .log-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .log-ctl input[type=date],.log-ctl select{font:12.5px var(--font);padding:6px 9px;border:1px solid var(--line-strong);border-radius:10px;background:var(--card2);color:var(--ink)}
+  table.log-table{width:100%;border-collapse:collapse;font-size:12px}
+  table.log-table th{text-align:left;color:var(--faint);padding:6px 10px;border-bottom:1px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0;background:var(--card)}
+  table.log-table td{padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.log-table .lt-ts{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted)}
+  table.log-table .lt-act{font-weight:700;white-space:nowrap}
+  /* ================= v4: drag-and-drop ================= */
+  .l-day.dragover{outline:2px dashed var(--green-bright);outline-offset:-2px;box-shadow:var(--shadow-md)}
+  tr[draggable="true"]{cursor:grab}
+  /* ================= v4: общая доска (подключаемые участки) ================= */
+  .sub-board{margin-top:20px}
+  .sub-board .sb-title{display:flex;align-items:center;gap:12px;margin:0 2px 10px;font-weight:800;font-size:13.5px;flex-wrap:wrap}
+  .sub-board .sb-title .ln-res{color:var(--muted);font-weight:600;font-size:12px}
+  .sub-board .sb-title .sb-unpin{margin-left:auto}
+  .bcols{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding:2px 2px 8px}
+  .bcol{flex:0 0 196px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-sm)}
+  .bcol.today{box-shadow:0 0 0 2px var(--green-bright),0 10px 22px -12px var(--green-glow)}
+  .bc-head{background:linear-gradient(135deg,#021f17 0%,#052e22 45%,var(--green-deep) 72%,#047857 135%);color:#fff;padding:7px 10px;font-size:11.5px;font-weight:700}
+  .bc-head .bc-pct{float:right;font-variant-numeric:tabular-nums;opacity:.92}
+  .bc-head .bc-load{font-size:10px;font-weight:500;opacity:.85;margin-top:2px;font-variant-numeric:tabular-nums}
+  .bc-head.over{background:linear-gradient(135deg,#4c0519,#9f1239 60%,#e11d48 140%)}
+  .bc-body{padding:6px}
+  .card.compact{cursor:default;padding:6px 8px 6px 10px;margin-bottom:6px}
+  .card.compact:hover{transform:none}
+  .card.compact .card-prod{font-size:11px}
+  /* ================= v5: «аврора» — фирменный визуал ================= */
+  /* зернистая плёнка поверх всего (кроме модалок/тостов) */
+  body::after{content:"";position:fixed;inset:0;z-index:65;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
+  html[data-theme="dark"] body::after{opacity:.08;mix-blend-mode:soft-light}
+  /* живое сияние в шапке */
+  header{overflow:hidden}
+  header::before{content:"";position:absolute;inset:-40% -10%;pointer-events:none;
+    background:
+      radial-gradient(34% 60% at 18% 50%, rgba(52,211,153,.34), transparent 70%),
+      radial-gradient(30% 55% at 62% 42%, rgba(37,99,235,.26), transparent 70%),
+      radial-gradient(26% 50% at 88% 60%, rgba(16,185,129,.28), transparent 70%);
+    animation:aurora 16s ease-in-out infinite alternate}
+  @keyframes aurora{from{transform:translate3d(-3%,-2%,0) rotate(-2deg) scale(1)}to{transform:translate3d(3%,2%,0) rotate(2deg) scale(1.08)}}
+  header>*{position:relative;z-index:1}
+  header .logo{font-family:var(--font-d);font-size:15px;font-weight:600;letter-spacing:0;text-shadow:none;
+    background:linear-gradient(92deg,#ffffff 20%,#a7f3d0 60%,#6ee7b7);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  /* bento-KPI: градиентная окантовка + дисплейные цифры */
+  .kpi{border:1px solid transparent;
+    background:linear-gradient(var(--card),var(--card)) padding-box,
+      linear-gradient(135deg,rgba(16,185,129,.6),rgba(37,99,235,.22) 55%,rgba(16,185,129,.08)) border-box}
+  .kpi.warn{background:linear-gradient(var(--amber-light),var(--amber-light)) padding-box,
+      linear-gradient(135deg,rgba(217,119,6,.65),rgba(217,119,6,.12)) border-box}
+  .kpi.bad{background:linear-gradient(var(--red-light),var(--red-light)) padding-box,
+      linear-gradient(135deg,rgba(225,29,72,.7),rgba(225,29,72,.15)) border-box}
+  .kpi b{font-family:var(--font-d);font-size:13px;font-weight:600}
+  /* дисплейный шрифт для дат и заголовков */
+  .day-head .dt,.bc-head,.l-head,.ss-head,.ln-name,.lane-head .ln-name{font-family:var(--font-d);letter-spacing:-.2px}
+  .day-head .dt{font-size:12px}
+  .bc-head{font-size:10px}
+  .l-head{font-size:11.5px}
+  .ss-head{font-size:11px}
+  .ln-name,.lane-head .ln-name{font-size:12.5px}
+  .day-item .d1{font-family:var(--font-d);font-size:11px}
+  .day-head .dt small{font-family:var(--font)}
+  /* стекло суббара посильнее */
+  .subbar{backdrop-filter:blur(18px) saturate(1.7)}
+  .seg{box-shadow:inset 0 1px 3px rgba(15,23,42,.08)}
+  /* today: вращающееся конусное кольцо поверх мягкого свечения */
+  @property --ring{syntax:'<angle>';initial-value:0deg;inherits:false}
+  .day-col.today,.bcol.today{position:relative;box-shadow:0 0 26px -8px var(--green-glow),var(--shadow-md)}
+  .day-col.today::before,.bcol.today::before{content:"";position:absolute;inset:-1.5px;border-radius:inherit;padding:1.6px;pointer-events:none;z-index:2;
+    background:conic-gradient(from var(--ring),#10b981,#6ee7b7,#059669,#34d399,#a7f3d0,#10b981);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+    animation:ringspin 7s linear infinite}
+  @keyframes ringspin{to{--ring:360deg}}
+  /* шиммер на полосах загрузки */
+  .loadbar i,.mini-bar i,.ss-bar i{position:relative;overflow:hidden}
+  .loadbar i::after,.ss-bar i::after{content:"";position:absolute;inset:0;transform:translateX(-110%);
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+    animation:shimmer 3.4s var(--ease) infinite}
+  @keyframes shimmer{55%{transform:translateX(110%)}100%{transform:translateX(110%)}}
+  /* карточки: точнее кромка, свечение ребра при наведении */
+  .card{border-color:var(--line);box-shadow:0 1px 2px rgba(15,23,42,.06)}
+  .card:hover{border-color:rgba(16,185,129,.55)}
+  .card:hover::before{box-shadow:0 0 10px var(--green-glow),0 0 2px var(--green-bright)}
+  /* плавное появление видов */
+  #boardLayout,#listView,#shiftsView,#multiView{animation:viewIn .28s var(--ease)}
+  @keyframes viewIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  /* ячейки теплокарты: чётче и с дисплейными цифрами */
+  .lcell .lc-p{font-family:var(--font-d);font-size:10px}
   /* ================= адаптив ================= */
   @media(max-width:1180px){aside#dayPanel{width:232px;flex-basis:232px}}
   @media(max-width:980px){
@@ -217,10 +407,12 @@
   <button class="ghost" id="btnRefresh" title="Обновить активный участок из Google Sheets">⟳ Обновить</button>
   <button class="ghost" id="btnExport" title="Скачать CSV с текущими датами">⤓ CSV</button>
   <button class="ghost" id="btnAutoplan" title="Автоматически распланировать участок">⚙ Автоплан</button>
+  <button class="ghost" id="btnLog" title="Журнал изменений и отчёт за период">📜 Журнал</button>
   <button class="ghost" id="btnShare" title="Совместный доступ: общие правки всех пользователей (через репозиторий GitHub)">🔗 Совместно</button>
   <button class="ghost" id="btnShareCfg" title="Токен GitHub и репозиторий совместного режима">⚙</button>
   <span id="syncStatus" title="Состояние синхронизации с Google Sheets"></span>
   <div class="spacer"></div>
+  <button class="ghost" id="btnTheme" title="Переключить тёмную / светлую тему">🌙</button>
   <button class="danger" id="btnDelSite" title="Удалить активный участок">✕</button>
 </header>
 
@@ -230,12 +422,17 @@
   <label title="Ресурс участка: сборщики × норма на человека; для УПКП — общая норма бригады в секциях">Ресурс: <input type="number" id="workersInput" min="1" step="1" style="width:52px"> <span id="resMul">сбор. × <input type="number" id="perWorkerInput" min="1" step="15" style="width:70px"> мин/чел =</span> <input type="number" id="fondTotalInput" min="1" step="10" style="width:84px"> <span id="fondUnit"></span></label>
   <input type="search" id="searchInput" placeholder="Поиск: заказ, изделие, контрагент…" style="width:230px">
   <label><input type="checkbox" id="onlyBad"> только проблемные</label>
-  <label>Дата <input type="date" id="datePick"></label>
-  <button class="btn" id="btnGo">Перейти</button>
+  <button class="btn" id="btnPinBoard" title="Вывести этот участок на общую доску — его дни и загрузка будут видны в видах «Доска», «Список дней» и «Все участки» у всех остальных участков">📌 На общую доску</button>
+  <div class="period" title="Период отображения. По умолчанию показываются даты с сегодняшнего дня; чтобы открыть более ранние сменные — выберите дату «с»">
+    Период: <input type="date" id="rangeFrom" title="Начало периода (пусто — с сегодняшнего дня)"> — <input type="date" id="rangeTo" title="Конец периода (пусто — все даты с данными)">
+    <button class="clear" id="rangeClear" title="Сбросить период">✕</button>
+  </div>
   <button class="btn" id="btnToday">Сегодня</button>
   <div class="seg">
     <button id="viewBoard" class="on">Доска</button>
     <button id="viewList">Список дней</button>
+    <button id="viewShifts">Сменные</button>
+    <button id="viewMulti">Все участки</button>
   </div>
 </div>
 </div>
@@ -248,6 +445,8 @@
   <main id="board"><div class="days" id="daysRow"></div></main>
 </div>
 <div id="listView" hidden></div>
+<div id="shiftsView" hidden></div>
+<div id="multiView" hidden></div>
 
 <!-- modal: add site -->
 <div class="modal-wrap" id="siteModal">
@@ -279,8 +478,8 @@
   <div class="modal">
     <h2 id="planTitle">Автопланирование</h2>
     <div class="mbody">
-      <div class="fld"><label>Примечания и пожелания (учитывает автопланировщик)</label>
-        <textarea id="planNotes" rows="3" placeholder="Примеры строк:&#10;2615 -> 25.10        (заказ точно на дату)&#10;Састэнт после 22.10  (не раньше даты)&#10;не позже 30.10: 339  (дедлайн)&#10;сначала: 904, Брестская СПМК-9"></textarea></div>
+      <div class="fld"><label>Пожелания к плану — можно своими словами (разберёт автопланировщик; сложные формулировки поможет перевести Kimi)</label>
+        <textarea id="planNotes" rows="4" placeholder="Примеры (можно своими словами, по строке на пожелание):&#10;2615 -> 25.10        (заказ точно на дату)&#10;Састэнт не раньше 22.10&#10;не позже 30.10: 339  (дедлайн)&#10;сначала: 904, Брестская СПМК-9&#10;904 делать после 2615"></textarea></div>
       <div class="fld"><label><input type="checkbox" id="planStrict" checked> строго последовательно — один договор за раз, следующий заказ со следующего рабочего дня</label></div>
       <div id="planHint" class="hint"></div>
       <div id="planBody"></div>
@@ -300,6 +499,27 @@
     <div class="mfoot">
       <button class="btn" id="splitCancel">Отмена</button>
       <button class="btn primary" id="splitCreate">Разбить</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal: журнал изменений -->
+<div class="modal-wrap" id="logModal">
+  <div class="modal" style="width:840px">
+    <h2>Журнал изменений</h2>
+    <div class="mbody">
+      <div class="log-ctl">
+        Период: <input type="date" id="logFrom"> — <input type="date" id="logTo">
+        <select id="logSite"><option value="">все участки</option></select>
+        <button class="btn" id="logApply">Показать</button>
+        <div class="spacer"></div>
+        <button class="btn" id="logCsv" title="Скачать отчёт за выбранный период в CSV">⤓ CSV отчёта</button>
+        <button class="btn" id="logClear" title="Удалить все записи журнала">Очистить</button>
+      </div>
+      <div id="logBody"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn primary" id="logClose">Закрыть</button>
     </div>
   </div>
 </div>
@@ -467,8 +687,47 @@ const SNAP = JSON.parse(document.getElementById('snapshot-data').textContent);
 const CONTRACTS = SNAP.contracts || {};
 const LS_KEY = 'planner_sites_v2';
 const WD = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
-const state = { sites: [], activeId: null, view: 'board', selectedDate: null };
+const state = { sites: [], activeId: null, view: 'board', selectedDate: null, rangeFrom: null, rangeTo: null };
 let pendingPlan = null;
+
+/* ---------- тема оформления (светлая / тёмная) ---------- */
+const THEME_KEY = 'planner.theme';
+function currentTheme(){
+  const saved = (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || '';
+  if(saved === 'dark' || saved === 'light') return saved;
+  if(typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+  return 'light';
+}
+function applyTheme(theme){
+  if(typeof document !== 'undefined' && document.documentElement) document.documentElement.dataset.theme = theme;
+  const b = typeof document !== 'undefined' && document.getElementById('btnTheme');
+  if(b) b.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  const next = currentTheme() === 'dark' ? 'light' : 'dark';
+  try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+  applyTheme(next);
+}
+
+/* ---------- журнал изменений ---------- */
+const LOG_KEY = 'planner_log_v1';
+function readLog(){
+  try{ const a = JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+  catch(e){ return []; }
+}
+function logChange(site, action, details){
+  try{
+    const arr = readLog();
+    arr.push({ ts: Date.now(), site: site ? site.id : '', siteName: site ? site.name : '',
+      action: String(action || ''), details: String(details || '') });
+    if(arr.length > 3000) arr.splice(0, arr.length - 3000);
+    localStorage.setItem(LOG_KEY, JSON.stringify(arr));
+  }catch(e){}
+}
+function fmtTs(ts){
+  const d = new Date(ts);
+  return pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -843,18 +1102,49 @@ function distributeMinutes(total, qtys, totalQty){
 }
 function buildSplitRecord(row, posRows, n){
   const totalQty = posRows.reduce((a,r) => a + (r.qty||0), 0);
+  return buildSplitRecordQtys(row, posRows, distributeQty(totalQty, n));
+}
+/* разбивка с произвольными (не обязательно равными) количествами частей */
+function buildSplitRecordQtys(row, posRows, qtys, commentBase){
+  const totalQty = posRows.reduce((a,r) => a + (r.qty||0), 0);
   const totalMin = posRows.reduce((a,r) => a + (r.minutes||0), 0);
-  const qtys = distributeQty(totalQty, n);
   const mins = distributeMinutes(totalMin, qtys, totalQty);
   const key = row.prodOrder + '|' + row.prod;
   const parts = qtys.map((q, i) => ({
     id:'sp' + hashStr(key + '|' + i + '|' + q + '|' + mins[i]),
     qty:q, minutes:mins[i], date:null,
-    label:'часть ' + (i+1) + '/' + n
+    label:'часть ' + (i+1) + '/' + qtys.length + ' (' + q + ' шт)'
   }));
   return { key, custOrder:row.custOrder, prodOrder:row.prodOrder, prod:row.prod,
     tdg:row.tdg || null, contractDate:row.contractDate || null, customer:row.customer || '',
-    commentBase:'разбивка ' + totalQty + ' шт', parts };
+    commentBase:commentBase || ('разбивка ' + totalQty + ' шт'), parts };
+}
+/* разумное дробление по фонду: день заполняется под ёмкость, остаток — следующие дни.
+   Пачки получаются НЕ обязательно равными (напр. 20 шт при ёмкости 10 и занятости
+   первого дня — 5 + 10 + 5). Если последняя пачка крошечная (< четверти дневной
+   ёмкости) — части перебалансируются равномерно, чтобы не плодить «хвосты». */
+function splitQtysByFond(totalQty, perUnit, fond, firstAvail){
+  if(!totalQty || totalQty <= 0) return [];
+  const per = perUnit > 0 ? perUnit : 1;
+  const cap = Math.max(1, Math.floor(fond / per));
+  if(totalQty * per <= (firstAvail != null ? firstAvail : fond)) return [totalQty]; // всё влезает в первый день
+  const out = [];
+  let left = totalQty;
+  let avail = firstAvail != null ? firstAvail : fond;
+  let guard = 0;
+  while(left > 0 && guard++ < 500){
+    let fit = Math.floor(avail / per);
+    if(fit <= 0){ avail = fond; continue; } // день занят другими — следующий день полный
+    const take = Math.min(left, fit);
+    out.push(take);
+    left -= take;
+    avail = fond;
+  }
+  if(left > 0) out.push(left); // страховка от guard
+  if(out.length > 1 && out[out.length-1] < Math.max(1, Math.floor(cap/4))){
+    return distributeQty(totalQty, out.length); // крошечный хвост → равномерно
+  }
+  return out;
 }
 /* раскладка частей по дням: минимум подряд идущих рабочих дней от якорной даты */
 function assignSplitDates(site, rec, anchorISO){
@@ -906,10 +1196,13 @@ function computeDays(site){
   }
   const dates = [...map.keys()].sort();
   const t = todayISO();
-  let from = dates.length ? dates[0] : t;
-  const minD = t < from ? t : from;
+  // по умолчанию показываем только с актуальной (сегодняшней) даты;
+  // более ранние даты открываются вручную через выбор периода (rangeFrom)
+  const minD = state.rangeFrom || t;
   let to = dates.length ? dates[dates.length-1] : addDays(t, 10);
-  if(to < t) to = t;
+  if(to < minD) to = minD;
+  if(state.rangeTo && state.rangeTo < to) to = state.rangeTo;
+  if(state.rangeTo && state.rangeTo < minD) to = minD; // некорректный период — покажем хотя бы старт
   let all = [];
   for(let d = minD; d <= to; d = addDays(d,1)){
     const rowsD = map.get(d) || [];
@@ -926,7 +1219,7 @@ function rowStatus(r){
   if(r.contractDate && r.dateEff && r.dateEff > r.contractDate) return 'amber';
   return 'green';
 }
-function cardHTML(r, posMap, site){
+function cardHTML(r, posMap, site, compact){
   const p = posMap.get(r.prodOrder + '|' + r.prod);
   const st = rowStatus(r);
   const hide = filterHide(r);
@@ -940,6 +1233,14 @@ function cardHTML(r, posMap, site){
     badges += '<span class="badge ' + (late?'tdg':'') + '">ТДГ ' + fmtD(r.tdg) + '</span>';
   }
   if(r.contractDate) badges += '<span class="badge">договор ' + fmtD(r.contractDate) + '</span>';
+  if(compact){
+    return '<div class="card compact st-' + st + (hide?'" style="display:none':'') + '">' +
+      '<div class="card-top"><span>' + esc(r.prodOrder || r.custOrder) + '</span><span class="card-min">' + uMin(site, r.minutes) + '</span></div>' +
+      '<div class="card-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</div>' +
+      '<div class="card-meta">' + (r.qty ? r.qty + ' шт' : '') + '</div>' +
+      (badges?'<div class="badges">' + badges + '</div>':'') +
+    '</div>';
+  }
   return '<div class="card st-' + st + (hide?'" style="display:none':'') + '" draggable="true" data-id="' + esc(r.id) + '">' +
     '<div class="card-top"><span>' + esc(r.prodOrder || r.custOrder) + '</span><span class="card-min">' + uMin(site, r.minutes) +
     (r.splitPart ? '' : ' <button class="mini" data-split="' + esc(r.id) + '" title="Разбить позицию на части">✂</button>') +
@@ -997,9 +1298,25 @@ function render(){
   $('fondTotalInput').readOnly = !team;
   $('fondTotalInput').value = fondOf(site);
   $('fondUnit').textContent = (site.unit || 'мин') + '/день' + (team ? ' (на бригаду)' : '');
+  const pinBtn = $('btnPinBoard');
+  if(pinBtn){
+    pinBtn.classList.toggle('primary', !!site.onBoard);
+    pinBtn.textContent = site.onBoard ? '📌 На общей доске ✓' : '📌 На общую доску';
+    pinBtn.title = site.onBoard
+      ? 'Участок выведен на общую доску: виден в обзорных секциях видов «Доска», «Список дней» и «Все участки». Нажмите, чтобы убрать'
+      : 'Вывести этот участок на общую доску — его дни и загрузка (со своим ресурсом) будут видны в видах «Доска», «Список дней» и «Все участки»';
+  }
   renderDayPanel(site, daysInfo);
   if(state.view === 'board') renderBoard(site, daysInfo, posMap);
-  else renderList(site, daysInfo, posMap);
+  else if(state.view === 'list') renderList(site, daysInfo, posMap);
+  else if(state.view === 'shifts') renderShifts();
+  else if(state.view === 'multi') renderMulti();
+}
+function showOnly(name){
+  $('boardLayout').style.display = name === 'board' ? '' : 'none';
+  $('listView').hidden = name !== 'list';
+  $('shiftsView').hidden = name !== 'shifts';
+  $('multiView').hidden = name !== 'multi';
 }
 function renderSiteSelect(){
   const sel = $('siteSelect');
@@ -1029,11 +1346,11 @@ function renderDayPanel(site, daysInfo){
   }
 }
 function renderBoard(site, daysInfo, posMap){
-  $('boardLayout').style.display = '';
-  $('listView').hidden = true;
+  showOnly('board');
   const row = $('daysRow');
   row.innerHTML = '';
   const fond = fondOf(site);
+  const t = todayISO();
   const cols = [];
   if(daysInfo.nodate.length) cols.push({date:'nodate'});
   cols.push(...daysInfo.days);
@@ -1051,9 +1368,11 @@ function renderBoard(site, daysInfo, posMap){
       continue;
     }
     const pct = Math.round(d.total / fond * 100);
-    col.className = 'day-col' + (pct > 100 ? ' over' : '') + (state.selectedDate === d.date ? ' flash' : '');
+    const isToday = d.date === t;
+    col.className = 'day-col' + (pct > 100 ? ' over' : '') + (isToday ? ' today' : '') + (state.selectedDate === d.date ? ' flash' : '');
     col.dataset.date = d.date;
-    col.innerHTML = '<div class="day-head"><div class="dt">' + fmtD(d.date) + '<small>' + WD[wdOf(d.date)] + (d.work?'':' · вых') + '</small></div>' +
+    col.innerHTML = '<div class="day-head"><div class="dt">' + fmtD(d.date) + '<small>' + WD[wdOf(d.date)] + (d.work?'':' · вых') + '</small>' +
+      (isToday ? '<span class="today-chip">сегодня</span>' : '') + '</div>' +
       '<div class="loadbar"><i style="width:' + Math.min(100,pct) + '%"></i></div>' +
       '<div class="di">' + uMin(site, d.total) + ' / ' + uMin(site, fond) + ' · ' + d.rows.length + ' опер.' + (pct>100?' · <b>перегруз +' + fmtMin(d.total-fond) + '</b>':'') + '</div></div>';
     const body = document.createElement('div');
@@ -1063,20 +1382,25 @@ function renderBoard(site, daysInfo, posMap){
     col.appendChild(body);
     row.appendChild(col);
   }
+  // общая доска: компактные секции выведенных участков — в формате доски
+  const boardEl = $('board');
+  if(boardEl.querySelectorAll) boardEl.querySelectorAll('.sub-board').forEach(el => { if(el.remove) el.remove(); });
+  for(const ps of pinnedSites()) boardEl.insertAdjacentHTML('beforeend', boardSectionHTML(ps));
 }
 function renderList(site, daysInfo, posMap){
-  $('boardLayout').style.display = 'none';
-  $('listView').hidden = false;
+  showOnly('list');
   const fond = fondOf(site);
+  const t = todayISO();
   const lv = $('listView');
   lv.innerHTML = '';
   const show = daysInfo.days.filter(d => d.has);
-  if(!show.length) lv.innerHTML = '<div class="hint">Нет операций с датами.</div>';
+  if(!show.length) lv.innerHTML = '<div class="hint">Нет операций с датами в выбранном периоде.</div>';
   for(const d of show){
     const pct = Math.round(d.total / fond * 100);
     const wrap = document.createElement('div');
     wrap.className = 'l-day' + (state.selectedDate === d.date ? ' flash' : '');
-    let head = '<div class="l-head' + (pct>100?' over':'') + '"><span>' + WD[wdOf(d.date)] + ', ' + fmtDFull(d.date) + '</span>' +
+    wrap.dataset.date = d.date;
+    let head = '<div class="l-head' + (pct>100?' over':'') + '"><span>' + WD[wdOf(d.date)] + ', ' + fmtDFull(d.date) + (d.date === t ? ' <span class="today-chip">сегодня</span>' : '') + '</span>' +
       '<span class="lh-sub">' + d.rows.length + ' операций</span>' +
       '<span class="lh-sub">' + uMin(site, d.total) + ' / ' + uMin(site, fond) + ' (' + pct + '%)' + (pct>100?' — ПЕРЕГРУЗ':'') + '</span></div>';
     let table = '<table class="l-table"><thead><tr><th>Заказ на пр-во</th><th>Заказ покупателя</th><th>Контрагент</th><th>Продукция</th><th>Кол-во</th><th>Норма</th><th>ТДГ</th><th>Договор</th><th>Статус</th></tr></thead><tbody>';
@@ -1084,7 +1408,7 @@ function renderList(site, daysInfo, posMap){
       if(filterHide(r)) continue;
       const st = rowStatus(r);
       const p = posMap.get(r.prodOrder + '|' + r.prod);
-      table += '<tr class="' + (st==='red'?'l-row-red':st==='amber'?'l-row-amber':'') + '">' +
+      table += '<tr draggable="true" data-id="' + esc(r.id) + '" title="Перетащите строку на другой день" class="' + (st==='red'?'l-row-red':st==='amber'?'l-row-amber':'') + '">' +
         '<td class="num">' + esc(r.prodOrder) + '</td>' +
         '<td class="num">' + esc(r.custOrder) + '</td>' +
         '<td>' + esc(r.customer) + '</td>' +
@@ -1099,31 +1423,202 @@ function renderList(site, daysInfo, posMap){
     wrap.innerHTML = head + table;
     lv.appendChild(wrap);
   }
+  // общая доска: секции выведенных участков — в формате списка дней
+  for(const ps of pinnedSites()) lv.insertAdjacentHTML('beforeend', listSectionHTML(ps));
+}
+
+/* ---------- вид «Сменные»: задания всех участков по дням ---------- */
+function renderShifts(){
+  showOnly('shifts');
+  const el = $('shiftsView');
+  const t = todayISO();
+  const from = state.rangeFrom || t;
+  let html = '<div class="hint" style="margin-bottom:12px">Сменные задания всех участков' +
+    (state.rangeFrom ? ' с ' + fmtDFull(state.rangeFrom) : ' с сегодняшнего дня (' + fmtDFull(t) + ')') +
+    (state.rangeTo ? ' по ' + fmtDFull(state.rangeTo) : '') +
+    '. Более ранние даты скрыты — откройте их через «Период» в верхней панели.</div>';
+  // собираем объединённый список дат по всем участкам
+  const perSite = state.sites.map(s => ({ site:s, info:computeDays(s) }));
+  const dateSet = new Set();
+  for(const ps of perSite) for(const d of ps.info.days) if(d.date >= from && (!state.rangeTo || d.date <= state.rangeTo) && (d.has || d.work)) dateSet.add(d.date);
+  const dates = [...dateSet].sort();
+  if(!dates.length){ el.innerHTML = html + '<div class="hint">В выбранном периоде сменных заданий нет.</div>'; return; }
+  for(const date of dates){
+    const isToday = date === t;
+    let dayHtml = '<div class="shift-day"><div class="l-head"><span>' + WD[wdOf(date)] + ', ' + fmtDFull(date) +
+      (isToday ? ' <span class="today-chip">сегодня</span>' : '') + '</span></div>';
+    let any = false;
+    for(const ps of perSite){
+      const d = ps.info.days.find(x => x.date === date);
+      if(!d || !d.rows.length) continue;
+      any = true;
+      const fond = fondOf(ps.site);
+      const pct = Math.round(d.total / fond * 100);
+      dayHtml += '<div class="shift-site"><div class="ss-head"><span>' + esc(ps.site.name) + '</span>' +
+        '<span class="ss-bar"><i class="' + (pct>100?'over':'') + '" style="width:' + Math.min(100,pct) + '%"></i></span>' +
+        '<span class="ss-load">' + uMin(ps.site, d.total) + ' / ' + uMin(ps.site, fond) + ' · ' + pct + '%' + (pct>100?' — ПЕРЕГРУЗ':'') + '</span></div>' +
+        '<table class="l-table"><thead><tr><th>Заказ на пр-во</th><th>Заказ покупателя</th><th>Контрагент</th><th>Продукция</th><th>Кол-во</th><th>Норма</th><th>ТДГ</th></tr></thead><tbody>';
+      for(const r of d.rows.slice().sort((a,b)=>(a.prodOrder||'').localeCompare(b.prodOrder||''))){
+        const st = rowStatus(r);
+        dayHtml += '<tr class="' + (st==='red'?'l-row-red':st==='amber'?'l-row-amber':'') + '">' +
+          '<td class="num">' + esc(r.prodOrder) + '</td><td class="num">' + esc(r.custOrder) + '</td>' +
+          '<td>' + esc(r.customer) + '</td><td class="l-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</td>' +
+          '<td class="num">' + (r.qty||'') + '</td><td class="num">' + fmtMin(r.minutes) + '</td>' +
+          '<td class="num">' + fmtD(r.tdg) + '</td></tr>';
+      }
+      dayHtml += '</tbody></table></div>';
+    }
+    if(!any) dayHtml += '<div class="hint" style="padding:10px 15px">заданий нет</div>';
+    dayHtml += '</div>';
+    html += dayHtml;
+  }
+  el.innerHTML = html;
+}
+
+/* ---------- вид «Все участки»: лента дней по каждому участку ---------- */
+function renderMulti(){
+  showOnly('multi');
+  const el = $('multiView');
+  const t = todayISO();
+  const sites = state.sites.filter(s => s.onBoard);
+  if(!sites.length){
+    el.innerHTML = '<div class="hint" style="max-width:640px;margin:24px auto;text-align:center">На общую доску пока ничего не выведено.<br><br>' +
+      'Откройте нужный участок и нажмите <b>«📌 На общую доску»</b> в верхней панели — ' +
+      'участок со своим ресурсом появится здесь, а также в общих секциях видов «Доска» и «Список дней».</div>';
+    return;
+  }
+  let html = '';
+  for(const site of sites){
+    const info = computeDays(site);
+    const fond = fondOf(site);
+    const res = siteResLine(site);
+    const todayD = info.days.find(d => d.date === t);
+    const todayPct = todayD ? Math.round(todayD.total / fond * 100) : 0;
+    const workDays = info.days.filter(d => d.work);
+    const totalMin = info.days.reduce((a,d) => a + d.total, 0);
+    const periodPct = workDays.length ? Math.round(totalMin / (workDays.length * fond) * 100) : 0;
+    const overDays = info.days.filter(d => d.total > fond).length;
+    html += '<div class="lane"><div class="lane-head">' +
+      '<span class="ln-name">' + esc(site.name) + '</span>' +
+      '<span class="ln-res" title="Ресурс участка">⚙ ' + esc(res) + '</span>' +
+      '<span class="ln-kpis">' +
+        '<span class="kpi' + (todayPct>100?' bad':'') + '"><b>' + todayPct + '%</b><span>сегодня</span></span>' +
+        '<span class="kpi"><b>' + periodPct + '%</b><span>загрузка периода</span></span>' +
+        (overDays ? '<span class="kpi bad"><b>' + overDays + '</b><span>дней перегруза</span></span>' : '') +
+      '</span></div><div class="lane-cells">';
+    for(const d of info.days){
+      const pct = fond ? Math.round(d.total / fond * 100) : 0;
+      const cls = !d.work ? 'off' : (d.total > fond ? 'l3' : (d.total > fond*0.85 ? 'l2' : (d.total > 0 ? 'l1' : 'l0')));
+      const tip = fmtDFull(d.date) + ' · ' + uMin(site, d.total) + ' / ' + uMin(site, fond) + ' (' + pct + '%) · ' + d.rows.length + ' опер.';
+      html += '<div class="lcell ' + cls + (d.date === t ? ' today' : '') + '" data-site="' + esc(site.id) + '" data-date="' + d.date + '" title="' + esc(tip) + '">' +
+        '<div class="lc-d">' + fmtD(d.date) + '</div>' +
+        '<div class="lc-p">' + (d.work ? pct + '%' : '—') + '</div>' +
+        '<div class="lc-n">' + (d.rows.length || '') + '</div></div>';
+    }
+    html += '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+/* ---------- общая доска: подключаемые участки (site.onBoard) ---------- */
+function siteResLine(site){
+  return site.teamTotal
+    ? 'бригада ' + (site.workers||'') + ' чел · норма ' + uMin(site, fondOf(site)) + ' на бригаду'
+    : (site.workers||'') + ' × ' + uMin(site, site.perWorker||0) + ' = ' + uMin(site, fondOf(site)) + '/день';
+}
+function pinnedSites(){
+  return state.sites.filter(s => s.onBoard && s.id !== state.activeId);
+}
+function sbTitleHTML(site){
+  return '<div class="sb-title">📌 ' + esc(site.name) +
+    '<span class="ln-res">⚙ ' + esc(siteResLine(site)) + '</span>' +
+    '<button class="mini sb-unpin" data-unpin="' + esc(site.id) + '" title="Убрать участок с общей доски">✕ убрать</button></div>';
+}
+/* секция в формате доски: компактные колонки дней (без drag&drop — только обзор) */
+function boardSectionHTML(site){
+  const info = computeDays(site);
+  const posMap = buildPositions(site);
+  const fond = fondOf(site);
+  const t = todayISO();
+  const days = info.days.filter(d => d.has);
+  let html = '<div class="sub-board">' + sbTitleHTML(site);
+  if(!days.length) return html + '<div class="hint">Нет операций в выбранном периоде.</div></div>';
+  html += '<div class="bcols">';
+  for(const d of days){
+    const pct = Math.round(d.total / fond * 100);
+    html += '<div class="bcol' + (d.date === t ? ' today' : '') + '">' +
+      '<div class="bc-head' + (pct > 100 ? ' over' : '') + '">' + WD[wdOf(d.date)] + ', ' + fmtD(d.date) +
+      '<span class="bc-pct">' + pct + '%</span>' +
+      '<div class="bc-load">' + uMin(site, d.total) + ' / ' + uMin(site, fond) + '</div></div>' +
+      '<div class="bc-body">';
+    d.rows.slice().sort((a,b)=>(a.prodOrder||'').localeCompare(b.prodOrder||'')).forEach(r => { html += cardHTML(r, posMap, site, true); });
+    html += '</div></div>';
+  }
+  return html + '</div></div>';
+}
+/* секция в формате списка дней: таблицы по дням */
+function listSectionHTML(site){
+  const info = computeDays(site);
+  const fond = fondOf(site);
+  const t = todayISO();
+  const show = info.days.filter(d => d.has);
+  let html = '<div class="sub-board">' + sbTitleHTML(site);
+  if(!show.length) return html + '<div class="hint">Нет операций в выбранном периоде.</div></div>';
+  for(const d of show){
+    const pct = Math.round(d.total / fond * 100);
+    html += '<div class="l-day">' +
+      '<div class="l-head' + (pct>100?' over':'') + '"><span>' + WD[wdOf(d.date)] + ', ' + fmtDFull(d.date) + (d.date === t ? ' <span class="today-chip">сегодня</span>' : '') + '</span>' +
+      '<span class="lh-sub">' + d.rows.length + ' операций</span>' +
+      '<span class="lh-sub">' + uMin(site, d.total) + ' / ' + uMin(site, fond) + ' (' + pct + '%)' + (pct>100?' — ПЕРЕГРУЗ':'') + '</span></div>' +
+      '<table class="l-table"><thead><tr><th>Заказ на пр-во</th><th>Заказ покупателя</th><th>Контрагент</th><th>Продукция</th><th>Кол-во</th><th>Норма</th><th>ТДГ</th><th>Статус</th></tr></thead><tbody>';
+    for(const r of d.rows.slice().sort((a,b)=>(a.prodOrder||'').localeCompare(b.prodOrder||''))){
+      const st = rowStatus(r);
+      html += '<tr class="' + (st==='red'?'l-row-red':st==='amber'?'l-row-amber':'') + '">' +
+        '<td class="num">' + esc(r.prodOrder) + '</td><td class="num">' + esc(r.custOrder) + '</td>' +
+        '<td>' + esc(r.customer) + '</td><td class="l-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</td>' +
+        '<td class="num">' + (r.qty||'') + '</td><td class="num">' + fmtMin(r.minutes) + '</td>' +
+        '<td class="num">' + fmtD(r.tdg) + '</td>' +
+        '<td>' + (st==='red'?'⚠ после ТДГ':st==='amber'?'⚠ после договора':'ок') + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+  }
+  return html + '</div>';
 }
 
 /* ---------- drag & drop ---------- */
 let dragId = null;
+function dropZoneOf(e){
+  return e.target.closest && e.target.closest('.day-col, .l-day');
+}
 document.addEventListener('dragstart', e => {
-  const card = e.target.closest && e.target.closest('.card');
-  if(!card) return;
-  dragId = card.dataset.id;
+  const src = e.target.closest && e.target.closest('[draggable="true"][data-id]');
+  if(!src) return;
+  dragId = src.dataset.id;
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/plain', dragId);
 });
 document.addEventListener('dragover', e => {
-  const col = e.target.closest && e.target.closest('.day-col');
-  if(col && dragId){ e.preventDefault(); col.classList.add('dragover'); }
+  const zone = dropZoneOf(e);
+  if(!zone || !dragId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.day-col.dragover, .l-day.dragover').forEach(c => { if(c !== zone) c.classList.remove('dragover'); });
+  zone.classList.add('dragover'); // подсвечивается весь столбец / весь день, а не только рамка
 });
 document.addEventListener('dragleave', e => {
-  const col = e.target.closest && e.target.closest('.day-col');
-  if(col) col.classList.remove('dragover');
+  const zone = dropZoneOf(e);
+  if(zone && !zone.contains(e.relatedTarget)) zone.classList.remove('dragover');
+});
+document.addEventListener('dragend', () => {
+  dragId = null;
+  document.querySelectorAll('.day-col.dragover, .l-day.dragover').forEach(c => c.classList.remove('dragover'));
 });
 document.addEventListener('drop', e => {
-  const col = e.target.closest && e.target.closest('.day-col');
-  document.querySelectorAll('.day-col.dragover').forEach(c => c.classList.remove('dragover'));
-  if(!col || !dragId) return;
+  const zone = dropZoneOf(e);
+  document.querySelectorAll('.day-col.dragover, .l-day.dragover').forEach(c => c.classList.remove('dragover'));
+  if(!zone || !dragId) return;
   e.preventDefault();
-  moveRowToDate(dragId, col.dataset.date);
+  moveRowToDate(dragId, zone.dataset.date);
   dragId = null;
 });
 function moveRowToDate(rowId, dateISO){
@@ -1131,9 +1626,12 @@ function moveRowToDate(rowId, dateISO){
   // часть разбивки?
   const fp = findPart(site, rowId);
   if(fp){
+    const oldPartD = fp.part.date || 'nodate';
     fp.part.date = dateISO === 'nodate' ? null : dateISO;
     if(site.overrides) delete site.overrides[rowId];
     saveSites(); scheduleSharedPush(site); render();
+    logChange(site, 'перенос', (site.splits[fp.key].prodOrder || '') + ' · ' + fp.part.label + ': ' +
+      (oldPartD==='nodate'?'без даты':fmtDFull(oldPartD)) + ' → ' + (dateISO==='nodate'?'без даты':fmtDFull(dateISO)));
     toast('Перенесено: ' + fp.part.label + ' — ' + (dateISO==='nodate'?'без даты':fmtD(dateISO)));
     return true;
   }
@@ -1151,6 +1649,8 @@ function moveRowToDate(rowId, dateISO){
     site.overrides[r.id] = dateISO;
   }
   saveSites(); scheduleSharedPush(site);
+  logChange(site, 'перенос', (r.prodOrder || r.custOrder) + ' · ' + r.prod + ': ' +
+    (oldD==='nodate'?'без даты':fmtDFull(oldD)) + ' → ' + (dateISO==='nodate'?'без даты':fmtDFull(dateISO)));
   render();
   const label = r.prodOrder || r.custOrder;
   toast('Перенесено: ' + label + ' — ' + (oldD==='nodate'?'без даты':fmtD(oldD)) + ' → ' + (dateISO==='nodate'?'без даты':fmtD(dateISO)));
@@ -1170,7 +1670,12 @@ function openSplitModal(rowId){
   let html = '<div class="note">Позиция <b>' + esc(r.prodOrder || r.custOrder) + '</b> — ' + esc(r.prod) +
     '<br>Всего: <b>' + totalQty + ' шт</b> · ' + uMin(site, totalMin) +
     (posRows.length > 1 ? '<br>Строк в позиции: ' + posRows.length + ' (уже разнесены по дням)' : '') + '</div>';
-  html += '<div class="fld"><label>На сколько частей разбить</label><input type="number" id="spN" value="3" min="2" max="60" step="1"></div>';
+  const perUnit = totalQty > 0 ? totalMin / totalQty : 0;
+  const capDay = perUnit > 0 ? Math.max(1, Math.floor(fondOf(site) / perUnit)) : totalQty;
+  html += '<div class="fld"><label>Как дробить</label><select id="spMode">' +
+    '<option value="smart">разумно — по фонду участка (день ≈ ' + capDay + ' шт, пачки могут быть неравными)</option>' +
+    '<option value="equal">равными частями (указать число частей)</option></select></div>';
+  html += '<div class="fld" id="spNWrap" style="display:none"><label>На сколько равных частей</label><input type="number" id="spN" value="3" min="2" max="60" step="1"></div>';
   html += '<div class="fld"><label>Даты частей</label><select id="spDates">' +
     '<option value="auto">подряд по дням с даты позиции (минимум дней, без превышения фонда)</option>' +
     '<option value="keep">оставить без дат — распределит автопланировщик</option></select></div>';
@@ -1187,16 +1692,20 @@ function openSplitModal(rowId){
   }
   $('splitBody').innerHTML = html;
   const upd = () => {
+    const smart = $('spMode').value === 'smart';
+    $('spNWrap').style.display = smart ? 'none' : '';
     const n = Math.max(2, Math.min(60, num($('spN').value) || 3));
-    const qtys = distributeQty(totalQty, n);
+    const qtys = smart ? splitQtysByFond(totalQty, perUnit, fondOf(site)) : distributeQty(totalQty, n);
+    if(qtys.length < 2){ $('spPreview').innerHTML = '<div class="hint">Вся позиция влезает в один день — дробить не нужно.</div>'; return; }
     const mins = distributeMinutes(totalMin, qtys, totalQty);
     let t = '<table class="chg"><thead><tr><th>Часть</th><th>Кол-во</th><th>Норма</th></tr></thead><tbody>';
     qtys.forEach((q, i) => {
       t += '<tr><td>' + (i+1) + '</td><td><input type="number" data-spq="' + i + '" value="' + q + '" min="1" style="width:70px"> шт</td><td>' + uMin(site, mins[i]) + '</td></tr>';
     });
-    t += '</tbody></table>';
+    t += '</tbody></table><div class="hint" style="margin-top:6px">Количества можно поправить вручную — сумма должна остаться ' + totalQty + ' шт.</div>';
     $('spPreview').innerHTML = t;
   };
+  $('spMode').addEventListener('change', upd);
   $('spN').addEventListener('input', upd);
   upd();
   $('splitModal').classList.add('open');
@@ -1206,24 +1715,29 @@ function createSplitFromModal(){
   if(!splitCtx) return;
   const { rowId, posRows } = splitCtx;
   const row = site.rows.find(x => x.id === rowId);
+  const totalQty = posRows.reduce((a,x) => a + (x.qty||0), 0);
+  const totalMin = posRows.reduce((a,x) => a + (x.minutes||0), 0);
+  const perUnit = totalQty > 0 ? totalMin / totalQty : 0;
+  const smart = $('spMode').value === 'smart';
   const n = Math.max(2, Math.min(60, num($('spN').value) || 3));
-  const rec = buildSplitRecord(row, posRows, n);
-  // ручная корректировка количеств
+  let qtys = smart ? splitQtysByFond(totalQty, perUnit, fondOf(site)) : distributeQty(totalQty, n);
+  // ручная корректировка количеств (инпуты отражают текущий расчёт)
   const qInputs = document.querySelectorAll('[data-spq]');
   if(qInputs.length){
     let sum = 0;
-    const qs = [...qInputs].map((inp, i) => { const q = Math.max(1, num(inp.value) || rec.parts[i].qty); sum += q; return q; });
-    const totalQty = posRows.reduce((a,x) => a + (x.qty||0), 0);
+    qtys = [...qInputs].map(inp => { const q = Math.max(1, num(inp.value) || 1); sum += q; return q; });
     if(sum !== totalQty){ toast('Сумма частей (' + sum + ') не равна количеству позиции (' + totalQty + ')'); return; }
-    const mins = distributeMinutes(posRows.reduce((a,x) => a + (x.minutes||0), 0), qs, totalQty);
-    rec.parts.forEach((p, i) => { p.qty = qs[i]; p.minutes = mins[i]; });
   }
+  if(qtys.length < 2){ toast('Вся позиция влезает в один день — дробить не нужно'); return; }
+  const rec = buildSplitRecordQtys(row, posRows, qtys);
   const mode = $('spDates').value;
   const anchor = posRows.map(x => x.dateEff).filter(Boolean).sort()[0];
   if(mode === 'auto') assignSplitDates(site, rec, anchor || todayISO());
   site.splits = site.splits || {};
   site.splits[rec.key] = rec;
-  saveSites(); scheduleSharedPush(site); render();
+  saveSites(); scheduleSharedPush(site);
+  logChange(site, 'разбивка', (rec.prodOrder || rec.custOrder) + ' · ' + rec.prod + ': ' + totalQty + ' шт → ' + rec.parts.map(p => p.qty).join(' + '));
+  render();
   $('splitModal').classList.remove('open');
   splitCtx = null;
   toast('Разбито на ' + rec.parts.length + ' частей: ' + rec.parts.map(p => p.qty + ' шт').join(' + '));
@@ -1231,8 +1745,11 @@ function createSplitFromModal(){
 function restoreSplit(key){
   const site = activeSite();
   if(!site.splits || !site.splits[key]) return;
+  const s = site.splits[key];
   delete site.splits[key];
-  saveSites(); scheduleSharedPush(site); render();
+  saveSites(); scheduleSharedPush(site);
+  logChange(site, 'отмена разбивки', (s.prodOrder || s.custOrder) + ' · ' + s.prod + ' — исходные строки возвращены');
+  render();
   toast('Разбивка отменена, исходные строки возвращены');
 }
 
@@ -1265,6 +1782,8 @@ function switchView(v){
   state.view = v;
   $('viewBoard').classList.toggle('on', v === 'board');
   $('viewList').classList.toggle('on', v === 'list');
+  $('viewShifts').classList.toggle('on', v === 'shifts');
+  $('viewMulti').classList.toggle('on', v === 'multi');
   render();
 }
 
@@ -1334,23 +1853,41 @@ function parseDateRu(s){
   return isNaN(d) ? null : d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
 }
 function parseNotes(site){
-  const res = { pins: [], earliest: [], latest: [], first: [] };
+  const res = { pins: [], earliest: [], latest: [], first: [], after: [], unparsed: [] };
   const lines = String(site.notes || '').split('\n');
+  const D = '(\\d{1,2}[.\\-/]\\d{1,2}(?:[.\\-/]\\d{2,4})?)';
+  const reFirst = /^(?:сначала|приоритет|в первую очередь|первым делом)\s*:?\s*(.+)$/i;
+  const rePinArrow = new RegExp('(.+?)\\s*(?:->|=)\\s*' + D + '\\s*$');
+  const rePinWord = new RegExp('(.+?)\\s+(?:строго|точно|поставить|сделать|на)\\s+(?:на\\s+)?' + D + '\\s*$', 'i');
+  const reEarly = new RegExp('(.+?)\\s+(?:после|не раньше|не ранее)\\s+' + D + '\\s*$', 'i');
+  const reLatest = new RegExp('(?:не позже|не позднее|дедлайн|до|к)\\s+' + D + '\\s*:?\\s*(.+)$', 'i');
+  const reAfter = /^(.+?)\s+(?:делать\s+)?после\s+(.+?)\s*$/i;
   for(let raw of lines){
     const line = raw.trim();
     if(!line) continue;
     let m;
-    if((m = line.match(/^(?:сначала|приоритет)\s*:?\s*(.+)$/i))){
+    if((m = line.match(reFirst))){
       res.first.push(...m[1].split(/[,;]/).map(s => s.trim()).filter(Boolean));
-    } else if((m = line.match(/(.+?)\s*(?:->|=)\s*(\d{1,2}[.\-/]\d{1,2}(?:[.\-/]\d{2,4})?)/))){
+    } else if((m = line.match(rePinArrow))){
       const d = parseDateRu(m[2]);
-      if(d) res.pins.push({ token: m[1].replace(/^!/, '').trim(), date: d });
-    } else if((m = line.match(/(.+?)\s+после\s+(\d{1,2}[.\-/]\d{1,2}(?:[.\-/]\d{2,4})?)/i))){
+      if(d){ res.pins.push({ token: m[1].replace(/^!/, '').trim(), date: d }); continue; }
+      res.unparsed.push(line);
+    } else if((m = line.match(reEarly))){
       const d = parseDateRu(m[2]);
-      if(d) res.earliest.push({ token: m[1].trim(), date: d });
-    } else if((m = line.match(/(?:не позже|до)\s+(\d{1,2}[.\-/]\d{1,2}(?:[.\-/]\d{2,4})?)\s*:?\s*(.+)/i))){
+      if(d){ res.earliest.push({ token: m[1].trim(), date: d }); continue; }
+      res.unparsed.push(line);
+    } else if((m = line.match(reLatest))){
       const d = parseDateRu(m[1]);
-      if(d) res.latest.push({ token: m[2].trim(), date: d });
+      if(d){ res.latest.push({ token: m[2].trim(), date: d }); continue; }
+      res.unparsed.push(line);
+    } else if((m = line.match(rePinWord))){
+      const d = parseDateRu(m[2]);
+      if(d){ res.pins.push({ token: m[1].replace(/^!/, '').trim(), date: d }); continue; }
+      res.unparsed.push(line);
+    } else if((m = line.match(reAfter)) && !parseDateRu(m[2])){
+      res.after.push({ token: m[1].trim(), ref: m[2].trim() });
+    } else {
+      res.unparsed.push(line);
     }
   }
   return res;
@@ -1377,12 +1914,23 @@ function autoplain(site){
   const positions = [...posMap.values()];
   for(const p of positions){
     p.totalMin = p.parts.reduce((a,r) => a + (r.minutes||0), 0);
+    p.totalQty = p.parts.reduce((a,r) => a + (r.qty||0), 0);
     p.deadline = p.parts.map(r => r.tdg || r.contractDate).filter(Boolean).sort()[0] || null;
     p.pin = notes.pins.find(d => posMatches(p, d.token)) || null;
     p.early = notes.earliest.filter(d => posMatches(p, d.token)).map(d => d.date).sort().pop() || null;
     p.late = notes.latest.filter(d => posMatches(p, d.token)).map(d => d.date).sort()[0] || null;
     if(p.late && p.deadline) p.deadline = p.late < p.deadline ? p.late : p.deadline;
     else if(p.late) p.deadline = p.late;
+    const aft = notes.after.find(a => posMatches(p, a.token));
+    p.afterRefTok = aft ? aft.ref : null;
+    p.afterRef = null;
+  }
+  // связи «X после Y»: ищем опорную позицию
+  for(const p of positions){
+    if(p.afterRefTok){
+      const q = positions.find(x => x !== p && posMatches(x, p.afterRefTok));
+      if(q) p.afterRef = q;
+    }
   }
   const firstIdx = p => {
     const i = notes.first.findIndex(tok => posMatches(p, tok));
@@ -1394,19 +1942,53 @@ function autoplain(site){
     ((orderNum(a.custOrder)||99999) - (orderNum(b.custOrder)||99999)));
   const plan = {};
   const load = {};
-  let cursor = t; // строгая последовательность: следующий заказ не раньше этого дня
+  const autoSplits = [];
+  const plannedEnd = new Map(); // key позиции -> последняя запланированная дата
   const tooBig = [];
-  for(const p of positions){
+  let cursor = t; // строгая последовательность: следующий заказ не раньше этого дня
+  const planOne = (p) => {
     const parts = p.parts.slice().sort((a,b) => (a.dateEff||'9999').localeCompare(b.dateEff||'9999'));
     if(p.pin){
-      for(const r of parts) plan[r.id] = p.pin.date;
-      continue;
+      for(const r of parts){
+        if((r.minutes||0) > fond) tooBig.push(r);
+        plan[r.id] = p.pin.date;
+      }
+      plannedEnd.set(p.key, p.pin.date);
+      return;
     }
     let start = t;
     if(p.early && p.early > start) start = p.early;
+    if(p.afterRef && plannedEnd.has(p.afterRef.key)){
+      const s2 = nextWorkDay(site, addDays(plannedEnd.get(p.afterRef.key), 1));
+      if(s2 > start) start = s2;
+    }
     if(strict && cursor > start) start = cursor;
     let d = nextWorkDay(site, start);
     let used = strict ? 0 : (load[d] || 0);
+    // авто-разбивка: единственная строка позиции не влезает в дневной фонд и есть
+    // количество — дробим разумно по фонду (пачки не обязательно равные), заказ идёт подряд.
+    // Позиции из нескольких строк не дробим: их операции и так раскладываются по дням.
+    const alreadySplit = p.parts.some(r => r.splitPart);
+    if(!alreadySplit && p.parts.length === 1 && p.totalQty > 1 && p.totalMin > fond){
+      const perUnit = p.totalMin / p.totalQty;
+      if(!strict && used > 0 && used + perUnit > fond){ d = nextWorkDay(site, addDays(d, 1)); used = load[d] || 0; }
+      const avail = strict ? fond : Math.max(0, fond - used);
+      const qtys = splitQtysByFond(p.totalQty, perUnit, fond, avail);
+      if(qtys.length > 1){
+        const rec = buildSplitRecordQtys(p.parts[0], p.parts, qtys, 'авто-разбивка по фонду (' + p.totalQty + ' шт)');
+        for(let i = 0; i < rec.parts.length; i++){
+          if(i > 0){ d = nextWorkDay(site, addDays(d, 1)); used = strict ? 0 : (load[d] || 0); }
+          rec.parts[i].date = d;
+          plan[rec.parts[i].id] = d;
+          used += rec.parts[i].minutes;
+          if(!strict) load[d] = used;
+        }
+        autoSplits.push(rec);
+        plannedEnd.set(p.key, d);
+        cursor = nextWorkDay(site, addDays(d, 1));
+        return;
+      }
+    }
     for(const r of parts){
       if((r.minutes||0) > fond) tooBig.push(r);
       let guard = 0;
@@ -1418,16 +2000,44 @@ function autoplain(site){
       used += (r.minutes || 0);
       if(!strict) load[d] = (load[d] || 0) + (r.minutes || 0);
     }
+    plannedEnd.set(p.key, d);
     cursor = nextWorkDay(site, addDays(d, 1));
+  };
+  // планируем последовательно; позиции со связью «после» ждут свою опору
+  const pending = positions.slice();
+  let guardPass = 0;
+  while(pending.length){
+    let progressed = false;
+    for(let i = 0; i < pending.length; i++){
+      const p = pending[i];
+      if(p.afterRef && !plannedEnd.has(p.afterRef.key) && pending.includes(p.afterRef)) continue;
+      pending.splice(i, 1);
+      i--;
+      planOne(p);
+      progressed = true;
+    }
+    if(!progressed){ while(pending.length) planOne(pending.shift()); break; } // цикл в связях — планируем как есть
+    if(++guardPass > positions.length + 2) break;
   }
   const changes = Object.keys(plan).filter(id => {
     const cur = rows.find(r => r.id === id);
     return cur && (cur.dateEff || null) !== plan[id];
   });
-  return { plan, changes, tooBig, total: rows.length, notes };
+  // контроль сроков: последний день позиции позже дедлайна (ТДГ / «не позже»)
+  const late = [];
+  for(const p of positions){
+    if(!p.deadline) continue;
+    const end = plannedEnd.get(p.key);
+    if(end && end > p.deadline) late.push({ prodOrder: p.prodOrder, prod: p.prod, end, deadline: p.deadline });
+  }
+  return { plan, changes, tooBig, total: rows.length, notes, autoSplits, late };
 }
-function applyPlanToSite(site, plan){
+function applyPlanToSite(site, plan, autoSplits){
   site.overrides = site.overrides || {};
+  if(autoSplits && autoSplits.length){
+    site.splits = site.splits || {};
+    for(const rec of autoSplits) site.splits[rec.key] = rec;
+  }
   for(const [id, d] of Object.entries(plan)){
     const fp = findPart(site, id);
     if(fp){ fp.part.date = d; delete site.overrides[id]; }
@@ -1450,16 +2060,32 @@ function runAutoplanPreview(){
   const rows = effRows(site);
   const byId = id => rows.find(r => r.id === id);
   const n = res.notes;
-  const dirCount = n.pins.length + n.earliest.length + n.latest.length + n.first.length;
+  const dirCount = n.pins.length + n.earliest.length + n.latest.length + n.first.length + n.after.length;
   let html = '<div class="kpis" style="margin-bottom:10px">' +
     '<div class="kpi"><b>' + res.total + '</b><span>операций в плане</span></div>' +
     '<div class="kpi"><b>' + res.changes.length + '</b><span>дат изменится</span></div>' +
     '<div class="kpi"><b>' + (res.total - res.changes.length) + '</b><span>без изменений</span></div>' +
+    (res.autoSplits.length?'<div class="kpi"><b>' + res.autoSplits.length + '</b><span>авто-разбивок по фонду</span></div>':'') +
+    (res.late.length?'<div class="kpi bad"><b>' + res.late.length + '</b><span>не успевают к сроку</span></div>':'') +
     (res.tooBig.length?'<div class="kpi bad"><b>' + res.tooBig.length + '</b><span>норма больше фонда</span></div>':'') +
   '</div>';
-  $('planHint').innerHTML = 'Правила: минимум дней на заказ · договоры последовательно по ТДГ' +
+  $('planHint').innerHTML = 'Правила: заказ идёт подряд и целиком · договоры по срочности (ТДГ)' +
     (site.planStrict !== false ? ' · строго: один договор за раз' : ' · компактно: договоры делят дни') +
     (dirCount ? ' · директив из примечаний: ' + dirCount : '');
+  if(n.unparsed && n.unparsed.length){
+    html += '<div class="note">Не распознано строк: ' + n.unparsed.length + ' — ' +
+      n.unparsed.slice(0, 5).map(esc).join('; ') + (n.unparsed.length > 5 ? '…' : '') +
+      '<br>Попробуйте переформулировать (примеры — в подсказке поля) или попросите Kimi перевести текст в директивы.</div>';
+  }
+  if(res.late.length){
+    html += '<div class="note" style="border-color:#f8c9d2;background:var(--red-light)"><b>Не укладываются в срок:</b><br>' +
+      res.late.map(l => esc(l.prodOrder || '') + ' · ' + esc(l.prod) + ' — конец ' + fmtDFull(l.end) + ' при сроке ' + fmtDFull(l.deadline)).join('<br>') + '</div>';
+  }
+  if(res.autoSplits.length){
+    html += '<div class="note"><b>Авто-разбивка по фонду (пачки по ёмкости дня, не обязательно равные):</b><br>' +
+      res.autoSplits.map(rec => esc(rec.prodOrder || rec.custOrder) + ' · ' + esc(rec.prod) + ' — ' +
+        rec.parts.map(p => p.qty + ' шт на ' + fmtD(p.date)).join(' + ')).join('<br>') + '</div>';
+  }
   if(res.changes.length){
     html += '<table class="chg"><thead><tr><th>Заказ на пр-во</th><th>Продукция</th><th>Кол-во</th><th>Было</th><th>Стало</th></tr></thead><tbody>';
     for(const id of res.changes.slice(0, 400)){
@@ -1472,6 +2098,57 @@ function runAutoplanPreview(){
     html += '</tbody></table>';
   } else html += '<div class="hint">Все даты уже соответствуют правилам.</div>';
   $('planBody').innerHTML = html;
+}
+
+/* ---------- журнал изменений: UI и отчёт ---------- */
+let logFilter = { from: '', to: '', site: '' };
+function openLogModal(){
+  const sel = $('logSite');
+  sel.innerHTML = '<option value="">все участки</option>' +
+    state.sites.map(s => '<option value="' + esc(s.id) + '"' + (logFilter.site === s.id ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('');
+  $('logFrom').value = logFilter.from || addDays(todayISO(), -7);
+  $('logTo').value = logFilter.to || todayISO();
+  renderLogTable();
+  $('logModal').classList.add('open');
+}
+function logEntriesFiltered(){
+  const from = $('logFrom').value || '';
+  const to = $('logTo').value || '';
+  const siteId = $('logSite').value || '';
+  logFilter = { from, to, site: siteId };
+  return readLog().filter(e => {
+    const d = new Date(e.ts);
+    const iso = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    if(from && iso < from) return false;
+    if(to && iso > to) return false;
+    if(siteId && e.site !== siteId) return false;
+    return true;
+  }).sort((a,b) => b.ts - a.ts);
+}
+function renderLogTable(){
+  const arr = logEntriesFiltered();
+  if(!arr.length){ $('logBody').innerHTML = '<div class="hint">За выбранный период изменений нет.</div>'; return; }
+  let html = '<table class="log-table"><thead><tr><th>Время</th><th>Участок</th><th>Действие</th><th>Детали</th></tr></thead><tbody>';
+  for(const e of arr.slice(0, 500)){
+    html += '<tr><td class="lt-ts">' + fmtTs(e.ts) + '</td><td>' + esc(e.siteName) + '</td>' +
+      '<td class="lt-act">' + esc(e.action) + '</td><td>' + esc(e.details) + '</td></tr>';
+  }
+  if(arr.length > 500) html += '<tr><td colspan="4">… и ещё ' + (arr.length - 500) + ' записей (сузьте период или выгрузите CSV)</td></tr>';
+  html += '</tbody></table>';
+  $('logBody').innerHTML = html;
+}
+function exportLogCsv(){
+  const arr = logEntriesFiltered();
+  const q = v => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+  const lines = [['Дата и время','Участок','Действие','Детали'].map(q).join(',')];
+  for(const e of arr) lines.push([fmtTs(e.ts), e.siteName, e.action, e.details].map(q).join(','));
+  const blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'planner_log_' + (logFilter.from || '') + '_' + (logFilter.to || todayISO()) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Отчёт по журналу сохранён: ' + arr.length + ' записей');
 }
 
 /* ---------- ui wiring ---------- */
@@ -1490,6 +2167,7 @@ function wire(){
     if(!confirm('Удалить участок «' + site.name + '»?')) return;
     state.sites = state.sites.filter(s => s.id !== site.id);
     state.activeId = state.sites[0].id;
+    logChange(null, 'участок удалён', site.name);
     saveSites(); render();
   });
   $('btnAddSite').addEventListener('click', () => { $('siteModal').classList.add('open'); });
@@ -1502,14 +2180,35 @@ function wire(){
   $('btnAutoplan').addEventListener('click', openAutoplan);
   $('btnShare').addEventListener('click', enableSharing);
   $('btnShareCfg').addEventListener('click', shareSettings);
+  $('btnTheme').addEventListener('click', toggleTheme);
+  // журнал изменений
+  $('btnLog').addEventListener('click', openLogModal);
+  $('logClose').addEventListener('click', () => $('logModal').classList.remove('open'));
+  $('logApply').addEventListener('click', renderLogTable);
+  $('logFrom').addEventListener('change', renderLogTable);
+  $('logTo').addEventListener('change', renderLogTable);
+  $('logSite').addEventListener('change', renderLogTable);
+  $('logCsv').addEventListener('click', exportLogCsv);
+  $('logClear').addEventListener('click', () => {
+    if(!confirm('Очистить журнал изменений полностью?')) return;
+    localStorage.removeItem(LOG_KEY);
+    renderLogTable();
+    toast('Журнал очищен');
+  });
   $('planCancel').addEventListener('click', () => { pendingPlan = null; $('planModal').classList.remove('open'); });
   $('planApply').addEventListener('click', () => {
     if(!pendingPlan) return;
     const site = activeSite();
-    applyPlanToSite(site, pendingPlan.plan);
-    saveSites(); scheduleSharedPush(site); render();
+    applyPlanToSite(site, pendingPlan.plan, pendingPlan.autoSplits);
+    saveSites(); scheduleSharedPush(site);
+    logChange(site, 'автоплан', 'изменено дат: ' + pendingPlan.changes.length +
+      (pendingPlan.autoSplits.length ? ', авто-разбивок: ' + pendingPlan.autoSplits.length +
+        ' (' + pendingPlan.autoSplits.map(r => (r.prodOrder || r.custOrder) + ' ' + r.parts.map(p => p.qty).join('+')).join('; ') + ')' : '') +
+      (pendingPlan.late.length ? ', не успевают к сроку: ' + pendingPlan.late.length : ''));
+    render();
     $('planModal').classList.remove('open');
-    toast('План применён: изменено дат — ' + pendingPlan.changes.length);
+    toast('План применён: изменено дат — ' + pendingPlan.changes.length +
+      (pendingPlan.autoSplits.length ? ', авто-разбивок — ' + pendingPlan.autoSplits.length : ''));
     pendingPlan = null;
   });
   $('planNotes').addEventListener('change', () => {
@@ -1524,18 +2223,32 @@ function wire(){
   });
   $('splitCancel').addEventListener('click', () => { splitCtx = null; $('splitModal').classList.remove('open'); });
   $('splitCreate').addEventListener('click', createSplitFromModal);
-  // делегированные клики: разбить / вернуть как было (и не дать начаться drag с кнопки)
+  // делегированные клики: разбить / вернуть как было / ячейка сводного вида (и не дать начаться drag с кнопки)
   document.addEventListener('click', e => {
     const uns = e.target.closest && e.target.closest('[data-unsplit]');
     if(uns){ restoreSplit(uns.dataset.unsplit); return; }
+    const unp = e.target.closest && e.target.closest('[data-unpin]');
+    if(unp){
+      const s = state.sites.find(x => x.id === unp.dataset.unpin);
+      if(s){ s.onBoard = false; saveSites(); logChange(s, 'с общей доски', s.name); render(); toast('«' + s.name + '» убран с общей доски'); }
+      return;
+    }
     const sp = e.target.closest && e.target.closest('[data-split]');
-    if(sp){ openSplitModal(sp.dataset.split); }
+    if(sp){ openSplitModal(sp.dataset.split); return; }
+    const lc = e.target.closest && e.target.closest('.lcell[data-site]');
+    if(lc && !lc.classList.contains('off')){
+      state.activeId = lc.dataset.site;
+      state.selectedDate = null;
+      switchView('board');
+      jumpToDate(lc.dataset.date);
+    }
   });
   document.addEventListener('mousedown', e => {
     if(e.target.closest && e.target.closest('.mini')) e.preventDefault();
   });
   const onResourceChange = () => {
     const site = activeSite();
+    const before = fondOf(site);
     site.workers = Math.max(1, num($('workersInput').value) || 1);
     if(site.teamTotal){
       site.fondMin = Math.max(1, num($('fondTotalInput').value) || 1);
@@ -1543,21 +2256,48 @@ function wire(){
       site.perWorker = Math.max(1, num($('perWorkerInput').value) || 1);
       site.fondMin = site.workers * site.perWorker;
     }
-    saveSites(); scheduleSharedPush(site); render();
+    saveSites(); scheduleSharedPush(site);
+    const after = fondOf(site);
+    if(before !== after) logChange(site, 'ресурс', (site.teamTotal ? 'бригада ' + site.workers + ' чел' : site.workers + ' × ' + site.perWorker) +
+      ': фонд ' + fmtMin(before) + ' → ' + fmtMin(after) + ' ' + (site.unit || 'мин') + '/день');
+    render();
   };
   $('workersInput').addEventListener('change', onResourceChange);
   $('perWorkerInput').addEventListener('change', onResourceChange);
   $('fondTotalInput').addEventListener('change', onResourceChange);
   $('searchInput').addEventListener('input', render);
   $('onlyBad').addEventListener('change', render);
-  $('btnGo').addEventListener('click', () => {
-    const v = $('datePick').value;
-    if(v) jumpToDate(v); else toast('Выберите дату');
+  $('btnPinBoard').addEventListener('click', () => {
+    const site = activeSite();
+    site.onBoard = !site.onBoard;
+    saveSites();
+    logChange(site, site.onBoard ? 'на общую доску' : 'с общей доски', site.name);
+    render();
+    toast(site.onBoard ? '«' + site.name + '» выведен на общую доску' : '«' + site.name + '» убран с общей доски');
   });
-  $('datePick').addEventListener('keydown', e => { if(e.key === 'Enter') $('btnGo').click(); });
-  $('btnToday').addEventListener('click', () => { $('datePick').value = todayISO(); jumpToDate(todayISO()); });
+  // период отображения (сменные: по умолчанию — с актуальной даты)
+  const onRange = () => {
+    state.rangeFrom = $('rangeFrom').value || null;
+    state.rangeTo = $('rangeTo').value || null;
+    state.selectedDate = null;
+    render();
+  };
+  $('rangeFrom').addEventListener('change', onRange);
+  $('rangeTo').addEventListener('change', onRange);
+  $('rangeClear').addEventListener('click', () => {
+    $('rangeFrom').value = ''; $('rangeTo').value = '';
+    state.rangeFrom = null; state.rangeTo = null; state.selectedDate = null;
+    render();
+  });
+  $('btnToday').addEventListener('click', () => {
+    $('rangeFrom').value = ''; $('rangeTo').value = '';
+    state.rangeFrom = null; state.rangeTo = null;
+    jumpToDate(todayISO());
+  });
   $('viewBoard').addEventListener('click', () => switchView('board'));
   $('viewList').addEventListener('click', () => switchView('list'));
+  $('viewShifts').addEventListener('click', () => switchView('shifts'));
+  $('viewMulti').addEventListener('click', () => switchView('multi'));
 }
 async function createSiteFromModal(){
   const name = $('nsName').value.trim() || ('Участок ' + (state.sites.length + 1));
@@ -1590,7 +2330,9 @@ async function createSiteFromModal(){
       format:fmt, unit:fmt === 'upkp' ? 'секц.' : 'мин', autoMonth };
     state.sites.push(site);
     state.activeId = site.id;
-    saveSites(); render();
+    saveSites();
+    logChange(site, 'участок создан', name + ': ' + raw.length + ' операций, фонд ' + fond);
+    render();
     $('siteModal').classList.remove('open');
     $('nsName').value = ''; $('nsUrl').value = ''; $('nsFile').value = ''; $('nsTeam').checked = false;
     toast('Участок «' + name + '» создан: ' + raw.length + ' операций');
@@ -1647,6 +2389,7 @@ async function refreshActive(){
 
 /* ---------- init ---------- */
 function init(){
+  applyTheme(currentTheme());
   state.sites = loadSites();
   state.activeId = state.sites[0].id;
   wire();
@@ -1675,7 +2418,8 @@ function init(){
 if(typeof window !== 'undefined'){
   window.PLANNER = { parseCSVText, parseUPKP, parseAny, detectFormat, curMonthSheet, orderNum, buildPositions, computeDays, moveRowToDate, autoplain, makeRows,
     state, effRows, parseDate, jumpToDate, nextWorkDay, parseGUrl, suggestFond, fondOf, LS_KEY, loadSites, csvToGrid,
-    parseNotes, distributeQty, distributeMinutes, buildSplitRecord, assignSplitDates, applyPlanToSite, findPart,
+    parseNotes, distributeQty, distributeMinutes, buildSplitRecord, buildSplitRecordQtys, splitQtysByFond, assignSplitDates, applyPlanToSite, findPart,
+    logChange, readLog, LOG_KEY, fmtTs, currentTheme, toggleTheme,
     sharedKey, pullShared, pushShared, ghCfg, ghSharedPath, enableSharing, shareSettings };
   if(typeof document !== 'undefined' && document.getElementById && typeof window.addEventListener !== 'undefined'){
     window.addEventListener('DOMContentLoaded', init);
