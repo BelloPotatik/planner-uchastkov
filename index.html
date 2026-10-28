@@ -812,10 +812,39 @@ function addDays(iso, n){ const d = new Date(iso+'T00:00:00'); d.setDate(d.getDa
 function wdOf(iso){ return new Date(iso+'T00:00:00').getDay(); }
 function orderNum(s){
   s = String(s||'');
+  // В УПКП номер идёт сразу после №. Не берём цифры из названий вроде «ЭМУ-4» / «СУ-10».
+  const sheetOrder = s.match(/^\s*№\s*(\d+)/);
+  if(sheetOrder) return Number(sheetOrder[1]);
+  const customerOrder = s.match(/заказ\s+покупателя\s*(\d+)/i);
+  if(customerOrder) return Number(customerOrder[1]);
   const groups = s.match(/\d+/g) || [];
   if(!groups.length) return null;
   return Number(s.includes('-') ? groups[groups.length-1] : groups[0]);
 }
+/* УПКП не имеет заказа на производство: договор — обязательная часть ключа позиции.
+   Иначе одинаковые установки из разных договоров склеиваются в одну позицию. */
+function positionKey(r, site){
+  const order = site && site.format === 'upkp' ? (r.custOrder || r.prodOrder) : r.prodOrder;
+  return (order || '') + '|' + (r.prod || '');
+}
+function upkpOrderLabel(value){
+  const s = String(value || '').trim();
+  const m = s.match(/^№\s*\d+/);
+  return m ? m[0].replace(/^№\s*/, '№ ') : s;
+}
+function upkpCustomer(value){
+  return String(value || '').replace(/^\s*№\s*\d+\s*/, '').trim();
+}
+function upkpProductLabel(value){
+  let s = String(value || '').replace(/\s+/g, ' ').trim();
+  s = s.split(/:{1,2}\s*приточная часть/i)[0];
+  s = s.split(/\s+с\s+сист\.?\s*автоматики.*$/i)[0];
+  s = s.split(/\s*,\s*(?=исполнение|исп-е|исп\.)/i)[0];
+  s = s.split(/\s*,?\s*(?=РБ№|Система автоматического|система автоматического|Узел регулирования|ККБ\s)/)[0];
+  return s.trim();
+}
+function displayProduct(r, site){ return site && site.format === 'upkp' ? upkpProductLabel(r.prod) : r.prod; }
+function displayCustomer(r, site){ return site && site.format === 'upkp' ? (upkpCustomer(r.custOrder) || r.customer || '') : (r.customer || ''); }
 function hashStr(s){ let h = 0; for(let i=0;i<s.length;i++) h = (h*31 + s.charCodeAt(i))|0; return (h>>>0).toString(36); }
 function num(v){ const n = parseFloat(String(v??'').replace(/\s/g,'').replace(',','.')); return isNaN(n)?0:n; }
 function fmtMin(m){ return (Math.round(m)||0).toLocaleString('ru-RU'); }
@@ -1139,7 +1168,7 @@ function effRows(site){
   const keys = new Set(Object.keys(splits));
   const out = [];
   for(const r of site.rows){
-    const k = r.prodOrder + '|' + r.prod;
+    const k = positionKey(r, site);
     if(keys.has(k)) continue; // строки позиции заменены частями разбивки
     out.push({...r, dateEff: (site.overrides && site.overrides[r.id]) || r.date || null});
   }
@@ -1179,16 +1208,16 @@ function distributeMinutes(total, qtys, totalQty){
   parts[parts.length-1] += drift;
   return parts;
 }
-function buildSplitRecord(row, posRows, n){
+function buildSplitRecord(row, posRows, n, site){
   const totalQty = posRows.reduce((a,r) => a + (r.qty||0), 0);
-  return buildSplitRecordQtys(row, posRows, distributeQty(totalQty, n));
+  return buildSplitRecordQtys(row, posRows, distributeQty(totalQty, n), undefined, site);
 }
 /* разбивка с произвольными (не обязательно равными) количествами частей */
-function buildSplitRecordQtys(row, posRows, qtys, commentBase){
+function buildSplitRecordQtys(row, posRows, qtys, commentBase, site){
   const totalQty = posRows.reduce((a,r) => a + (r.qty||0), 0);
   const totalMin = posRows.reduce((a,r) => a + (r.minutes||0), 0);
   const mins = distributeMinutes(totalMin, qtys, totalQty);
-  const key = row.prodOrder + '|' + row.prod;
+  const key = positionKey(row, site);
   const parts = qtys.map((q, i) => ({
     id:'sp' + hashStr(key + '|' + i + '|' + q + '|' + mins[i]),
     qty:q, minutes:mins[i], date:null,
@@ -1251,8 +1280,9 @@ function buildPositions(site){
   if(_pass.pos && _pass.pos.has(site)) return _pass.pos.get(site);
   const m = new Map();
   for(const r of effRows(site)){
-    const k = r.prodOrder + '|' + r.prod;
-    if(!m.has(k)) m.set(k, {key:k, prodOrder:r.prodOrder, prod:r.prod, parts:[]});
+    const k = positionKey(r, site);
+    if(!m.has(k)) m.set(k, {key:k, custOrder:r.custOrder, prodOrder:r.prodOrder,
+      customer:r.customer || '', prod:r.prod, parts:[]});
     m.get(k).parts.push(r);
   }
   for(const p of m.values()){
@@ -1308,9 +1338,14 @@ function rowStatus(r){
   return 'green';
 }
 function cardHTML(r, posMap, site, compact){
-  const p = posMap.get(r.prodOrder + '|' + r.prod);
+  const p = posMap.get(positionKey(r, site));
   const st = rowStatus(r);
   const hide = filterHide(r);
+  const isUPKP = site && site.format === 'upkp';
+  const orderLabel = isUPKP ? upkpOrderLabel(r.custOrder) : (r.prodOrder || r.custOrder);
+  const product = displayProduct(r, site);
+  const meta = isUPKP ? displayCustomer(r, site) :
+    (r.custOrder + (r.customer ? ' · ' + r.customer : ''));
   let badges = '';
   if(p && p.split){
     const idx = p.dates.indexOf(r.dateEff) + 1;
@@ -1323,18 +1358,18 @@ function cardHTML(r, posMap, site, compact){
   if(r.contractDate) badges += '<span class="badge">договор ' + fmtD(r.contractDate) + '</span>';
   if(compact){
     return '<div class="card compact st-' + st + (hide?'" style="display:none':'') + '">' +
-      '<div class="card-top"><span>' + esc(r.prodOrder || r.custOrder) + '</span><span class="card-min">' + uMin(site, r.minutes) + '</span></div>' +
-      '<div class="card-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</div>' +
+      '<div class="card-top"><span>' + esc(orderLabel) + '</span><span class="card-min">' + uMin(site, r.minutes) + '</span></div>' +
+      '<div class="card-prod" title="' + esc(r.prod) + '">' + esc(product) + '</div>' +
       '<div class="card-meta">' + (r.qty ? r.qty + ' шт' : '') + '</div>' +
       (badges?'<div class="badges">' + badges + '</div>':'') +
     '</div>';
   }
   return '<div class="card st-' + st + (hide?'" style="display:none':'') + '" draggable="true" data-id="' + esc(r.id) + '">' +
-    '<div class="card-top"><span>' + esc(r.prodOrder || r.custOrder) + '</span><span class="card-min">' + uMin(site, r.minutes) +
+    '<div class="card-top"><span>' + esc(orderLabel) + '</span><span class="card-min">' + uMin(site, r.minutes) +
     (r.splitPart ? '' : ' <button class="mini" data-split="' + esc(r.id) + '" title="Разбить позицию на части">✂</button>') +
     '</span></div>' +
-    '<div class="card-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</div>' +
-    '<div class="card-meta">' + esc(r.custOrder) + (r.customer?' · ' + esc(r.customer):'') + (r.qty?' · ' + r.qty + ' шт':'') + '</div>' +
+    '<div class="card-prod" title="' + esc(r.prod) + '">' + esc(product) + '</div>' +
+    '<div class="card-meta">' + esc(meta) + (r.qty?' · ' + r.qty + ' шт':'') + '</div>' +
     (badges?'<div class="badges">' + badges + '</div>':'') +
   '</div>';
 }
@@ -1548,16 +1583,19 @@ function renderList(site, daysInfo, posMap){
     let head = '<div class="l-head' + (pct>100?' over':'') + '"><span>' + WD[wdOf(d.date)] + ', ' + fmtDFull(d.date) + (d.date === t ? ' <span class="today-chip">сегодня</span>' : '') + '</span>' +
       '<span class="lh-sub">' + d.rows.length + ' операций</span>' +
       '<span class="lh-sub">' + uMin(site, d.total) + ' / ' + uMin(site, fond) + ' (' + pct + '%)' + (pct>100?' — ПЕРЕГРУЗ':'') + '</span></div>';
-    let table = '<table class="l-table"><thead><tr><th>Заказ на пр-во</th><th>Заказ покупателя</th><th>Контрагент</th><th>Продукция</th><th>Кол-во</th><th>Норма</th><th>ТДГ</th><th>Договор</th><th>Статус</th></tr></thead><tbody>';
+    const isUPKP = site.format === 'upkp';
+    let table = isUPKP
+      ? '<table class="l-table"><thead><tr><th>Договор</th><th>Контрагент</th><th>Продукция</th><th>Кол-во</th><th>Секции</th><th>ТДГ</th><th>Дата по договору</th><th>Статус</th></tr></thead><tbody>'
+      : '<table class="l-table"><thead><tr><th>Заказ на пр-во</th><th>Заказ покупателя</th><th>Контрагент</th><th>Продукция</th><th>Кол-во</th><th>Норма</th><th>ТДГ</th><th>Договор</th><th>Статус</th></tr></thead><tbody>';
     for(const r of d.rows.slice().sort((a,b)=>(a.prodOrder||'').localeCompare(b.prodOrder||''))){
       if(filterHide(r)) continue;
       const st = rowStatus(r);
-      const p = posMap.get(r.prodOrder + '|' + r.prod);
+      const p = posMap.get(positionKey(r, site));
       table += '<tr draggable="true" data-id="' + esc(r.id) + '" title="Перетащите строку на другой день" class="' + (st==='red'?'l-row-red':st==='amber'?'l-row-amber':'') + '">' +
-        '<td class="num">' + esc(r.prodOrder) + '</td>' +
-        '<td class="num">' + esc(r.custOrder) + '</td>' +
-        '<td>' + esc(r.customer) + '</td>' +
-        '<td class="l-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</td>' +
+        (isUPKP ? '' : '<td class="num">' + esc(r.prodOrder) + '</td>') +
+        '<td class="num">' + esc(isUPKP ? upkpOrderLabel(r.custOrder) : r.custOrder) + '</td>' +
+        '<td title="' + esc(r.custOrder) + '">' + esc(displayCustomer(r, site)) + '</td>' +
+        '<td class="l-prod" title="' + esc(r.prod) + '">' + esc(displayProduct(r, site)) + '</td>' +
         '<td class="num">' + (r.qty||'') + (p && p.split?' <span class="badge split" title="Позиция разбита на ' + p.dates.length + ' дней: ' + esc(p.dates.map(x=>fmtD(x)).join(', ')) + '">⤨' + p.dates.length + '</span>':'') + '</td>' +
         '<td class="num">' + fmtMin(r.minutes) + '</td>' +
         '<td class="num">' + fmtD(r.tdg) + '</td>' +
@@ -1608,7 +1646,7 @@ function renderShifts(){
         const st = rowStatus(r);
         dayHtml += '<tr class="' + (st==='red'?'l-row-red':st==='amber'?'l-row-amber':'') + '">' +
           '<td class="num">' + esc(r.prodOrder) + '</td><td class="num">' + esc(r.custOrder) + '</td>' +
-          '<td>' + esc(r.customer) + '</td><td class="l-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</td>' +
+          '<td>' + esc(displayCustomer(r, ps.site)) + '</td><td class="l-prod" title="' + esc(r.prod) + '">' + esc(displayProduct(r, ps.site)) + '</td>' +
           '<td class="num">' + (r.qty||'') + '</td><td class="num">' + fmtMin(r.minutes) + '</td>' +
           '<td class="num">' + fmtD(r.tdg) + '</td></tr>';
       }
@@ -1722,7 +1760,7 @@ function listSectionHTML(site){
       const st = rowStatus(r);
       html += '<tr class="' + (st==='red'?'l-row-red':st==='amber'?'l-row-amber':'') + '">' +
         '<td class="num">' + esc(r.prodOrder) + '</td><td class="num">' + esc(r.custOrder) + '</td>' +
-        '<td>' + esc(r.customer) + '</td><td class="l-prod" title="' + esc(r.prod) + '">' + esc(r.prod) + '</td>' +
+        '<td>' + esc(displayCustomer(r, site)) + '</td><td class="l-prod" title="' + esc(r.prod) + '">' + esc(displayProduct(r, site)) + '</td>' +
         '<td class="num">' + (r.qty||'') + '</td><td class="num">' + fmtMin(r.minutes) + '</td>' +
         '<td class="num">' + fmtD(r.tdg) + '</td>' +
         '<td>' + (st==='red'?'⚠ после ТДГ':st==='amber'?'⚠ после договора':'ок') + '</td></tr>';
@@ -1817,11 +1855,13 @@ function openSplitModal(rowId){
   const site = activeSite();
   const r = site.rows.find(x => x.id === rowId);
   if(!r) return;
-  const posRows = effRows(site).filter(x => x.prodOrder === r.prodOrder && x.prod === r.prod);
+  const key = positionKey(r, site);
+  const posRows = effRows(site).filter(x => positionKey(x, site) === key);
   splitCtx = { rowId, posRows };
   const totalQty = posRows.reduce((a,x) => a + (x.qty||0), 0);
   const totalMin = posRows.reduce((a,x) => a + (x.minutes||0), 0);
-  let html = '<div class="note">Позиция <b>' + esc(r.prodOrder || r.custOrder) + '</b> — ' + esc(r.prod) +
+  const orderLabel = site.format === 'upkp' ? upkpOrderLabel(r.custOrder) : (r.prodOrder || r.custOrder);
+  let html = '<div class="note">Позиция <b>' + esc(orderLabel) + '</b> — ' + esc(displayProduct(r, site)) +
     '<br>Всего: <b>' + totalQty + ' шт</b> · ' + uMin(site, totalMin) +
     (posRows.length > 1 ? '<br>Строк в позиции: ' + posRows.length + ' (уже разнесены по дням)' : '') + '</div>';
   const perUnit = totalQty > 0 ? totalMin / totalQty : 0;
@@ -1883,7 +1923,7 @@ function createSplitFromModal(){
     if(sum !== totalQty){ toast('Сумма частей (' + sum + ') не равна количеству позиции (' + totalQty + ')'); return; }
   }
   if(qtys.length < 2){ toast('Вся позиция влезает в один день — дробить не нужно'); return; }
-  const rec = buildSplitRecordQtys(row, posRows, qtys);
+  const rec = buildSplitRecordQtys(row, posRows, qtys, undefined, site);
   const mode = $('spDates').value;
   const anchor = posRows.map(x => x.dateEff).filter(Boolean).sort()[0];
   if(mode === 'auto') assignSplitDates(site, rec, anchor || todayISO());
@@ -2133,7 +2173,7 @@ function autoplain(site){
       const avail = strict ? fond : Math.max(0, fond - used);
       const qtys = splitQtysByFond(p.totalQty, perUnit, fond, avail);
       if(qtys.length > 1){
-        const rec = buildSplitRecordQtys(p.parts[0], p.parts, qtys, 'авто-разбивка по фонду (' + p.totalQty + ' шт)');
+        const rec = buildSplitRecordQtys(p.parts[0], p.parts, qtys, 'авто-разбивка по фонду (' + p.totalQty + ' шт)', site);
         for(let i = 0; i < rec.parts.length; i++){
           if(i > 0){ d = nextWorkDay(site, addDays(d, 1)); used = strict ? 0 : (load[d] || 0); }
           rec.parts[i].date = d;
@@ -2613,6 +2653,7 @@ if(typeof window !== 'undefined'){
   window.PLANNER = { parseCSVText, parseUPKP, parseAny, detectFormat, curMonthSheet, orderNum, buildPositions, computeDays, moveRowToDate, autoplain, makeRows,
     state, effRows, parseDate, jumpToDate, nextWorkDay, parseGUrl, suggestFond, fondOf, LS_KEY, loadSites, csvToGrid,
     parseNotes, distributeQty, distributeMinutes, buildSplitRecord, buildSplitRecordQtys, splitQtysByFond, assignSplitDates, applyPlanToSite, findPart,
+    positionKey, upkpOrderLabel, upkpCustomer, upkpProductLabel, displayProduct, displayCustomer,
     logChange, readLog, LOG_KEY, fmtTs, currentTheme, toggleTheme,
     sharedKey, pullShared, pushShared, ghCfg, ghSharedPath, enableSharing, shareSettings };
   if(typeof document !== 'undefined' && document.getElementById && typeof window.addEventListener !== 'undefined'){
