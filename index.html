@@ -3,505 +3,680 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Планировщик участков — производство</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap');
-  /* ================= design tokens v4 (light + dark) ================= */
-  :root{
-    color-scheme:light;
-    --green:#059669; --green-dark:#047857; --green-deep:#064e3b; --green-bright:#10b981; --green-glow:rgba(16,185,129,.45);
-    --red:#e11d48; --red-dark:#be123c; --red-light:#fff1f2;
-    --amber:#d97706; --amber-dark:#b45309; --amber-light:#fffbeb;
-    --blue:#2563eb; --blue-light:#eff6ff;
-    --line:#e6eaf0; --line-strong:#d3dae3;
-    --bg:#f2f5f9; --card:#ffffff; --card2:#f8fafc; --ink:#0f172a; --muted:#64748b; --faint:#94a3b8;
-    --sel-bg:#ecfdf5; --seg-bg:#e9eef4; --hover-bg:#f1f5f9;
-    --shadow-sm:0 1px 2px rgba(15,23,42,.05),0 1px 3px rgba(15,23,42,.04);
-    --shadow-md:0 6px 16px -6px rgba(15,23,42,.13),0 2px 6px -2px rgba(15,23,42,.06);
-    --shadow-lg:0 24px 48px -16px rgba(15,23,42,.30);
-    --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
-    --ease:cubic-bezier(.2,.8,.2,1);
-    --font:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
-    --font-d:"Unbounded","Inter",system-ui,sans-serif;
-  }
-  html[data-theme="dark"]{
-    color-scheme:dark;
-    --red-light:rgba(225,29,72,.14);
-    --amber-light:rgba(217,119,6,.14);
-    --blue-light:rgba(37,99,235,.18);
-    --line:#26303e; --line-strong:#374457;
-    --bg:#0b111d; --card:#131c2c; --card2:#0f1725; --ink:#e6edf7; --muted:#93a3b8; --faint:#66788f;
-    --sel-bg:rgba(16,185,129,.12); --seg-bg:#0f1725; --hover-bg:#1b2638;
-    --shadow-sm:0 1px 2px rgba(0,0,0,.35),0 1px 3px rgba(0,0,0,.28);
-    --shadow-md:0 8px 20px -8px rgba(0,0,0,.55),0 2px 6px -2px rgba(0,0,0,.4);
-    --shadow-lg:0 28px 56px -18px rgba(0,0,0,.75);
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;font:13.5px/1.5 var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-feature-settings:"cv02","cv03","cv04";background:
-    radial-gradient(1200px 600px at 88% -12%, rgba(16,185,129,.08), transparent 60%),
-    radial-gradient(900px 520px at -8% -4%, rgba(37,99,235,.06), transparent 55%),
-    var(--bg)}
-  ::selection{background:#c9f0dd}
-  :focus-visible{outline:2px solid var(--green-bright);outline-offset:2px;border-radius:6px}
-  button{font-family:inherit}
-  /* тонкие скроллбары */
-  ::-webkit-scrollbar{width:10px;height:10px}
-  ::-webkit-scrollbar-thumb{background:#c6d0db;border-radius:999px;border:2px solid transparent;background-clip:padding-box}
-  ::-webkit-scrollbar-thumb:hover{background:#a4b2c2;border:2px solid transparent;background-clip:padding-box}
-  ::-webkit-scrollbar-track{background:transparent}
-  /* ================= top bar (sticky, glass) ================= */
-  .topbar{position:sticky;top:0;z-index:60}
-  header{background:linear-gradient(115deg,#021f17 0%,#052e22 34%,var(--green-deep) 62%,#047857 108%);color:#fff;padding:10px 18px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;position:relative;box-shadow:0 8px 26px -12px rgba(4,47,36,.6)}
-  header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);pointer-events:none}
-  header .logo{font-size:16.5px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;display:flex;align-items:center;gap:8px;text-shadow:0 1px 8px rgba(0,0,0,.35)}
-  header select,header button{font:12.5px var(--font);border-radius:999px;border:1px solid rgba(255,255,255,.22);padding:6px 13px;background:rgba(255,255,255,.09);color:#fff;cursor:pointer;backdrop-filter:blur(6px);transition:background .18s var(--ease),transform .18s var(--ease),border-color .18s var(--ease),box-shadow .18s var(--ease)}
-  header select:hover,header button:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.42);box-shadow:0 6px 16px -6px rgba(0,0,0,.4);transform:translateY(-1px)}
-  header button:active{transform:scale(.96)}
-  header select option{color:var(--ink);background:#fff}
-  header button.ghost{background:rgba(255,255,255,.10)}
-  header button.danger{background:linear-gradient(135deg,#fb7185,#e11d48);border-color:transparent;box-shadow:0 4px 14px -6px rgba(225,29,72,.65)}
-  header button.danger:hover{background:linear-gradient(135deg,#f43f5e,#be123c);box-shadow:0 6px 18px -6px rgba(225,29,72,.8)}
-  .spacer{flex:1}
-  /* ================= subbar ================= */
-  .subbar{background:rgba(255,255,255,.86);backdrop-filter:blur(14px) saturate(1.5);border-bottom:1px solid var(--line);padding:9px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 10px 26px -20px rgba(15,23,42,.28)}
-  .kpis{display:flex;gap:8px;flex-wrap:wrap}
-  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:7px 13px 7px 14px;white-space:nowrap;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:transform .18s var(--ease),box-shadow .18s var(--ease)}
-  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--green-bright),var(--green-dark))}
-  .kpi.warn::before{background:linear-gradient(180deg,#fbbf24,var(--amber))}
-  .kpi.bad::before{background:linear-gradient(180deg,#fb7185,var(--red))}
-  .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
-  .kpi b{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
-  .kpi span{color:var(--faint);font-size:9.5px;display:block;text-transform:uppercase;letter-spacing:.7px;margin-top:1px;font-weight:600}
-  .kpi.warn{background:var(--amber-light);border-color:#f3e3bd}
-  .kpi.bad{background:var(--red-light);border-color:#f8c9d2}
-  .subbar input[type=date],.subbar input[type=search],.subbar input[type=number]{font:12.5px var(--font);padding:6px 10px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;transition:border-color .16s var(--ease),box-shadow .16s var(--ease)}
-  .subbar input:focus{border-color:var(--green-bright);box-shadow:0 0 0 4px rgba(16,185,129,.15);outline:none}
-  .subbar label{display:flex;align-items:center;gap:5px;color:var(--muted);white-space:nowrap;font-size:12px}
-  .seg{display:flex;background:#e9eef4;border-radius:999px;padding:3px;gap:2px;position:relative}
-  .seg .pill{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:999px;background:#fff;box-shadow:var(--shadow-sm);transition:transform .3s var(--ease),width .3s var(--ease);pointer-events:none}
-  html[data-theme="dark"] .seg .pill{background:var(--card)}
-  .seg button{border:0;background:transparent;padding:5px 14px;border-radius:999px;cursor:pointer;color:var(--muted);font-weight:600;font-size:12px;transition:color .18s var(--ease);position:relative;z-index:1}
-  .seg button:hover{color:var(--ink)}
-  .seg button.on{color:var(--green-deep)}
-  .btn{font:12.5px var(--font);border:1px solid var(--line-strong);background:#fff;border-radius:10px;padding:6px 13px;cursor:pointer;font-weight:600;color:var(--ink);transition:background .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease),box-shadow .16s var(--ease),transform .16s var(--ease),filter .16s var(--ease)}
-  .btn:hover{background:#f1f5f9;border-color:#c3cfdb}
-  .btn:active{transform:scale(.96)}
-  .btn.primary{background:linear-gradient(135deg,var(--green-bright),var(--green-dark));border-color:transparent;color:#fff;box-shadow:0 4px 12px -4px var(--green-glow)}
-  .btn.primary:hover{box-shadow:0 6px 16px -4px var(--green-glow);filter:brightness(1.06)}
-  /* ================= layout ================= */
-  .layout{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;min-height:calc(100vh - 120px)}
-  aside#dayPanel{width:254px;flex:0 0 254px;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);position:sticky;top:126px;max-height:calc(100vh - 154px);display:flex;flex-direction:column;box-shadow:var(--shadow-md)}
-  aside#dayPanel h3{margin:0;padding:13px 15px 9px;font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:1.1px;font-weight:700}
-  #dayList{overflow-y:auto;padding:0 10px 12px}
-  .day-item{border:1px solid var(--line);border-radius:var(--r-md);padding:8px 11px;margin-bottom:7px;cursor:pointer;background:#fff;transition:border-color .16s var(--ease),box-shadow .16s var(--ease),transform .16s var(--ease)}
-  .day-item:hover{border-color:var(--green-bright);box-shadow:var(--shadow-sm);transform:translateY(-1px)}
-  .day-item:active{transform:scale(.985)}
-  .day-item.sel{border-color:var(--green-bright);background:linear-gradient(135deg,#ecfdf5,#f0fdf8);box-shadow:inset 0 0 0 1px var(--green-bright),0 4px 12px -6px var(--green-glow)}
-  .day-item .d1{display:flex;justify-content:space-between;font-weight:700;font-size:12.5px;letter-spacing:-.1px}
-  .day-item .d1 span:last-child{font-variant-numeric:tabular-nums}
-  .day-item .d2{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:2px}
-  .mini-bar{height:5px;background:#e8edf2;border-radius:999px;margin-top:7px;overflow:hidden}
-  .mini-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green-bright),var(--green));border-radius:999px;transition:width .3s var(--ease)}
-  .mini-bar i.over{background:linear-gradient(90deg,#fb7185,var(--red))}
-  .day-item.empty{opacity:.55}
-  /* ================= board ================= */
-  main#board{flex:1;overflow-x:auto;padding-bottom:24px;scrollbar-gutter:stable}
-  .days{display:flex;gap:13px;align-items:flex-start;padding:4px 2px}
-  .day-col{flex:0 0 244px;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm);content-visibility:auto;contain-intrinsic-size:244px 300px;transition:box-shadow .2s var(--ease)}
-  .day-col:hover{box-shadow:var(--shadow-md)}
-  .day-col.flash{animation:flash 1.2s ease}
-  @keyframes flash{0%,60%{box-shadow:0 0 0 3px var(--green-bright),0 8px 22px -8px var(--green-glow);background:#f0fdf8}100%{box-shadow:var(--shadow-sm)}}
-  .day-col.dragover{outline:2px dashed var(--green-bright);outline-offset:-2px;background:#f0fdf8;box-shadow:var(--shadow-md)}
-  .day-col.nodate{flex-basis:208px;border-style:dashed;border-color:var(--line-strong)}
-  .day-head{background:linear-gradient(135deg,#021f17 0%,#052e22 45%,var(--green-deep) 72%,#047857 135%);color:#fff;padding:10px 12px;position:relative}
-  .day-head::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent)}
-  .day-col.nodate .day-head{background:linear-gradient(135deg,#0f172a,#475569 140%)}
-  .day-col.over .day-head{background:linear-gradient(135deg,#4c0519,#9f1239 60%,#e11d48 140%)}
-  .day-head .dt{font-weight:800;font-size:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:7px}
-  .day-head .dt small{font-weight:600;background:rgba(255,255,255,.16);border-radius:999px;padding:1.5px 8px;font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;opacity:1}
-  .loadbar{height:6px;background:rgba(255,255,255,.22);border-radius:999px;margin:8px 0 6px;overflow:hidden}
-  .loadbar i{display:block;height:100%;background:linear-gradient(90deg,#ffffff,#a7f3d0);border-radius:999px;box-shadow:0 0 8px rgba(255,255,255,.55);transition:width .3s var(--ease)}
-  .day-col.over .loadbar i{background:linear-gradient(90deg,#fecdd3,#fb7185);box-shadow:0 0 8px rgba(251,113,133,.6)}
-  .day-head .di{font-size:11px;opacity:.92;font-variant-numeric:tabular-nums}
-  .day-body{min-height:120px;padding:8px}
-  .day-col.over .day-body{background:var(--red-light)}
-  .day-empty{color:var(--faint);font-size:11px;text-align:center;padding:18px 4px;border:1.5px dashed var(--line);border-radius:var(--r-md);margin:2px}
-  /* ================= card ================= */
-  .card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:8px 10px 8px 12px;margin-bottom:8px;cursor:grab;box-shadow:0 1px 2px rgba(15,23,42,.05);transition:transform .16s var(--ease),box-shadow .16s var(--ease),border-color .16s var(--ease)}
-  .card::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:999px;background:#cbd5e1}
-  .card:hover{transform:translateY(-2px);box-shadow:0 10px 22px -10px rgba(15,23,42,.24);border-color:#c3cfdb}
-  .card:active{cursor:grabbing;transform:scale(.98)}
-  .card.st-green::before{background:linear-gradient(180deg,#34d399,var(--green));box-shadow:0 0 6px var(--green-glow)}
-  .card.st-amber::before{background:linear-gradient(180deg,#fbbf24,var(--amber));box-shadow:0 0 6px rgba(245,158,11,.45)}
-  .card.st-red::before{background:linear-gradient(180deg,#fb7185,var(--red));box-shadow:0 0 6px rgba(225,29,72,.5)}
-  .card-top{display:flex;justify-content:space-between;gap:6px;font-weight:700;font-size:12.5px;letter-spacing:-.1px}
-  .card-min{white-space:nowrap;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:4px}
-  .card-prod{font-size:12px;margin:3px 0 2px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .card-meta{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
-  .badge{font-size:10px;border-radius:999px;padding:2.5px 8px;background:#f1f5f9;color:var(--muted);font-weight:600;letter-spacing:.2px;border:1px solid transparent}
-  .badge.split{background:var(--blue-light);color:var(--blue);border-color:#dbeafe}
-  .badge.tdg{background:var(--red-light);color:var(--red);border-color:#fecdd3}
-  .badge.ok{background:#ecfdf5;color:var(--green);border-color:#bbf0da}
-  /* ================= list view ================= */
-  #listView{padding:16px 18px}
-  .l-day{margin-bottom:16px;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:#fff;box-shadow:var(--shadow-sm)}
-  .l-head{background:linear-gradient(135deg,#021f17,#052e22 45%,var(--green-deep) 72%,#047857 135%);color:#fff;padding:9px 15px;display:flex;gap:18px;align-items:center;font-weight:700}
-  .l-head .lh-sub{font-weight:500;font-size:12px;opacity:.9}
-  .l-head.over{background:linear-gradient(135deg,#4c0519,#9f1239 60%,#e11d48 140%)}
-  table.l-table{width:100%;border-collapse:collapse;font-size:12px}
-  table.l-table th{background:#f8fafc;color:var(--faint);font-weight:700;text-align:left;padding:7px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;font-size:10px;text-transform:uppercase;letter-spacing:.6px;z-index:1}
-  table.l-table td{padding:7px 12px;border-bottom:1px solid #eef2f6;vertical-align:top}
-  table.l-table tr:last-child td{border-bottom:0}
-  table.l-table tbody tr{transition:background .12s ease}
-  table.l-table tbody tr:hover td{background:#f8fafc}
-  tr.l-row-red td{background:var(--red-light)}
-  tr.l-row-amber td{background:var(--amber-light)}
-  td.num{white-space:nowrap;font-variant-numeric:tabular-nums}
-  .l-prod{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  /* ================= modal ================= */
-  .modal-wrap{position:fixed;inset:0;background:rgba(6,12,26,0);display:flex;align-items:center;justify-content:center;z-index:80;padding:16px;opacity:0;visibility:hidden;transition:opacity .26s var(--ease),background-color .26s var(--ease),visibility 0s linear .26s}
-  .modal-wrap.open{opacity:1;visibility:visible;background:rgba(6,12,26,.58);backdrop-filter:blur(8px) saturate(1.2);transition:opacity .26s var(--ease),background-color .26s var(--ease),visibility 0s}
-  .modal{background:#fff;border-radius:var(--r-xl);width:660px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.65);transform:translateY(18px) scale(.955);opacity:0;transition:transform .34s var(--ease),opacity .24s var(--ease)}
-  .modal-wrap.open .modal{transform:none;opacity:1}
-  .modal h2{margin:0;padding:16px 22px 13px;font-size:17px;font-weight:800;letter-spacing:-.3px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#f8fafc,#fff);border-radius:var(--r-xl) var(--r-xl) 0 0}
-  .modal .mbody{padding:16px 22px;overflow-y:auto}
-  .modal .mfoot{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;background:#f8fafc;border-radius:0 0 var(--r-xl) var(--r-xl)}
-  .fld{margin-bottom:13px}
-  .fld label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-  .fld input[type=text],.fld input[type=url],.fld input[type=number],.fld select{width:100%;font:13px var(--font);padding:9px 11px;border:1px solid var(--line-strong);border-radius:11px;background:#fff;transition:border-color .16s var(--ease),box-shadow .16s var(--ease)}
-  .fld input:focus,.fld select:focus{border-color:var(--green-bright);box-shadow:0 0 0 4px rgba(16,185,129,.14);outline:none}
-  .days-check{display:flex;gap:8px;flex-wrap:wrap}
-  .days-check label{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ink);text-transform:none;letter-spacing:0;font-weight:500}
-  table.chg{width:100%;border-collapse:collapse;font-size:12px}
-  table.chg th{text-align:left;color:var(--faint);padding:6px 10px;border-bottom:1px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
-  table.chg td{padding:6px 10px;border-bottom:1px solid #f0f2f5}
-  .chg .old{color:var(--red);text-decoration:line-through}
-  .chg .new{color:var(--green);font-weight:700}
-  .note{background:var(--amber-light);border:1px solid #f3e3bd;border-radius:var(--r-md);padding:10px 14px;font-size:12px;margin-bottom:11px}
-  /* ================= toast ================= */
-  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(10,18,32,.95);color:#fff;padding:11px 18px 11px 15px;border-radius:999px;font-size:13px;font-weight:500;display:none;z-index:99;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.09);animation:toastIn .22s var(--ease);max-width:90vw}
-  #toast::before{content:"";display:inline-block;width:8px;height:8px;border-radius:999px;background:linear-gradient(135deg,var(--green-bright),var(--green));margin-right:9px;box-shadow:0 0 8px var(--green-glow);vertical-align:1px}
-  @keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
-  .hint{color:var(--muted);font-size:12px}
-  textarea{width:100%;box-sizing:border-box;font:inherit;padding:9px 11px;border:1px solid var(--line-strong);border-radius:var(--r-md);resize:vertical;background:#fff}
-  textarea:focus{border-color:var(--green-bright);box-shadow:0 0 0 4px rgba(16,185,129,.14);outline:none}
-  .mini{border:1px solid var(--line-strong);background:#fff;border-radius:999px;font-size:10.5px;padding:2px 8px;cursor:pointer;line-height:16px;color:var(--muted);font-weight:600;transition:background .14s var(--ease),color .14s var(--ease),border-color .14s var(--ease),box-shadow .14s var(--ease)}
-  .mini:hover{background:var(--amber-light);color:var(--ink);border-color:#e8cf9a}
-  /* ================= v4: тёмная тема (переопределения) ================= */
-  html[data-theme="dark"] body{background:
-    radial-gradient(1200px 600px at 88% -12%, rgba(16,185,129,.10), transparent 60%),
-    radial-gradient(900px 520px at -8% -4%, rgba(37,99,235,.10), transparent 55%),
-    var(--bg)}
-  html[data-theme="dark"] ::selection{background:rgba(16,185,129,.35)}
-  html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#2c3a4e;border:2px solid transparent;background-clip:padding-box}
-  html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:#3c4d66;border:2px solid transparent;background-clip:padding-box}
-  html[data-theme="dark"] .subbar{background:rgba(13,19,32,.84);box-shadow:0 10px 26px -20px rgba(0,0,0,.65)}
-  html[data-theme="dark"] .kpi.warn{border-color:rgba(217,119,6,.4)}
-  html[data-theme="dark"] .kpi.bad{border-color:rgba(225,29,72,.4)}
-  html[data-theme="dark"] .subbar input[type=date],html[data-theme="dark"] .subbar input[type=search],html[data-theme="dark"] .subbar input[type=number]{background:var(--card2);color:var(--ink)}
-  html[data-theme="dark"] .seg{background:var(--seg-bg)}
-  html[data-theme="dark"] .seg button.on{background:var(--card);color:var(--green-bright)}
-  html[data-theme="dark"] .btn{background:var(--card);border-color:var(--line-strong);color:var(--ink)}
-  html[data-theme="dark"] .btn:hover{background:var(--hover-bg);border-color:var(--line-strong)}
-  html[data-theme="dark"] aside#dayPanel{background:var(--card)}
-  html[data-theme="dark"] .day-item{background:var(--card2)}
-  html[data-theme="dark"] .day-item.sel{background:linear-gradient(135deg,rgba(16,185,129,.18),rgba(16,185,129,.07))}
-  html[data-theme="dark"] .mini-bar{background:#1c2740}
-  html[data-theme="dark"] .day-col{background:var(--card)}
-  html[data-theme="dark"] .day-col.dragover{background:rgba(16,185,129,.08)}
-  html[data-theme="dark"] .card{background:var(--card2);border-color:var(--line)}
-  html[data-theme="dark"] .card:hover{border-color:var(--line-strong)}
-  html[data-theme="dark"] .card-prod{color:#c4d0e0}
-  html[data-theme="dark"] .badge{background:#1b2638;color:var(--muted)}
-  html[data-theme="dark"] .badge.split{border-color:rgba(37,99,235,.45)}
-  html[data-theme="dark"] .badge.tdg{border-color:rgba(225,29,72,.4)}
-  html[data-theme="dark"] .badge.ok{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.35)}
-  html[data-theme="dark"] .l-day,html[data-theme="dark"] .shift-day,html[data-theme="dark"] .lane{background:var(--card)}
-  html[data-theme="dark"] table.l-table th{background:var(--card2)}
-  html[data-theme="dark"] table.l-table td{border-bottom-color:var(--line)}
-  html[data-theme="dark"] table.l-table tbody tr:hover td{background:var(--hover-bg)}
-  html[data-theme="dark"] .modal{background:var(--card);border-color:var(--line-strong)}
-  html[data-theme="dark"] .modal h2{background:linear-gradient(180deg,var(--card2),var(--card))}
-  html[data-theme="dark"] .modal .mfoot{background:var(--card2)}
-  html[data-theme="dark"] .fld input[type=text],html[data-theme="dark"] .fld input[type=url],html[data-theme="dark"] .fld input[type=number],html[data-theme="dark"] .fld select{background:var(--card2);color:var(--ink)}
-  html[data-theme="dark"] textarea{background:var(--card2);color:var(--ink)}
-  html[data-theme="dark"] table.chg td{border-bottom-color:var(--line)}
-  html[data-theme="dark"] .note{border-color:rgba(217,119,6,.4)}
-  html[data-theme="dark"] .mini{background:var(--card);color:var(--muted)}
-  html[data-theme="dark"] header select option{color:#0f172a;background:#fff}
-  html[data-theme="dark"] #toast{background:rgba(20,28,44,.97)}
-  /* ================= v4: столбец «сегодня» ================= */
-  .day-col.today{box-shadow:0 0 0 2px var(--green-bright),0 14px 30px -14px var(--green-glow)}
-  .day-col.today .day-head{background:linear-gradient(135deg,#022c1f 0%,#065f46 55%,#059669 130%)}
-  .day-head .today-chip{background:#fff;color:var(--green-deep);font-weight:800;border-radius:999px;padding:1.5px 8px;font-size:9.5px;text-transform:uppercase;letter-spacing:.6px}
-  /* ================= v4: выбор периода ================= */
-  .period{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;white-space:nowrap}
-  .period input[type=date]{font:12.5px var(--font);padding:6px 9px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;color:var(--ink);transition:border-color .16s var(--ease),box-shadow .16s var(--ease)}
-  html[data-theme="dark"] .period input[type=date]{background:var(--card2)}
-  .period input[type=date]:focus{border-color:var(--green-bright);box-shadow:0 0 0 4px rgba(16,185,129,.15);outline:none}
-  .period .clear{border:0;background:transparent;color:var(--faint);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:8px}
-  .period .clear:hover{color:var(--red);background:var(--red-light)}
-  /* ================= v4: сменные задания ================= */
-  #shiftsView,#multiView{padding:16px 18px}
-  .shift-day{margin-bottom:16px;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--card);box-shadow:var(--shadow-sm)}
-  .shift-site{border-top:1px solid var(--line)}
-  .shift-site:first-of-type{border-top:0}
-  .ss-head{display:flex;gap:12px;align-items:center;padding:8px 15px;background:var(--card2);font-weight:700;font-size:12.5px}
-  .ss-head .ss-load{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
-  .ss-bar{flex:0 0 130px;height:6px;background:var(--seg-bg);border-radius:999px;overflow:hidden}
-  .ss-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green-bright),var(--green));border-radius:999px}
-  .ss-bar i.over{background:linear-gradient(90deg,#fb7185,var(--red))}
-  /* ================= v4: сводный вид участков ================= */
-  .lane{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);margin-bottom:14px;overflow:hidden}
-  .lane-head{display:flex;align-items:center;gap:12px;padding:11px 15px 9px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
-  .lane-head .ln-name{font-weight:800;font-size:14px;letter-spacing:-.2px}
-  .lane-head .ln-res{color:var(--muted);font-size:12px}
-  .lane-head .ln-kpis{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-  .lane-head .ln-kpis .kpi{padding:4px 11px}
-  .lane-cells{display:flex;gap:5px;overflow-x:auto;padding:11px 14px 13px}
-  .lcell{flex:0 0 48px;border-radius:10px;border:1px solid var(--line);background:var(--card2);padding:5px 4px 6px;text-align:center;cursor:pointer;transition:transform .14s var(--ease),box-shadow .14s var(--ease)}
-  .lcell:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
-  .lcell .lc-d{font-size:10px;color:var(--faint);font-weight:700}
-  .lcell .lc-p{font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
-  .lcell .lc-n{font-size:9.5px;color:var(--muted)}
-  .lcell.off{opacity:.38;cursor:default}
-  .lcell.l0 .lc-p{color:var(--faint)}
-  .lcell.l1{background:linear-gradient(180deg,#d9f7e8,#ecfdf5);border-color:#b7ecd3}
-  .lcell.l2{background:linear-gradient(180deg,#fef3c7,#fffbeb);border-color:#f3e3bd}
-  .lcell.l3{background:linear-gradient(180deg,#ffe4e6,#fff1f2);border-color:#f8c9d2}
-  .lcell.l3 .lc-p{color:var(--red)}
-  html[data-theme="dark"] .lcell.l1{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4)}
-  html[data-theme="dark"] .lcell.l2{background:rgba(217,119,6,.15);border-color:rgba(217,119,6,.4)}
-  html[data-theme="dark"] .lcell.l3{background:rgba(225,29,72,.15);border-color:rgba(225,29,72,.4)}
-  .lcell.today{box-shadow:0 0 0 2px var(--green-bright)}
-  /* ================= v4: журнал изменений ================= */
-  .log-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-  .log-ctl input[type=date],.log-ctl select{font:12.5px var(--font);padding:6px 9px;border:1px solid var(--line-strong);border-radius:10px;background:var(--card2);color:var(--ink)}
-  table.log-table{width:100%;border-collapse:collapse;font-size:12px}
-  table.log-table th{text-align:left;color:var(--faint);padding:6px 10px;border-bottom:1px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.5px;position:sticky;top:0;background:var(--card)}
-  table.log-table td{padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-  table.log-table .lt-ts{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted)}
-  table.log-table .lt-act{font-weight:700;white-space:nowrap}
-  /* ================= v4: drag-and-drop ================= */
-  .l-day.dragover{outline:2px dashed var(--green-bright);outline-offset:-2px;box-shadow:var(--shadow-md)}
-  tr[draggable="true"]{cursor:grab}
-  /* ================= v4: общая доска (подключаемые участки) ================= */
-  .sub-board{margin-top:20px}
-  .sub-board .sb-title{display:flex;align-items:center;gap:12px;margin:0 2px 10px;font-weight:800;font-size:13.5px;flex-wrap:wrap}
-  .sub-board .sb-title .ln-res{color:var(--muted);font-weight:600;font-size:12px}
-  .sub-board .sb-title .sb-unpin{margin-left:auto}
-  .bcols{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding:2px 2px 8px}
-  .bcol{flex:0 0 196px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-sm)}
-  .bcol.today{box-shadow:0 0 0 2px var(--green-bright),0 10px 22px -12px var(--green-glow)}
-  .bc-head{background:linear-gradient(135deg,#021f17 0%,#052e22 45%,var(--green-deep) 72%,#047857 135%);color:#fff;padding:7px 10px;font-size:11.5px;font-weight:700}
-  .bc-head .bc-pct{float:right;font-variant-numeric:tabular-nums;opacity:.92}
-  .bc-head .bc-load{font-size:10px;font-weight:500;opacity:.85;margin-top:2px;font-variant-numeric:tabular-nums}
-  .bc-head.over{background:linear-gradient(135deg,#4c0519,#9f1239 60%,#e11d48 140%)}
-  .bc-body{padding:6px}
-  .card.compact{cursor:default;padding:6px 8px 6px 10px;margin-bottom:6px}
-  .card.compact:hover{transform:none}
-  .card.compact .card-prod{font-size:11px}
-  /* ================= v5: «аврора» — фирменный визуал ================= */
-  /* зернистая плёнка поверх всего (кроме модалок/тостов) — v7: без blend-mode,
-     обычная прозрачность не заставляет композитор смешивать всю страницу каждый кадр */
-  body::after{content:"";position:fixed;inset:0;z-index:65;pointer-events:none;opacity:.045;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
-  html[data-theme="dark"] body::after{opacity:.06}
-  /* живое сияние в шапке */
-  header{overflow:hidden}
-  header::before{content:"";position:absolute;inset:-40% -10%;pointer-events:none;
-    background:
-      radial-gradient(34% 60% at 18% 50%, rgba(52,211,153,.34), transparent 70%),
-      radial-gradient(30% 55% at 62% 42%, rgba(37,99,235,.26), transparent 70%),
-      radial-gradient(26% 50% at 88% 60%, rgba(16,185,129,.28), transparent 70%);
-    animation:aurora 16s ease-in-out infinite alternate}
-  @keyframes aurora{from{transform:translate3d(-3%,-2%,0) rotate(-2deg) scale(1)}to{transform:translate3d(3%,2%,0) rotate(2deg) scale(1.08)}}
-  header>*{position:relative;z-index:1}
-  header .logo{font-family:var(--font-d);font-size:15px;font-weight:600;letter-spacing:0;text-shadow:none;
-    background:linear-gradient(92deg,#ffffff 20%,#a7f3d0 60%,#6ee7b7);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  /* bento-KPI: градиентная окантовка + дисплейные цифры */
-  .kpi{border:1px solid transparent;
-    background:linear-gradient(var(--card),var(--card)) padding-box,
-      linear-gradient(135deg,rgba(16,185,129,.6),rgba(37,99,235,.22) 55%,rgba(16,185,129,.08)) border-box}
-  .kpi.warn{background:linear-gradient(var(--amber-light),var(--amber-light)) padding-box,
-      linear-gradient(135deg,rgba(217,119,6,.65),rgba(217,119,6,.12)) border-box}
-  .kpi.bad{background:linear-gradient(var(--red-light),var(--red-light)) padding-box,
-      linear-gradient(135deg,rgba(225,29,72,.7),rgba(225,29,72,.15)) border-box}
-  .kpi b{font-family:var(--font-d);font-size:13px;font-weight:600}
-  /* дисплейный шрифт для дат и заголовков */
-  .day-head .dt,.bc-head,.l-head,.ss-head,.ln-name,.lane-head .ln-name{font-family:var(--font-d);letter-spacing:-.2px}
-  .day-head .dt{font-size:12px}
-  .bc-head{font-size:10px}
-  .l-head{font-size:11.5px}
-  .ss-head{font-size:11px}
-  .ln-name,.lane-head .ln-name{font-size:12.5px}
-  .day-item .d1{font-family:var(--font-d);font-size:11px}
-  .day-head .dt small{font-family:var(--font)}
-  /* стекло суббара посильнее */
-  .subbar{backdrop-filter:blur(18px) saturate(1.7)}
-  .seg{box-shadow:inset 0 1px 3px rgba(15,23,42,.08)}
-  /* today: вращающееся конусное кольцо — v7 GPU-версия: маска статична,
-     вращается только внутренний слой через transform (композитор, без перерисовки) */
-  .day-col.today,.bcol.today{position:relative;box-shadow:0 0 26px -8px var(--green-glow),var(--shadow-md)}
-  .ring{position:absolute;inset:-1.5px;border-radius:inherit;padding:1.6px;pointer-events:none;z-index:2;overflow:hidden;
-    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
-    mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
-  .ring::before{content:"";position:absolute;inset:-160%;
-    background:conic-gradient(from 0deg,#10b981,#6ee7b7,#059669,#34d399,#a7f3d0,#10b981);
-    animation:ringspin 7s linear infinite;will-change:transform}
-  @keyframes ringspin{to{transform:rotate(360deg)}}
-  /* шиммер на полосах загрузки */
-  .loadbar i,.mini-bar i,.ss-bar i{position:relative;overflow:hidden}
-  .loadbar i::after,.ss-bar i::after{content:"";position:absolute;inset:0;transform:translateX(-110%);
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
-    animation:shimmer 3.4s var(--ease) infinite}
-  @keyframes shimmer{55%{transform:translateX(110%)}100%{transform:translateX(110%)}}
-  /* карточки: точнее кромка, свечение ребра при наведении */
-  .card{border-color:var(--line);box-shadow:0 1px 2px rgba(15,23,42,.06)}
-  .card:hover{border-color:rgba(16,185,129,.55)}
-  .card:hover::before{box-shadow:0 0 10px var(--green-glow),0 0 2px var(--green-bright)}
-  /* плавное появление видов */
-  #boardLayout,#listView,#shiftsView,#multiView{animation:viewIn .28s var(--ease)}
-  @keyframes viewIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
-  /* ячейки теплокарты: чётче и с дисплейными цифрами */
-  .lcell .lc-p{font-family:var(--font-d);font-size:10px}
-  /* ================= v6: люксовая плавность ================= */
-  /* стаггер-появление колонок/дней при смене вида (только transform/opacity — без фризов) */
-  @keyframes colIn{from{opacity:0;transform:translateY(14px) scale(.975)}to{opacity:1;transform:none}}
-  .enter-anim .days > .day-col,.enter-anim > .l-day,.enter-anim > .shift-day,.enter-anim > .lane{
-    animation:colIn .42s var(--ease) both;animation-delay:calc(min(var(--i,0),14) * 34ms)}
-  /* виртуализация длинных списков: не рисуем то, что за экраном */
-  .l-day,.shift-day{content-visibility:auto;contain-intrinsic-size:auto 220px}
-  /* аврора — строго на композиторе */
-  header::before{will-change:transform}
-  /* плавная смена темы через View Transitions (где поддерживается) */
-  ::view-transition-old(root),::view-transition-new(root){animation-duration:.4s;animation-timing-function:var(--ease)}
-  /* ---------- кастомный выпадающий список участка ---------- */
-  .sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);opacity:0;pointer-events:none}
-  .cselect{position:relative}
-  .cs-btn{display:flex;align-items:center;gap:8px;max-width:250px;font:12.5px var(--font);font-weight:600;border-radius:999px;border:1px solid rgba(255,255,255,.22);padding:6px 13px;background:rgba(255,255,255,.09);color:#fff;cursor:pointer;backdrop-filter:blur(6px);transition:background .18s var(--ease),transform .18s var(--ease),border-color .18s var(--ease),box-shadow .18s var(--ease)}
-  .cs-btn:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.42);box-shadow:0 6px 16px -6px rgba(0,0,0,.4);transform:translateY(-1px)}
-  .cs-btn:active{transform:scale(.96)}
-  .cs-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cs-btn svg{flex:0 0 auto;transition:transform .28s var(--ease)}
-  .cselect.open .cs-btn svg{transform:rotate(180deg)}
-  .cs-menu{position:fixed;z-index:75;min-width:180px;max-width:330px;max-height:330px;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:5px;opacity:0;visibility:hidden;transform:translateY(-8px) scale(.96);transform-origin:top left;transition:opacity .18s var(--ease),transform .24s var(--ease),visibility 0s linear .24s}
-  .cs-menu.open{opacity:1;visibility:visible;transform:none;transition:opacity .18s var(--ease),transform .24s var(--ease),visibility 0s}
-  .cs-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);font:12.5px var(--font);font-weight:500;padding:8px 11px;border-radius:9px;cursor:pointer;opacity:0;transform:translateY(-5px);
-    transition:background .12s ease 0s,color .12s ease 0s,opacity .2s var(--ease) calc(min(var(--i,0),12) * 26ms),transform .24s var(--ease) calc(min(var(--i,0),12) * 26ms)}
-  .cs-menu.open .cs-item{opacity:1;transform:none}
-  .cs-item:hover{background:var(--hover-bg)}
-  .cs-item.on{background:var(--sel-bg);color:var(--green-deep);font-weight:700}
-  html[data-theme="dark"] .cs-item.on{color:var(--green-bright)}
-  /* ---------- красивые нативные селекты (журнал, разбивка) ---------- */
-  .fld select,.log-ctl select{appearance:none;-webkit-appearance:none;cursor:pointer;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;background-position:right 11px center;padding-right:32px}
-  /* акцентные чекбоксы */
-  input[type=checkbox]{accent-color:var(--green-bright);width:14px;height:14px;cursor:pointer}
-  /* иконка календаря в тёмной теме */
-  html[data-theme="dark"] input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:pointer}
-  /* тёмная тема: активная кнопка вида — только цвет (фон даёт скользящая плашка) */
-  html[data-theme="dark"] .seg button.on{background:transparent;color:var(--green-bright)}
-  /* ================= v7: оптимизация верстки и рендера ================= */
-  /* изоляция пересчёта: изменение одной карточки не пересчитывает всю доску */
-  .card,.day-item,.lcell,.kpi{contain:layout style}
-  /* заэкранные секции общей доски и ленты участков не отрисовываются */
-  .bcol{content-visibility:auto;contain-intrinsic-size:196px 240px}
-  .lane{content-visibility:auto;contain-intrinsic-size:auto 130px}
-  /* will-change только на время стаггер-анимации — класс снимается через ~1.1 с */
-  .enter-anim .days > .day-col,.enter-anim > .l-day,.enter-anim > .shift-day,.enter-anim > .lane{will-change:transform,opacity}
-  /* ================= адаптив ================= */
-  @media(max-width:1180px){aside#dayPanel{width:232px;flex-basis:232px}}
-  @media(max-width:980px){
-    aside#dayPanel{display:none}
-    .layout{padding:12px 13px}
-  }
-  @media(max-width:720px){
-    body{font-size:13px}
-    header{padding:8px 11px;gap:6px}
-    header .logo{font-size:14.5px}
-    header select,header button{padding:5px 10px;font-size:12px}
-    .subbar{padding:8px 11px;gap:8px}
-    .kpis{overflow-x:auto;flex-wrap:nowrap;max-width:100%;padding-bottom:2px;scrollbar-width:none}
-    .kpi{flex:0 0 auto}
-    #searchInput{width:160px!important}
-    .day-col{flex-basis:228px}
-    .layout{padding:10px 9px}
-    .card{padding:7px 9px 7px 11px}
-    table.l-table{font-size:11px}
-    table.l-table th,table.l-table td{padding:6px 8px}
-    .l-prod{max-width:180px}
-    .modal{width:100%}
-  }
-  /* тач-экраны: убираем hover-подъём, увеличиваем зоны нажатия */
-  @media(pointer:coarse){
-    .card{cursor:default}
-    .card:hover{transform:none}
-    .day-item,.mini,.btn,header button{min-height:32px}
-  }
-  /* уважение к настройке reduced motion */
-  @media(prefers-reduced-motion:reduce){
-    *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
-  }
+<meta name="theme-color" content="#17211d">
+<title>ПОТОК — планировщик производственных участков</title>
+<style>/* ==========================================================================
+   ПОТОК / production workspace
+   Источник стилей разделён по назначению: токены, каркас, компоненты, виды,
+   панели, диалоги, движение и адаптив. В production всё собирается в один файл.
+   ========================================================================== */
+
+/* 01. Design tokens ------------------------------------------------------- */
+:root{
+  color-scheme:light;
+  --bg:#f1f3ee;
+  --surface:#ffffff;
+  --surface-2:#f7f8f5;
+  --surface-3:#edf0ea;
+  --ink:#1c2520;
+  --ink-soft:#3d4942;
+  --muted:#727d76;
+  --faint:#98a19b;
+  --line:#dfe4dd;
+  --line-strong:#cbd3ca;
+  --green:#257458;
+  --green-hover:#1d6049;
+  --green-soft:#e2f0e8;
+  --green-bright:#45a77e;
+  --mint:#a9dfc2;
+  --red:#c94b54;
+  --red-light:#fbecee;
+  --amber:#ad741d;
+  --amber-light:#fbf3e3;
+  --blue:#3f6f8d;
+  --blue-light:#eaf2f6;
+  --header:#17211d;
+  --header-2:#202c26;
+  --header-ink:#eff6f1;
+  --shadow-xs:0 1px 2px rgba(23,33,29,.04);
+  --shadow-sm:0 5px 18px rgba(23,33,29,.055);
+  --shadow-md:0 18px 45px rgba(23,33,29,.12);
+  --shadow-lg:0 30px 80px rgba(10,18,13,.22);
+  --radius-sm:7px;
+  --radius:11px;
+  --radius-lg:15px;
+  --ease:cubic-bezier(.22,.75,.25,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --font:Inter,"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Cascadia Mono","SFMono-Regular",Consolas,monospace;
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101511;
+  --surface:#181f1a;
+  --surface-2:#141a16;
+  --surface-3:#202922;
+  --ink:#edf3ee;
+  --ink-soft:#c8d2ca;
+  --muted:#9aa69d;
+  --faint:#6f7d73;
+  --line:#2c372f;
+  --line-strong:#3b493f;
+  --green:#83d3ae;
+  --green-hover:#a0e2c2;
+  --green-soft:#203a2d;
+  --green-bright:#83d3ae;
+  --mint:#83d3ae;
+  --red:#ef858c;
+  --red-light:#382225;
+  --amber:#e1b565;
+  --amber-light:#352d1e;
+  --blue:#91b9cf;
+  --blue-light:#202f38;
+  --header:#0c110e;
+  --header-2:#161e19;
+  --header-ink:#eff6f1;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.18);
+  --shadow-sm:0 7px 20px rgba(0,0,0,.18);
+  --shadow-md:0 20px 48px rgba(0,0,0,.34);
+  --shadow-lg:0 32px 90px rgba(0,0,0,.5);
+}
+
+/* 02. Reset and application frame ---------------------------------------- */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font:13px/1.45 var(--font);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,select,textarea{font:inherit}
+button{color:inherit}
+button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--green-bright);outline-offset:2px}
+button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allowed;opacity:.45}
+[hidden]{display:none!important}
+::selection{background:var(--mint);color:#14251b}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line-strong);border:2px solid transparent;border-radius:20px;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:var(--faint);border:2px solid transparent;background-clip:padding-box}
+.svg-defs{position:absolute;width:0;height:0;overflow:hidden}
+button svg,.search-box svg,.period>svg,.rail-add svg,.pin-button svg{width:17px;height:17px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.spacer{flex:1}
+.sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);opacity:0;pointer-events:none}
+.app-shell{min-height:100dvh}
+.app-header{height:64px;padding:0 18px;display:flex;align-items:center;gap:10px;background:var(--header);color:var(--header-ink);border-bottom:1px solid rgba(255,255,255,.07);position:relative;z-index:60}
+.brand{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;white-space:nowrap}
+.brand-mark{width:27px;height:27px;display:flex;align-items:flex-end;gap:3px;padding:5px;border:1px solid rgba(169,223,194,.35);border-radius:7px}
+.brand-mark i{display:block;width:4px;background:var(--mint);border-radius:1px}
+.brand-mark i:nth-child(1){height:8px}.brand-mark i:nth-child(2){height:15px}.brand-mark i:nth-child(3){height:11px}
+.brand-name{font-size:16px;font-weight:800;letter-spacing:2.6px}
+.brand-caption{font-size:10px;color:#94a59a;border-left:1px solid #35453b;padding-left:12px;letter-spacing:.3px}
+.header-context{display:flex;align-items:center;gap:7px;margin-left:14px;color:#9aaba0;font-size:11px;white-space:nowrap}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 3px rgba(169,223,194,.1)}
+.header-actions{display:flex;align-items:center;gap:3px}
+.icon-action{height:34px;padding:0 9px;border:0;border-radius:7px;background:transparent;color:#b9c6bd;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:11px;transition:color .16s,background .16s,transform .16s}
+.icon-action:hover{background:rgba(255,255,255,.075);color:#fff}
+.icon-action:active{transform:scale(.96)}
+.compact-action{width:34px;padding:0}
+.header-separator{height:22px;width:1px;background:#344239;margin:0 2px}
+.profile-chip{height:36px;display:flex;align-items:center;gap:7px;padding:0 8px 0 4px;border:1px solid #344239;border-radius:9px;background:transparent;color:#dbe5de;cursor:pointer;font-size:11px;transition:background .18s,border-color .18s}
+.profile-chip:hover{background:var(--header-2);border-color:#52645a}
+.profile-avatar{width:26px;height:26px;display:grid;place-items:center;border-radius:6px;background:#32473a;color:var(--mint);font-weight:800}
+.theme-toggle{height:36px;display:flex;align-items:center;gap:7px;padding:0 6px;border:0;background:transparent;color:#afbeb4;cursor:pointer;font-size:10px}
+.theme-track{width:32px;height:18px;padding:2px;border-radius:20px;background:#39483f;display:block;transition:background .22s}
+.theme-track i{display:block;width:14px;height:14px;border-radius:50%;background:#d8e4dc;transition:transform .28s var(--ease-out),background .22s}
+html[data-theme="dark"] .theme-track{background:#426a55}
+html[data-theme="dark"] .theme-track i{transform:translateX(14px);background:var(--mint)}
+.dock-toggle{display:none}
+.workspace-grid{height:calc(100dvh - 64px);display:grid;grid-template-columns:214px minmax(0,1fr) 304px}
+
+/* 03. Site rail ----------------------------------------------------------- */
+.site-rail{min-width:0;display:flex;flex-direction:column;gap:12px;padding:18px 14px 14px;background:var(--surface-2);border-right:1px solid var(--line);overflow-y:auto;z-index:5}
+.rail-heading{display:flex;align-items:center;justify-content:space-between;padding:0 3px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase}
+.count-badge{min-width:22px;padding:1px 6px;text-align:center;border:1px solid var(--line);border-radius:10px;color:var(--faint);font:10px var(--mono)}
+.cselect{position:relative}
+.cs-btn{width:100%;min-height:40px;padding:0 11px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);cursor:pointer;font-weight:700;text-align:left;box-shadow:var(--shadow-xs);transition:border-color .18s,box-shadow .18s}
+.cs-btn:hover{border-color:var(--green-bright);box-shadow:var(--shadow-sm)}
+.cs-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-btn svg{transition:transform .25s var(--ease)}
+.cselect.open .cs-btn svg{transform:rotate(180deg)}
+.cs-menu{position:fixed;z-index:90;min-width:210px;max-width:330px;max-height:340px;overflow-y:auto;padding:5px;background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow-md);opacity:0;visibility:hidden;transform:translateY(-7px) scale(.98);transform-origin:top left;transition:opacity .18s,transform .24s var(--ease-out),visibility 0s linear .24s}
+.cs-menu.open{opacity:1;visibility:visible;transform:none;transition:opacity .18s,transform .24s var(--ease-out),visibility 0s}
+.cs-item{width:100%;padding:9px 10px;border:0;border-radius:7px;background:transparent;color:var(--ink);text-align:left;cursor:pointer;font-size:12px;opacity:0;transform:translateY(-4px);transition:background .14s,opacity .18s calc(var(--i,0)*20ms),transform .22s var(--ease-out) calc(var(--i,0)*20ms)}
+.cs-menu.open .cs-item{opacity:1;transform:none}
+.cs-item:hover{background:var(--surface-3)}
+.cs-item.on{background:var(--green-soft);color:var(--green);font-weight:700}
+.site-rail-list{display:flex;flex-direction:column;gap:5px}
+.site-rail-item{width:100%;display:grid;grid-template-columns:29px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px;border:1px solid transparent;border-radius:9px;background:transparent;text-align:left;cursor:pointer;transition:background .16s,border-color .16s,transform .16s}
+.site-rail-item:hover{background:var(--surface-3);transform:translateX(2px)}
+.site-rail-item.on{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow-xs)}
+.site-monogram{width:29px;height:29px;display:grid;place-items:center;border-radius:7px;background:var(--surface-3);color:var(--muted);font:700 10px var(--mono)}
+.site-rail-item.on .site-monogram{background:var(--green-soft);color:var(--green)}
+.site-rail-copy{min-width:0}
+.site-rail-copy b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700}
+.site-rail-copy small{display:block;color:var(--faint);font-size:9px;margin-top:1px}
+.site-mini-load{font:9px var(--mono);color:var(--muted)}
+.site-mini-load.over{color:var(--red)}
+.rail-add{display:flex;align-items:center;justify-content:center;gap:7px;min-height:35px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;transition:color .16s,border-color .16s,background .16s}
+.rail-add:hover{color:var(--green);border-color:var(--green);background:var(--green-soft)}
+.rail-section{border-top:1px solid var(--line);padding-top:14px;margin-top:3px}
+.section-label{margin-bottom:10px;color:var(--faint);font-size:9px;font-weight:800;letter-spacing:.9px;text-transform:uppercase}
+.resource-equation{display:flex;align-items:flex-end;gap:5px}
+.resource-equation label{min-width:0;flex:1}
+.resource-equation label span{display:block;margin:0 0 4px 2px;color:var(--faint);font-size:9px}
+.resource-equation input{width:100%;height:33px;padding:0 5px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);text-align:center;font:11px var(--mono);transition:border-color .16s,box-shadow .16s}
+.resource-equation input:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft);outline:0}
+.resource-equation input[readonly]{background:var(--surface-3);color:var(--muted)}
+.equation-sign{padding-bottom:8px;color:var(--faint);font-size:11px}
+.resource-unit{margin-top:6px;text-align:right;color:var(--faint);font-size:9px}
+.btn{min-height:33px;padding:6px 11px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink-soft);cursor:pointer;font-size:11px;font-weight:650;white-space:nowrap;box-shadow:var(--shadow-xs);transition:background .16s,border-color .16s,color .16s,transform .16s,box-shadow .16s}
+.btn:hover{background:var(--surface-3);border-color:var(--faint);box-shadow:var(--shadow-sm)}
+.btn:active{transform:scale(.97)}
+.btn.primary{border-color:var(--green);background:var(--green);color:#fff}
+html[data-theme="dark"] .btn.primary{color:#102219}
+.btn.primary:hover{background:var(--green-hover);border-color:var(--green-hover)}
+.btn.wide{width:100%;min-height:39px}
+.pin-button{width:100%}
+.pin-button.primary{background:var(--green-soft);color:var(--green);border-color:transparent;box-shadow:none}
+.rail-bottom{margin-top:auto;padding-top:16px}
+.sync-status{min-height:30px;padding:8px 3px;color:var(--muted);font-size:9px;line-height:1.45;border-top:1px solid var(--line)}
+.text-button{padding:4px 2px;border:0;background:transparent;cursor:pointer;font-size:10px}
+.danger-text{color:var(--faint)}
+.danger-text:hover{color:var(--red)}
+
+/* 04. Main stage and toolbar --------------------------------------------- */
+.main-stage{min-width:0;overflow-y:auto;overflow-x:hidden;position:relative;background-color:var(--bg);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:32px 32px;background-attachment:fixed}
+.main-stage::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(var(--bg) 0%,transparent 24%);opacity:.75}
+.main-stage>*{position:relative}
+.stage-heading{min-height:92px;padding:18px 20px 14px;display:flex;align-items:center;gap:18px;background:var(--bg)}
+.eyebrow{color:var(--faint);font:9px var(--mono);letter-spacing:.6px;text-transform:uppercase}
+.stage-heading h1{margin:5px 0 0;font-size:23px;line-height:1.15;letter-spacing:-.8px;font-weight:750}
+.site-load-strip{margin-left:auto;display:flex;align-items:stretch;gap:7px}
+.top-load{min-width:98px;padding:7px 9px;border-left:2px solid var(--line-strong);background:var(--surface-2)}
+.top-load span{display:block;color:var(--faint);font-size:8px;font-weight:700;letter-spacing:.7px;text-transform:uppercase}
+.top-load b{display:block;margin-top:3px;font:700 12px var(--mono)}
+.top-load small{display:block;margin-top:2px;color:var(--muted);font-size:8px}
+.top-load.over{border-left-color:var(--red)}
+.subbar{position:sticky;top:0;z-index:30;padding:9px 16px;background:color-mix(in srgb,var(--surface) 93%,transparent);border-top:1px solid var(--line);border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+.toolbar-primary,.toolbar-secondary{display:flex;align-items:center;gap:9px;min-width:0}
+.toolbar-secondary{margin-top:8px}
+.seg{display:flex;position:relative;gap:2px;padding:3px;background:var(--surface-3);border-radius:8px}
+.seg .pill{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:6px;background:var(--surface);box-shadow:var(--shadow-xs);pointer-events:none;transition:transform .28s var(--ease-out),width .28s var(--ease-out)}
+.seg button{position:relative;z-index:1;min-height:27px;padding:4px 11px;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-size:10px;font-weight:650;transition:color .18s}
+.seg button:hover{color:var(--ink)}
+.seg button.on{color:var(--green)}
+.search-box{height:31px;min-width:180px;max-width:245px;flex:1;display:flex;align-items:center;gap:7px;padding:0 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--faint);transition:border-color .16s,box-shadow .16s}
+.search-box:focus-within{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.search-box input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font-size:10px}
+.search-box svg{width:14px;height:14px}
+.bad-filter{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:10px;white-space:nowrap;cursor:pointer}
+input[type="checkbox"]{accent-color:var(--green);cursor:pointer}
+.period{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:10px;white-space:nowrap}
+.period>svg{width:14px;height:14px}
+.period input[type="date"],.log-ctl input[type="date"]{height:30px;padding:0 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--ink);font-size:10px;color-scheme:light}
+html[data-theme="dark"] .period input[type="date"],html[data-theme="dark"] .log-ctl input[type="date"]{color-scheme:dark}
+.period-dash{color:var(--faint)}
+.period .clear{width:23px;height:23px;padding:0;border:0;border-radius:5px;background:transparent;color:var(--faint);cursor:pointer;font-size:16px;line-height:1}
+.period .clear:hover{background:var(--red-light);color:var(--red)}
+.toolbar-note{color:var(--faint);font-size:9px}
+.kpi-scroll{padding:10px 16px 0;overflow-x:auto;scrollbar-width:none}
+.kpi-scroll::-webkit-scrollbar{display:none}
+.kpis{display:flex;gap:7px;min-width:max-content}
+.kpi{min-width:91px;padding:8px 10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow-xs);contain:layout style}
+.kpi b{display:block;font:700 12px var(--mono);white-space:nowrap}
+.kpi span{display:block;margin-top:3px;color:var(--faint);font-size:8px;letter-spacing:.45px;text-transform:uppercase;white-space:nowrap}
+.kpi.warn{background:var(--amber-light);border-color:color-mix(in srgb,var(--amber) 35%,var(--line))}
+.kpi.bad{background:var(--red-light);border-color:color-mix(in srgb,var(--red) 35%,var(--line))}
+.kpi.bad b{color:var(--red)}
+.view-container{padding:12px 14px 24px}
+
+/* 05. Board --------------------------------------------------------------- */
+.layout{display:block;min-height:280px}
+main#board{width:100%;overflow-x:auto;padding:1px 1px 18px;scrollbar-gutter:stable}
+.days{display:flex;align-items:flex-start;gap:10px;min-width:max-content}
+.day-col{width:252px;flex:0 0 252px;position:relative;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-xs);content-visibility:auto;contain-intrinsic-size:252px 360px;transition:border-color .18s,box-shadow .18s,background .18s}
+.day-col:hover{border-color:var(--line-strong);box-shadow:var(--shadow-sm)}
+.day-head{padding:11px 12px 10px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.day-head .dt{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;letter-spacing:-.2px}
+.day-head .dt small{padding:2px 6px;border-radius:4px;background:var(--surface-3);color:var(--muted);font:8px var(--mono);text-transform:uppercase}
+.today-chip{padding:2px 6px;border-radius:4px;background:var(--green);color:#fff;font:8px var(--font);font-weight:700;text-transform:uppercase}
+html[data-theme="dark"] .today-chip{color:#102219}
+.loadbar{height:3px;margin:9px 0 7px;overflow:hidden;border-radius:4px;background:var(--surface-3)}
+.loadbar i{display:block;height:100%;border-radius:4px;background:var(--green);transition:width .42s var(--ease-out)}
+.day-head .di{color:var(--muted);font-size:9px;font-variant-numeric:tabular-nums}
+.day-head .di b{color:var(--red)}
+.day-body{min-height:145px;padding:8px;transition:background .18s}
+.day-col.today{border-color:var(--green-bright);box-shadow:0 0 0 1px var(--green-bright),var(--shadow-sm)}
+.day-col.today .day-head{background:var(--green-soft)}
+.day-col.over .day-head{background:var(--red-light)}
+.day-col.over .loadbar i{background:var(--red)}
+.day-col.nodate{width:220px;flex-basis:220px;border-style:dashed}
+.day-col.dragover{border-color:var(--green);background:var(--green-soft);box-shadow:0 0 0 3px var(--green-soft)}
+.day-col.dragover .day-body{background:var(--green-soft)}
+.day-empty{margin:3px;padding:22px 5px;border:1px dashed var(--line);border-radius:8px;color:var(--faint);font-size:9px;text-align:center}
+.ring{position:absolute;inset:-1px;z-index:2;padding:1px;border-radius:inherit;pointer-events:none;overflow:hidden;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+.ring::before{content:"";position:absolute;inset:-180%;background:conic-gradient(transparent 0 70%,var(--green-bright) 82%,transparent 94%);animation:ring-turn 10s linear infinite;will-change:transform}
+@keyframes ring-turn{to{transform:rotate(360deg)}}
+.card{position:relative;margin-bottom:7px;padding:9px 9px 9px 12px;overflow:hidden;border:1px solid var(--line);border-radius:8px;background:var(--surface);box-shadow:var(--shadow-xs);cursor:grab;contain:layout style;transition:transform .18s var(--ease),border-color .18s,box-shadow .18s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green-bright)}
+.card.st-amber::before{background:var(--amber)}
+.card.st-red::before{background:var(--red)}
+.card:hover{z-index:2;transform:translateY(-2px);border-color:var(--green-bright);box-shadow:var(--shadow-sm)}
+.card:active{cursor:grabbing;transform:scale(.985)}
+.card-top{display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:750}
+.card-min{display:flex;align-items:center;gap:3px;color:var(--muted);font:9px var(--mono);white-space:nowrap}
+.card-prod{margin:5px 0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-soft);font-size:10px}
+.card-meta{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:9px}
+.badges{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.badge{padding:2px 5px;border:1px solid var(--line);border-radius:4px;background:var(--surface-2);color:var(--muted);font-size:8px;font-weight:600}
+.badge.split{background:var(--blue-light);color:var(--blue);border-color:transparent}
+.badge.tdg{background:var(--red-light);color:var(--red);border-color:transparent}
+.mini{padding:2px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);color:var(--muted);cursor:pointer;font:9px var(--font);transition:color .15s,background .15s,border-color .15s}
+.mini:hover{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+
+/* 06. Lists, shifts and multi-site board --------------------------------- */
+.l-day,.shift-day,.lane{margin-bottom:11px;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-xs);content-visibility:auto;contain-intrinsic-size:auto 230px;transition:border-color .18s,box-shadow .18s}
+.l-day.dragover{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.l-head{min-height:40px;padding:9px 12px;display:flex;align-items:center;gap:18px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:11px;font-weight:750}
+.l-head .lh-sub{color:var(--muted);font-size:9px;font-weight:500}
+.l-head .lh-sub:last-child{margin-left:auto;font-family:var(--mono)}
+.l-head.over{background:var(--red-light)}
+table.l-table{width:100%;border-collapse:collapse;font-size:10px}
+table.l-table th{padding:7px 10px;border-bottom:1px solid var(--line);background:var(--surface-2);color:var(--faint);text-align:left;font-size:8px;font-weight:750;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+table.l-table td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.l-table tr:last-child td{border-bottom:0}
+table.l-table tbody tr{transition:background .12s}
+table.l-table tbody tr:hover td{background:var(--surface-2)}
+tr[draggable="true"]{cursor:grab}
+tr.l-row-red td{background:var(--red-light)}
+tr.l-row-amber td{background:var(--amber-light)}
+td.num{white-space:nowrap;font-variant-numeric:tabular-nums}
+.l-prod{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shift-site{border-top:1px solid var(--line)}
+.ss-head{display:flex;align-items:center;gap:12px;padding:9px 12px;background:var(--surface-2);font-size:10px;font-weight:750}
+.ss-head .ss-load{margin-left:auto;color:var(--muted);font:9px var(--mono)}
+.ss-bar{width:100px;height:3px;overflow:hidden;border-radius:4px;background:var(--surface-3)}
+.ss-bar i{display:block;height:100%;background:var(--green)}
+.ss-bar i.over{background:var(--red)}
+.lane{contain:layout style}
+.lane-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.lane-head .ln-name{font-size:12px;font-weight:800}
+.ln-res{color:var(--muted);font-size:9px}
+.lane-head .ln-kpis{margin-left:auto;display:flex;gap:5px}
+.lane-head .ln-kpis .kpi{min-width:72px;padding:5px 8px}
+.lane-cells{display:flex;gap:4px;overflow-x:auto;padding:10px 12px 12px}
+.lcell{flex:0 0 45px;padding:5px 3px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);text-align:center;cursor:pointer;contain:layout style;transition:transform .15s,border-color .15s}
+.lcell:hover{transform:translateY(-2px);border-color:var(--green)}
+.lcell .lc-d{color:var(--faint);font:8px var(--mono)}
+.lcell .lc-p{margin-top:2px;font:700 10px var(--mono)}
+.lcell .lc-n{color:var(--muted);font-size:8px}
+.lcell.off{opacity:.35;cursor:default}
+.lcell.l1{background:var(--green-soft);border-color:color-mix(in srgb,var(--green) 25%,var(--line))}
+.lcell.l2{background:var(--amber-light);border-color:color-mix(in srgb,var(--amber) 25%,var(--line))}
+.lcell.l3{background:var(--red-light);border-color:color-mix(in srgb,var(--red) 35%,var(--line))}
+.lcell.l3 .lc-p{color:var(--red)}
+.lcell.today{box-shadow:0 0 0 1px var(--green)}
+.sub-board{margin-top:20px}
+.sb-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 2px 9px;font-size:12px;font-weight:800}
+.sb-title .sb-unpin{margin-left:auto}
+.bcols{display:flex;gap:9px;align-items:flex-start;overflow-x:auto;padding:2px 2px 8px}
+.bcol{flex:0 0 204px;position:relative;overflow:hidden;border:1px solid var(--line);border-radius:9px;background:var(--surface);content-visibility:auto;contain-intrinsic-size:204px 280px}
+.bcol.today{border-color:var(--green)}
+.bc-head{padding:8px 9px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:10px;font-weight:750}
+.bc-head.over{background:var(--red-light)}
+.bc-head .bc-pct{float:right;font-family:var(--mono)}
+.bc-head .bc-load{margin-top:3px;color:var(--muted);font:8px var(--mono)}
+.bc-body{padding:6px}
+.card.compact{cursor:default;padding:7px 7px 7px 10px}
+.card.compact:hover{transform:none}
+.card.compact .card-prod{font-size:9px}
+
+/* 07. Right dock, carousel and widgets ----------------------------------- */
+.control-dock{min-width:0;display:flex;flex-direction:column;background:var(--surface);border-left:1px solid var(--line);overflow:hidden;z-index:40}
+.dock-header{min-height:70px;padding:14px 11px 8px;display:grid;grid-template-columns:29px 1fr 29px;align-items:center;gap:8px}
+.dock-header h2{margin:4px 0 0;font-size:14px;letter-spacing:-.2px;text-align:center}
+.dock-header .eyebrow{text-align:center}
+.dock-arrow{width:29px;height:29px;padding:0;display:grid;place-items:center;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--muted);cursor:pointer;transition:background .16s,color .16s,transform .16s}
+.dock-arrow:hover{background:var(--green-soft);color:var(--green)}
+.dock-arrow:active{transform:scale(.92)}
+.dock-arrow:first-child svg{transform:rotate(180deg)}
+.dock-dots{height:20px;display:flex;align-items:center;justify-content:center;gap:5px}
+.dock-dot{width:5px;height:5px;padding:0;border:0;border-radius:6px;background:var(--line-strong);cursor:pointer;transition:width .25s var(--ease-out),background .2s}
+.dock-dot.on{width:17px;background:var(--green)}
+.dock-viewport{min-height:0;flex:1;overflow:hidden}
+.dock-track{height:100%;display:flex;align-items:flex-start;transform:translateX(0);transition:transform .38s var(--ease-out);will-change:auto}
+.dock-track.moving{will-change:transform}
+.dock-panel{width:100%;height:100%;flex:0 0 100%;padding:11px 15px 20px;overflow-y:auto;overscroll-behavior:contain}
+.panel-intro{margin:0 0 12px;color:var(--muted);font-size:10px;line-height:1.55}
+.panel-title{margin:8px 0 6px;font-size:16px;letter-spacing:-.3px}
+#dayPanel h3{margin:0 0 8px;color:var(--faint);font-size:9px;letter-spacing:.8px;text-transform:uppercase}
+#dayList{display:flex;flex-direction:column;gap:6px}
+.day-item{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);cursor:pointer;contain:layout style;transition:transform .17s var(--ease),border-color .17s,background .17s}
+.day-item:hover{transform:translateX(-2px);border-color:var(--green-bright);background:var(--green-soft)}
+.day-item.sel{border-color:var(--green);background:var(--green-soft)}
+.day-item .d1{display:flex;justify-content:space-between;font-size:10px;font-weight:750}
+.day-item .d1 span:last-child{font-family:var(--mono)}
+.day-item .d2{display:flex;justify-content:space-between;gap:5px;margin-top:3px;color:var(--muted);font-size:8px}
+.day-item.empty{opacity:.6}
+.mini-bar{height:3px;margin-top:7px;overflow:hidden;border-radius:3px;background:var(--surface-3)}
+.mini-bar i{display:block;height:100%;background:var(--green);transition:width .35s var(--ease-out)}
+.mini-bar i.over{background:var(--red)}
+.dock-footer{min-height:35px;padding:9px 14px;display:flex;justify-content:space-between;border-top:1px solid var(--line);color:var(--faint);font-size:8px}
+.keyboard-hint{font-family:var(--mono)}
+.inline-control{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;color:var(--muted);font-size:10px}
+select{appearance:none;-webkit-appearance:none;padding:7px 27px 7px 9px;border:1px solid var(--line);border-radius:7px;background-color:var(--surface-2);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23727d76' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;color:var(--ink);cursor:pointer;font-size:10px}
+textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);resize:vertical;font:11px/1.55 var(--font);transition:border-color .16s,box-shadow .16s}
+textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft);outline:0}
+.switch-row{display:flex!important;align-items:flex-start;gap:7px;margin:10px 0;color:var(--muted);font-size:10px!important;font-weight:500!important;letter-spacing:0!important;text-transform:none!important;cursor:pointer}
+.switch-row input{margin:2px 0 0;flex:0 0 auto}
+.load-hero{margin-bottom:12px;padding:13px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.load-hero-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.load-hero-head b{font-size:11px}
+.load-hero-head strong{font:700 23px var(--mono);letter-spacing:-1px}
+.load-hero.over strong{color:var(--red)}
+.load-numbers{margin:7px 0 9px;color:var(--muted);font:9px var(--mono)}
+.load-track{height:5px;overflow:hidden;border-radius:5px;background:var(--surface-3)}
+.load-track i{display:block;height:100%;border-radius:5px;background:var(--green);transition:width .5s var(--ease-out)}
+.load-track i.over{background:var(--red)}
+.load-hero small{display:block;margin-top:7px;color:var(--faint);font-size:8px}
+.load-site-list{display:flex;flex-direction:column;gap:6px}
+.load-row{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;transition:border-color .16s,transform .16s}
+.load-row:hover{transform:translateX(-2px);border-color:var(--green)}
+.load-row-head{display:flex;align-items:center;justify-content:space-between;gap:7px;font-size:10px}
+.load-row-head b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.load-row-head span{font:700 10px var(--mono)}
+.load-row .load-track{margin:7px 0 5px;height:3px}
+.load-row small{color:var(--muted);font:8px var(--mono)}
+.kimi-mark{width:35px;height:35px;display:grid;place-items:center;border-radius:10px;background:var(--header);color:var(--mint);font:700 18px var(--mono)}
+.connection-card{margin:10px 0;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--muted);font-size:9px;line-height:1.5}
+.connection-card.ok{border-color:color-mix(in srgb,var(--green) 35%,var(--line));color:var(--green)}
+.connection-card.pending{border-color:var(--green);background:var(--green-soft)}
+.connection-card.error{border-color:var(--red);background:var(--red-light);color:var(--red)}
+.how-it-works{margin-top:13px;border-top:1px solid var(--line);padding-top:10px;color:var(--muted);font-size:9px}
+.how-it-works summary{cursor:pointer;color:var(--ink-soft);font-weight:700}
+.how-it-works p{line-height:1.6}
+.kimi-result-card{margin-top:10px;padding:10px;border:1px solid var(--green);border-radius:8px;background:var(--green-soft);font-size:9px}
+.kimi-result-card b{display:block;margin-bottom:4px;color:var(--green)}
+.widget-picker{display:grid;grid-template-columns:1fr 34px;gap:6px;margin-bottom:12px}
+.widget-picker select{width:100%;min-width:0}
+.widget-picker .btn{padding:0}
+.custom-widgets{display:flex;flex-direction:column;gap:8px}
+.widget-card{overflow:hidden;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);animation:widget-in .28s var(--ease-out)}
+.widget-head{display:flex;align-items:center;gap:4px;padding:7px 9px;border-bottom:1px solid var(--line)}
+.widget-head b{margin-right:auto;font-size:9px;letter-spacing:.3px;text-transform:uppercase}
+.widget-head button{width:21px;height:21px;padding:0;border:0;border-radius:4px;background:transparent;color:var(--faint);cursor:pointer}
+.widget-head button:hover{background:var(--surface-3);color:var(--ink)}
+.widget-body{padding:10px;font-size:10px}
+.widget-big{display:block;font:700 20px var(--mono);letter-spacing:-.6px}
+.widget-caption{display:block;margin-top:3px;color:var(--muted);font-size:9px}
+.widget-list{margin:0;padding:0;list-style:none}
+.widget-list li{padding:5px 0;border-bottom:1px solid var(--line);color:var(--muted);font-size:9px}
+.widget-list li:last-child{border-bottom:0}
+.widget-list b{color:var(--ink-soft)}
+.widget-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.widget-actions .btn{padding:5px;font-size:9px}
+@keyframes widget-in{from{opacity:0;transform:translateY(7px) scale(.98)}to{opacity:1;transform:none}}
+
+/* 08. Dialogs, forms and reports ----------------------------------------- */
+.modal-wrap{position:fixed;inset:0;z-index:100;padding:18px;display:flex;align-items:center;justify-content:center;background:rgba(8,15,11,0);opacity:0;visibility:hidden;transition:opacity .22s,background .22s,visibility 0s linear .28s}
+.modal-wrap.open{opacity:1;visibility:visible;background:rgba(8,15,11,.55);backdrop-filter:blur(5px);transition:opacity .22s,background .22s,visibility 0s}
+.modal{width:620px;max-width:96vw;max-height:90dvh;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:15px;background:var(--surface);box-shadow:var(--shadow-lg);opacity:0;transform:translateY(14px) scale(.98);transition:transform .32s var(--ease-out),opacity .22s}
+.modal-wrap.open .modal{opacity:1;transform:none}
+.modal-wide{width:760px}.modal-report{width:920px}
+.modal h2{margin:0;padding:17px 20px 14px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:16px;letter-spacing:-.3px}
+.modal .mbody{padding:17px 20px;overflow-y:auto}
+.modal .mfoot{padding:12px 20px;display:flex;justify-content:flex-end;gap:7px;border-top:1px solid var(--line);background:var(--surface-2)}
+.fld{margin-bottom:13px}
+.fld>label{display:block;margin-bottom:5px;color:var(--muted);font-size:9px;font-weight:750;letter-spacing:.55px;text-transform:uppercase}
+.fld input[type="text"],.fld input[type="url"],.fld input[type="number"],.fld input[type="file"]{width:100%;height:36px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--ink);font-size:11px}
+.fld select{width:100%}
+.fld input:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft);outline:0}
+.resource-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.days-check{display:flex;flex-wrap:wrap;gap:10px}
+.days-check label{display:flex;align-items:center;gap:4px;color:var(--ink-soft);font-size:10px;text-transform:none;letter-spacing:0}
+.hint{color:var(--muted);font-size:10px;line-height:1.55}
+.note{margin-bottom:10px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--amber) 30%,var(--line));border-radius:8px;background:var(--amber-light);color:var(--ink-soft);font-size:10px}
+table.chg,table.log-table{width:100%;border-collapse:collapse;font-size:10px}
+table.chg th,table.log-table th{padding:7px 9px;border-bottom:1px solid var(--line);color:var(--faint);text-align:left;font-size:8px;text-transform:uppercase;letter-spacing:.45px}
+table.chg td,table.log-table td{padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+.chg .old{color:var(--red);text-decoration:line-through}.chg .new{color:var(--green);font-weight:750}
+.log-ctl{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:12px;color:var(--muted);font-size:10px}
+.log-table .lt-ts{color:var(--muted);font-family:var(--mono);white-space:nowrap}.log-table .lt-act{font-weight:700;white-space:nowrap}
+.profile-current{margin-bottom:15px;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--green-soft)}
+.profile-current b{display:block;color:var(--green);font-size:12px}.profile-current span{color:var(--muted);font-size:10px}
+.profile-create{display:grid;grid-template-columns:1.2fr 1.3fr auto;align-items:end;gap:8px;padding-bottom:13px;border-bottom:1px solid var(--line)}
+.profiles-list{display:flex;flex-direction:column;gap:6px;margin:13px 0}
+.profile-item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
+.profile-item b{display:block;font-size:11px}.profile-item small{display:block;margin-top:2px;color:var(--muted);font-size:9px}
+.profile-role{display:inline-block;margin-left:5px;padding:1px 5px;border-radius:4px;background:var(--surface-3);color:var(--muted);font-size:8px;font-weight:600}
+.security-note{padding:11px 12px;border-left:3px solid var(--amber);background:var(--amber-light);color:var(--muted);font-size:9px;line-height:1.6}.security-note b{color:var(--ink-soft)}
+#toast{position:fixed;left:50%;bottom:24px;z-index:120;max-width:min(600px,90vw);padding:10px 16px;border:1px solid #3c4e42;border-radius:8px;background:#17211d;color:#eef5f0;box-shadow:var(--shadow-md);display:none;font-size:11px;transform:translateX(-50%);animation:toast-in .25s var(--ease-out)}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+body[data-role="viewer"] .rail-add,body[data-role="viewer"] .danger-text,body[data-role="viewer"] #btnShareCfg{display:none}
+body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cursor:default}
+
+/* 09. Motion -------------------------------------------------------------- */
+#boardLayout,#listView,#shiftsView,#multiView{animation:view-in .26s var(--ease-out)}
+@keyframes view-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes col-in{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+.enter-anim .days>.day-col,.enter-anim>.l-day,.enter-anim>.shift-day,.enter-anim>.lane{will-change:transform,opacity;animation:col-in .36s var(--ease-out) both;animation-delay:calc(min(var(--i,0),12)*25ms)}
+.day-col.flash{animation:day-flash 1s var(--ease)}
+@keyframes day-flash{0%,45%{box-shadow:0 0 0 3px var(--green-bright)}100%{box-shadow:var(--shadow-xs)}}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.32s;animation-timing-function:var(--ease)}
+
+/* 10. Responsive ---------------------------------------------------------- */
+@media(max-width:1450px){
+  .workspace-grid{grid-template-columns:196px minmax(0,1fr) 286px}
+  .brand-caption{display:none}
+  .header-context{display:none}
+  .icon-action{padding:0 7px}.icon-action span{display:none}.optional-action{display:none}
+  .stage-heading{padding-left:16px;padding-right:16px}
+  .top-load{min-width:86px}
+}
+@media(max-width:1180px){
+  .workspace-grid{grid-template-columns:196px minmax(0,1fr)}
+  .control-dock{position:fixed;top:74px;right:10px;bottom:10px;width:310px;border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow-lg);transform:translateX(calc(100% + 24px));opacity:0;visibility:hidden;transition:transform .35s var(--ease-out),opacity .22s,visibility 0s linear .35s}
+  body.dock-open .control-dock{transform:none;opacity:1;visibility:visible;transition:transform .35s var(--ease-out),opacity .22s,visibility 0s}
+  .dock-toggle{display:inline-flex}
+  .stage-heading h1{font-size:21px}
+}
+@media(max-width:800px){
+  body{overflow:auto}
+  .app-header{height:58px;padding:0 10px;gap:5px;position:sticky;top:0}
+  .brand-name{font-size:14px}.brand-mark{width:25px;height:25px}
+  .header-actions{margin-left:auto}.header-actions .spacer,.header-separator{display:none}
+  .profile-chip{padding-right:4px}.profile-chip>span:last-child{display:none}
+  #themeLabel{display:none}
+  .workspace-grid{height:auto;min-height:calc(100dvh - 58px);display:block}
+  .site-rail{padding:12px;display:grid;grid-template-columns:1fr auto;gap:8px;border-right:0;border-bottom:1px solid var(--line);overflow:visible}
+  .rail-heading,.resource-card,.rail-bottom{display:none}
+  .cselect{grid-column:1}.rail-add{grid-column:2;padding:0 10px}
+  .site-rail-list{grid-column:1/-1;grid-row:2;flex-direction:row;overflow-x:auto;padding-bottom:2px}
+  .site-rail-item{min-width:155px}
+  .pin-button{grid-column:1/-1;grid-row:3;min-height:31px}
+  .main-stage{overflow:visible}
+  .stage-heading{min-height:80px;padding:14px 12px;align-items:flex-start;flex-wrap:wrap}
+  .stage-heading h1{font-size:20px}
+  .site-load-strip{width:100%;margin:0}
+  .top-load{flex:1;min-width:0}
+  .subbar{top:58px;padding:8px 10px}
+  .toolbar-primary{flex-wrap:wrap}.toolbar-primary .spacer{display:none}
+  .seg{width:100%;overflow-x:auto}.seg button{flex:1;padding:4px 7px;white-space:nowrap}
+  .search-box{max-width:none;min-width:150px}
+  .toolbar-secondary{flex-wrap:wrap}.toolbar-note{display:none}
+  .kpi-scroll{padding-left:10px;padding-right:10px}
+  .view-container{padding:10px 8px 22px}
+  .day-col{width:246px;flex-basis:246px}
+  .l-head{align-items:flex-start;flex-wrap:wrap;gap:4px 10px}.l-head .lh-sub:last-child{margin-left:0}
+  table.l-table{display:block;overflow-x:auto;white-space:nowrap}
+  .profile-create{grid-template-columns:1fr 1fr}.profile-create .btn{grid-column:1/-1}
+  .control-dock{top:68px;right:8px;bottom:8px;width:min(330px,calc(100vw - 16px))}
+}
+@media(max-width:480px){
+  .brand{gap:6px}.brand-name{letter-spacing:1.5px}
+  #btnRefresh{display:none}
+  .period{width:100%;flex-wrap:wrap}.period input{flex:1;min-width:112px}
+  .resource-form-grid{grid-template-columns:1fr}
+  .modal-wrap{padding:8px}.modal{max-width:100%;max-height:94dvh}
+  .profile-create{grid-template-columns:1fr}.profile-create .btn{grid-column:auto}
+  .profile-item{grid-template-columns:1fr auto}.profile-item .profile-use{grid-column:1/-1}
+}
+@media(pointer:coarse){.card:hover,.site-rail-item:hover,.load-row:hover,.day-item:hover{transform:none}.btn,.icon-action,.mini{min-height:34px}}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .ring{display:none}
+}
 </style>
 </head>
 <body>
+<svg class="svg-defs" aria-hidden="true">
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7"/></symbol>
+  <symbol id="i-plan" viewBox="0 0 24 24"><path d="M4 5h10M4 12h16M4 19h10M18 3v4M16 5h4M18 15v6M15 18h6"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 19h16"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1"/></symbol>
+  <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="m9 3 6 6M8 4l8 8-3 1-4 6-1-1 4-6-3-3zM14 14l6 6"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
+</svg>
 
-<div class="topbar">
-<header>
-  <div class="logo">📋 Планировщик участков</div>
-  <div class="cselect" id="siteCSelect">
-    <button type="button" class="cs-btn" id="csBtn" title="Выбрать участок" aria-haspopup="listbox"><span id="csLabel">Участок</span><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-  </div>
-  <select id="siteSelect" title="Участок" class="sr-only" tabindex="-1" aria-hidden="true"></select>
-  <button class="ghost" id="btnAddSite" title="Добавить участок">＋ Участок</button>
-  <button class="ghost" id="btnRefresh" title="Обновить активный участок из Google Sheets">⟳ Обновить</button>
-  <button class="ghost" id="btnExport" title="Скачать CSV с текущими датами">⤓ CSV</button>
-  <button class="ghost" id="btnAutoplan" title="Автоматически распланировать участок">⚙ Автоплан</button>
-  <button class="ghost" id="btnLog" title="Журнал изменений и отчёт за период">📜 Журнал</button>
-  <button class="ghost" id="btnShare" title="Совместный доступ: общие правки всех пользователей (через репозиторий GitHub)">🔗 Совместно</button>
-  <button class="ghost" id="btnShareCfg" title="Токен GitHub и репозиторий совместного режима">⚙</button>
-  <span id="syncStatus" title="Состояние синхронизации с Google Sheets"></span>
+<div class="app-shell">
+<header class="app-header">
+  <a class="brand" href="./" aria-label="ПОТОК — на главную">
+    <span class="brand-mark"><i></i><i></i><i></i></span>
+    <span class="brand-name">ПОТОК</span>
+    <span class="brand-caption">производственный контур</span>
+  </a>
+  <div class="header-context"><span class="live-dot"></span><span id="headerDate">Планирование</span></div>
   <div class="spacer"></div>
-  <button class="ghost" id="btnTheme" title="Переключить тёмную / светлую тему">🌙</button>
-  <button class="danger" id="btnDelSite" title="Удалить активный участок">✕</button>
+  <nav class="header-actions" aria-label="Действия планировщика">
+    <button class="icon-action" id="btnRefresh" title="Обновить из Google Sheets"><svg><use href="#i-refresh"/></svg><span>Обновить</span></button>
+    <button class="icon-action" id="btnAutoplan" title="Открыть локальный автоплан"><svg><use href="#i-plan"/></svg><span>Автоплан</span></button>
+    <button class="icon-action optional-action" id="btnExport" title="Скачать CSV"><svg><use href="#i-download"/></svg><span>CSV</span></button>
+    <button class="icon-action optional-action" id="btnLog" title="Журнал и отчёт за период"><svg><use href="#i-log"/></svg><span>Журнал</span></button>
+    <button class="icon-action optional-action" id="btnShare" title="Совместные правки через GitHub"><svg><use href="#i-share"/></svg><span>Совместно</span></button>
+    <button class="icon-action compact-action" id="btnShareCfg" title="Настройки совместного доступа"><svg><use href="#i-settings"/></svg></button>
+  </nav>
+  <span class="header-separator"></span>
+  <button class="profile-chip" id="btnProfiles" title="Профили и права"><span class="profile-avatar" id="profileAvatar">В</span><span id="profileName">Владелец</span></button>
+  <button class="theme-toggle" id="btnTheme" title="Переключить тему" aria-label="Переключить светлую и тёмную тему"><span class="theme-track"><i></i></span><span id="themeLabel">Светлая</span></button>
+  <button class="icon-action compact-action dock-toggle" id="btnDock" title="Открыть панели"><svg><use href="#i-panel"/></svg></button>
 </header>
 
-<div class="subbar">
-  <div class="kpis" id="kpis"></div>
-  <div class="spacer"></div>
-  <label title="Ресурс участка: сборщики × норма на человека; для УПКП — общая норма бригады в секциях">Ресурс: <input type="number" id="workersInput" min="1" step="1" style="width:52px"> <span id="resMul">сбор. × <input type="number" id="perWorkerInput" min="1" step="15" style="width:70px"> мин/чел =</span> <input type="number" id="fondTotalInput" min="1" step="10" style="width:84px"> <span id="fondUnit"></span></label>
-  <input type="search" id="searchInput" placeholder="Поиск: заказ, изделие, контрагент…" style="width:230px">
-  <label><input type="checkbox" id="onlyBad"> только проблемные</label>
-  <button class="btn" id="btnPinBoard" title="Вывести этот участок на общую доску — его дни и загрузка будут видны в видах «Доска», «Список дней» и «Все участки» у всех остальных участков">📌 На общую доску</button>
-  <div class="period" title="Период отображения. По умолчанию показываются даты с сегодняшнего дня; чтобы открыть более ранние сменные — выберите дату «с»">
-    Период: <input type="date" id="rangeFrom" title="Начало периода (пусто — с сегодняшнего дня)"> — <input type="date" id="rangeTo" title="Конец периода (пусто — все даты с данными)">
-    <button class="clear" id="rangeClear" title="Сбросить период">✕</button>
-  </div>
-  <button class="btn" id="btnToday">Сегодня</button>
-  <div class="seg">
-    <span class="pill" id="segPill"></span>
-    <button id="viewBoard" class="on">Доска</button>
-    <button id="viewList">Список дней</button>
-    <button id="viewShifts">Сменные</button>
-    <button id="viewMulti">Все участки</button>
-  </div>
-</div>
-</div>
+<div class="workspace-grid">
+  <aside class="site-rail">
+    <div class="rail-heading"><span>Участки</span><span class="count-badge" id="siteCount">4</span></div>
+    <div class="cselect" id="siteCSelect">
+      <button type="button" class="cs-btn" id="csBtn" title="Выбрать участок" aria-haspopup="listbox"><span id="csLabel">Участок</span><svg width="12" height="8" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    </div>
+    <select id="siteSelect" title="Участок" class="sr-only" tabindex="-1" aria-hidden="true"></select>
+    <div id="siteRailList" class="site-rail-list"></div>
+    <button class="rail-add" id="btnAddSite"><svg><use href="#i-plus"/></svg>Добавить участок</button>
 
-<div class="layout" id="boardLayout">
-  <aside id="dayPanel">
-    <h3>Дни загрузки</h3>
-    <div id="dayList"></div>
+    <div class="rail-section resource-card">
+      <div class="section-label">Ресурс активного участка</div>
+      <div class="resource-equation">
+        <label><span>Люди</span><input type="number" id="workersInput" min="1" step="1"></label>
+        <span class="equation-sign" id="resMul">×</span>
+        <label id="perWorkerWrap"><span>Норма</span><input type="number" id="perWorkerInput" min="1" step="15"></label>
+        <span class="equation-sign">=</span>
+        <label><span>Фонд</span><input type="number" id="fondTotalInput" min="1" step="10"></label>
+      </div>
+      <div class="resource-unit" id="fondUnit">мин/день</div>
+    </div>
+    <button class="btn pin-button" id="btnPinBoard"><svg><use href="#i-pin"/></svg><span>На общую доску</span></button>
+    <div class="rail-bottom">
+      <div id="syncStatus" class="sync-status" title="Состояние синхронизации"></div>
+      <button class="text-button danger-text" id="btnDelSite">Удалить участок</button>
+    </div>
   </aside>
-  <main id="board"><div class="days" id="daysRow"></div></main>
+
+  <main class="main-stage">
+    <section class="stage-heading">
+      <div><div class="eyebrow">Рабочее пространство / <span id="stageSiteName">участок</span></div><h1>План производства</h1></div>
+      <div id="siteLoadStrip" class="site-load-strip"></div>
+    </section>
+
+    <div class="subbar">
+      <div class="toolbar-primary">
+        <div class="seg" aria-label="Формат отображения">
+          <span class="pill" id="segPill"></span>
+          <button id="viewBoard" class="on">Доска</button>
+          <button id="viewList">Список дней</button>
+          <button id="viewShifts">Сменные</button>
+          <button id="viewMulti">Все участки</button>
+        </div>
+        <div class="spacer"></div>
+        <label class="search-box"><svg><use href="#i-search"/></svg><input type="search" id="searchInput" placeholder="Заказ, изделие, контрагент…"></label>
+        <label class="bad-filter"><input type="checkbox" id="onlyBad"><span>Проблемные</span></label>
+      </div>
+      <div class="toolbar-secondary">
+        <div class="period" title="Более ранние сменные открываются выбором даты">
+          <svg><use href="#i-calendar"/></svg><span>Период</span>
+          <input type="date" id="rangeFrom" title="Начало периода"><span class="period-dash">—</span><input type="date" id="rangeTo" title="Конец периода">
+          <button class="clear" id="rangeClear" title="Сбросить период">×</button>
+        </div>
+        <button class="btn" id="btnToday">Сегодня</button>
+        <div class="spacer"></div>
+        <span class="toolbar-note">Прошлые даты скрыты до выбора периода</span>
+      </div>
+    </div>
+
+    <div class="kpi-scroll"><div class="kpis" id="kpis"></div></div>
+
+    <div class="view-container">
+      <div class="layout" id="boardLayout">
+        <main id="board"><div class="days" id="daysRow"></div></main>
+      </div>
+      <div id="listView" hidden></div>
+      <div id="shiftsView" hidden></div>
+      <div id="multiView" hidden></div>
+    </div>
+  </main>
+
+  <aside class="control-dock" id="controlDock" aria-label="Панели управления">
+    <div class="dock-header">
+      <button class="dock-arrow" id="dockPrev" title="Предыдущая панель" aria-label="Предыдущая панель"><svg><use href="#i-chevron"/></svg></button>
+      <div><div class="eyebrow">Панель <span id="dockIndex">01</span> / 04</div><h2 id="dockTitle">Дни загрузки</h2></div>
+      <button class="dock-arrow" id="dockNext" title="Следующая панель" aria-label="Следующая панель"><svg><use href="#i-chevron"/></svg></button>
+    </div>
+    <div class="dock-dots" id="dockDots" aria-label="Выбор панели"></div>
+    <div class="dock-viewport">
+      <div class="dock-track" id="dockTrack">
+        <section class="dock-panel" data-panel="0" aria-label="Дни загрузки">
+          <aside id="dayPanel"><div class="panel-intro">Быстрый переход к смене. Нажатие прокручивает доску к нужной дате.</div><h3>Дни загрузки</h3><div id="dayList"></div></aside>
+        </section>
+        <section class="dock-panel" data-panel="1" aria-label="Загрузка участков">
+          <div class="panel-intro">Фактическая норма и ресурс считаются отдельно для каждого участка.</div>
+          <div class="inline-control"><label for="loadPeriod">Период расчёта</label><select id="loadPeriod"><option value="day">День</option><option value="week">Неделя</option><option value="month">Месяц</option></select></div>
+          <div id="loadWidgets"></div>
+        </section>
+        <section class="dock-panel" data-panel="2" aria-label="Автоплан с Kimi">
+          <div class="kimi-mark">K</div>
+          <h3 class="panel-title">Автоплан с Kimi</h3>
+          <p class="panel-intro">Опишите ограничения своими словами. Запрос отправляется только по кнопке — без API-ключа и фоновых проверок.</p>
+          <textarea id="kimiNotes" rows="6" placeholder="Например: сначала заказ 2615. Установку для Састэнт не начинать раньше 22.10. Не разбрасывать мелкие партии по свободным дням."></textarea>
+          <label class="switch-row"><input type="checkbox" id="kimiStrict" checked><span>Договоры строго последовательно</span></label>
+          <button class="btn primary wide" id="btnKimiRequest">Подготовить запрос для Kimi</button>
+          <div class="connection-card" id="kimiStatus">Проверяем канал Kimi Work…</div>
+          <div id="kimiResult"></div>
+          <details class="how-it-works"><summary>Как проходит запрос</summary><p>Оставьте эту страницу открытой во встроенном браузере. В активном чате Kimi агент должен ожидать запрос через инструмент страницы. Он получит операции и пожелания, проверит план и вернёт его сюда.</p><p>WebMCP не может разбудить уже завершённый диалог. Закрытие или обновление страницы отменяет ожидание.</p></details>
+        </section>
+        <section class="dock-panel" data-panel="3" aria-label="Мои виджеты">
+          <div class="panel-intro">Соберите собственную сводку. Порядок и состав сохраняются в этом браузере.</div>
+          <div class="widget-picker"><select id="widgetPicker" aria-label="Тип виджета"></select><button class="btn" id="btnAddWidget" title="Добавить виджет"><svg><use href="#i-plus"/></svg></button></div>
+          <div id="customWidgets" class="custom-widgets"></div>
+        </section>
+      </div>
+    </div>
+    <div class="dock-footer"><span id="dockFooterName">Навигация по сменам</span><span class="keyboard-hint">← →</span></div>
+  </aside>
 </div>
-<div id="listView" hidden></div>
-<div id="shiftsView" hidden></div>
-<div id="multiView" hidden></div>
+</div>
 
 <!-- modal: add site -->
 <div class="modal-wrap" id="siteModal">
@@ -509,78 +684,46 @@
     <h2>Новый участок</h2>
     <div class="mbody">
       <div class="fld"><label>Название участка</label><input type="text" id="nsName" placeholder="например: УПКП ОП-6В"></div>
-      <div class="fld"><label>Источник данных — Google Sheets (ссылка на таблицу или лист)</label>
-        <input type="url" id="nsUrl" placeholder="https://docs.google.com/spreadsheets/d/…/edit?gid=…"></div>
-      <div class="fld"><label>…или CSV-файл (Файл → Скачать → CSV из Google Sheets)</label>
-        <input type="file" id="nsFile" accept=".csv,text/csv"></div>
-      <div class="fld"><label>Ресурс участка: сборщиков</label><input type="number" id="nsWorkers" value="4" min="1" step="1"></div>
-      <div class="fld"><label>Норма в день (мин; для УПКП — секций)</label><input type="number" id="nsPerWorker" value="450" min="1" step="15"></div>
-      <div class="fld"><label><input type="checkbox" id="nsTeam"> норма указана на бригаду целиком (не на человека), как у УПКП</label></div>
-      <div class="fld"><label>Рабочие дни</label>
-        <div class="days-check" id="nsDays"></div>
-      </div>
-      <div class="hint">Таблица должна содержать колонки: «Заказ покупателя», «Продукция», «Количество», «Дата операции», «всего» (минуты), «Заказ на производство», «ТДГ». Для автообновления откройте доступ к таблице «по ссылке» (просмотр).</div>
+      <div class="fld"><label>Источник данных — Google Sheets</label><input type="url" id="nsUrl" placeholder="https://docs.google.com/spreadsheets/d/…/edit?gid=…"></div>
+      <div class="fld"><label>…или CSV-файл</label><input type="file" id="nsFile" accept=".csv,text/csv"></div>
+      <div class="resource-form-grid"><div class="fld"><label>Сборщиков</label><input type="number" id="nsWorkers" value="4" min="1" step="1"></div><div class="fld"><label>Норма в день</label><input type="number" id="nsPerWorker" value="450" min="1" step="15"></div></div>
+      <div class="fld"><label><input type="checkbox" id="nsTeam"> норма указана на бригаду целиком</label></div>
+      <div class="fld"><label>Рабочие дни</label><div class="days-check" id="nsDays"></div></div>
+      <div class="hint">Нужны колонки «Заказ покупателя», «Продукция», «Количество», «Дата операции», «всего», «Заказ на производство», «ТДГ». Для автообновления откройте доступ «по ссылке».</div>
     </div>
-    <div class="mfoot">
-      <button class="btn" id="nsCancel">Отмена</button>
-      <button class="btn primary" id="nsCreate">Создать участок</button>
-    </div>
+    <div class="mfoot"><button class="btn" id="nsCancel">Отмена</button><button class="btn primary" id="nsCreate">Создать участок</button></div>
   </div>
 </div>
 
 <!-- modal: autoplan -->
 <div class="modal-wrap" id="planModal">
-  <div class="modal">
+  <div class="modal modal-wide">
     <h2 id="planTitle">Автопланирование</h2>
     <div class="mbody">
-      <div class="fld"><label>Пожелания к плану — можно своими словами (разберёт автопланировщик; сложные формулировки поможет перевести Kimi)</label>
-        <textarea id="planNotes" rows="4" placeholder="Примеры (можно своими словами, по строке на пожелание):&#10;2615 -> 25.10        (заказ точно на дату)&#10;Састэнт не раньше 22.10&#10;не позже 30.10: 339  (дедлайн)&#10;сначала: 904, Брестская СПМК-9&#10;904 делать после 2615"></textarea></div>
-      <div class="fld"><label><input type="checkbox" id="planStrict" checked> строго последовательно — один договор за раз, следующий заказ со следующего рабочего дня</label></div>
-      <div id="planHint" class="hint"></div>
-      <div id="planBody"></div>
+      <div class="fld"><label>Пожелания к плану — своими словами</label><textarea id="planNotes" rows="4" placeholder="2615 -> 25.10&#10;Састэнт не раньше 22.10&#10;не позже 30.10: 339&#10;сначала: 904"></textarea></div>
+      <div class="fld"><label class="switch-row"><input type="checkbox" id="planStrict" checked> строго последовательно — следующий договор после полного завершения предыдущего</label></div>
+      <div id="planHint" class="hint"></div><div id="planBody"></div>
     </div>
-    <div class="mfoot">
-      <button class="btn" id="planCancel">Отмена</button>
-      <button class="btn primary" id="planApply">Применить план</button>
-    </div>
+    <div class="mfoot"><button class="btn" id="planCancel">Отмена</button><button class="btn primary" id="planApply">Применить план</button></div>
   </div>
 </div>
 
 <!-- modal: split position -->
-<div class="modal-wrap" id="splitModal">
-  <div class="modal">
-    <h2>Разбить позицию на части</h2>
-    <div class="mbody" id="splitBody"></div>
-    <div class="mfoot">
-      <button class="btn" id="splitCancel">Отмена</button>
-      <button class="btn primary" id="splitCreate">Разбить</button>
-    </div>
-  </div>
-</div>
+<div class="modal-wrap" id="splitModal"><div class="modal"><h2>Разбить позицию на части</h2><div class="mbody" id="splitBody"></div><div class="mfoot"><button class="btn" id="splitCancel">Отмена</button><button class="btn primary" id="splitCreate">Разбить</button></div></div></div>
 
-<!-- modal: журнал изменений -->
-<div class="modal-wrap" id="logModal">
-  <div class="modal" style="width:840px">
-    <h2>Журнал изменений</h2>
-    <div class="mbody">
-      <div class="log-ctl">
-        Период: <input type="date" id="logFrom"> — <input type="date" id="logTo">
-        <select id="logSite"><option value="">все участки</option></select>
-        <button class="btn" id="logApply">Показать</button>
-        <div class="spacer"></div>
-        <button class="btn" id="logCsv" title="Скачать отчёт за выбранный период в CSV">⤓ CSV отчёта</button>
-        <button class="btn" id="logClear" title="Удалить все записи журнала">Очистить</button>
-      </div>
-      <div id="logBody"></div>
-    </div>
-    <div class="mfoot">
-      <button class="btn primary" id="logClose">Закрыть</button>
-    </div>
-  </div>
-</div>
+<!-- modal: journal -->
+<div class="modal-wrap" id="logModal"><div class="modal modal-report"><h2>Журнал изменений</h2><div class="mbody"><div class="log-ctl">Период: <input type="date" id="logFrom"> — <input type="date" id="logTo"><select id="logSite"><option value="">все участки</option></select><button class="btn" id="logApply">Показать</button><div class="spacer"></div><button class="btn" id="logCsv">Скачать CSV</button><button class="btn" id="logClear">Очистить</button></div><div id="logBody"></div></div><div class="mfoot"><button class="btn primary" id="logClose">Закрыть</button></div></div></div>
+
+<!-- modal: profiles -->
+<div class="modal-wrap" id="profilesModal"><div class="modal modal-wide"><h2>Профили и доступ</h2><div class="mbody">
+  <div class="profile-current" id="profileCurrent"></div>
+  <div class="profile-create"><div class="fld"><label>Имя нового профиля</label><input type="text" id="newProfileName" placeholder="Например: мастер смены"></div><div class="fld"><label>Уровень прав</label><select id="newProfileRole"><option value="planner">Планировщик — план и ресурсы</option><option value="viewer">Наблюдатель — только просмотр</option><option value="admin">Администратор — полный доступ</option></select></div><button class="btn primary" id="btnCreateProfile">Создать профиль</button></div>
+  <div id="profilesList" class="profiles-list"></div>
+  <div class="security-note"><b>Честно про права.</b> Это статическая страница: роли ограничивают действия в интерфейсе, но не заменяют серверную авторизацию. Ссылка не содержит секретов. Для защищённых совместных записей права задаются доступом к GitHub-репозиторию; без сервера криптографической защиты профиля нет.</div>
+</div><div class="mfoot"><button class="btn primary" id="profilesClose">Готово</button></div></div></div>
 
 <div class="cs-menu" id="csMenu" role="listbox"></div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 <script type="application/json" id="snapshot-data">{
  "generatedAt": "2026-10-15",
  "contracts": {
@@ -734,10 +877,1209 @@
  "op": [],
  "sau": [],
  "bv": [],
- "upkp": []
+ "upkp": [
+  {
+   "order": "№ 2113 ОАО \"Ремстрой\" г. Пружаны",
+   "prodOrder": "",
+   "product": "Приточная вентиляц. установка с электрообогревом  УПКП-200/9,0 \"Компакт-МК\"с сист. автоматики (380В)",
+   "qty": 1,
+   "opDate": "2026-09-29",
+   "norm": 1,
+   "tdg": null,
+   "comment": "",
+   "sum": 0.0
+  },
+  {
+   "order": "№ 1775 Волковысское ОАО \"СМТ № 32\"",
+   "prodOrder": "",
+   "product": "Приточная вентиляц. установка с электрообогревом  УПКП-200/6,0\"Компакт-МК\"с сист. автоматики (380В)",
+   "qty": 1,
+   "opDate": "2026-09-29",
+   "norm": 1,
+   "tdg": null,
+   "comment": "",
+   "sum": 0.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-27,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-1-v2 ПВ1,Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 8,
+   "opDate": "2026-10-01",
+   "norm": 8,
+   "tdg": null,
+   "comment": "",
+   "sum": 116814.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Симпл-О-У3, исполнение общепромышленное, РБ№3141-2-v2 П2,Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-01",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 7650.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Симпл-ГК-У3, исполнение гигиеническое, РБ№3141-3-v2 П3, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 4,
+   "opDate": "2026-10-01",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 8352.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,5-Симпл-О-У3, исполнение общепромышленное, РБ№3141-28-v2 П28, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-01",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 8484.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Симпл-О-У3, исполнение общепромышленное, РБ№3141-29-v2 П29, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-01",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 7488.0
+  },
+  {
+   "order": "№1253 ООО СтатусЦентр",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-2,5-Оптима-О-У3,исполнение общепромышленное, РБ№1241-7-v1 ПВ10 САУ",
+   "qty": 8,
+   "opDate": "2026-10-01",
+   "norm": 8,
+   "tdg": null,
+   "comment": "",
+   "sum": 24654.0
+  },
+  {
+   "order": "№1253 ООО СтатусЦентр",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,5-Вариус-О-У3,исполнение общепромышленное, РБ№1241-9-v1 П12 САУ",
+   "qty": 3,
+   "opDate": "2026-10-01",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 11328.0
+  },
+  {
+   "order": "№ 2358 «БЕЛТЕХКОМ» ООО (Москва)",
+   "prodOrder": "",
+   "product": "Установка приточная DV-B05000, исполнение общепромышленное, РБ№349-1-v1 Фреон. охл.",
+   "qty": 1,
+   "opDate": "2026-10-01",
+   "norm": 1,
+   "tdg": null,
+   "comment": "",
+   "sum": 3775.98
+  },
+  {
+   "order": "№ 2310 ОАО \"Смолевичи Бройлер\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Симпл-О-У3, исполнение общепромышленное, РБ№3300-1-v2 П2, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 4,
+   "opDate": "2026-10-01",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 9174.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-17,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-7-v2 ПВ7, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 7,
+   "opDate": "2026-10-02",
+   "norm": 7,
+   "tdg": null,
+   "comment": "",
+   "sum": 42522.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-17,5-Симпл-О-У3, исполнение общепромышленное, РБ№3141-18-v2 П17.1 Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-02",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 19866.0
+  },
+  {
+   "order": "№1253 ООО СтатусЦентр",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-1,2-Оптима-ГК-У3, исполнение гигиеническое, РБ№2737-8-v3 ПВ11 САУ",
+   "qty": 8,
+   "opDate": "2026-10-02",
+   "norm": 8,
+   "tdg": null,
+   "comment": "",
+   "sum": 19860.0
+  },
+  {
+   "order": "№1253 ООО СтатусЦентр",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-6,0-Вариус-О-У1-X,исп-е общепром,РБ№1241-10-v1 П13 САУ ККБ с компл обвязки",
+   "qty": 6,
+   "opDate": "2026-10-02",
+   "norm": 6,
+   "tdg": null,
+   "comment": "",
+   "sum": 41694.0
+  },
+  {
+   "order": "№1253 ООО СтатусЦентр",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-2,0-Оптима-Б-У3,РБ№1241-11-v1 ПВ5 САУ",
+   "qty": 9,
+   "opDate": "2026-10-02",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 30870.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-3,0-Симпл-О-У3, исполнение общепромышленное, РБ№3141-26-v2 П26, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-05",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 8970.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,0-Симпл-ГК-У3, исполнение гигиеническое, РБ№3141-23-v2 П21, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 5,
+   "opDate": "2026-10-05",
+   "norm": 5,
+   "tdg": null,
+   "comment": "",
+   "sum": 10206.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-6,0-Симпл-О-У3, исполнение общепромышленное, РБ№3141-25-v2 П25, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-05",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 11904.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,5-Симпл-О-У3, исполнение общепромышленное, РБ№3141-27-v2 П27, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-05",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 8328.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,0-Симпл-О-У3, исполнение общепромышленное, РБ№3141-30-v2 П30, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-05",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 7950.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Симпл-О-У3, исполнение общепромышленное, РБ№3141-31-v2 П31, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-05",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 7650.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Симпл-О-У3, исполнение общепромышленное, РБ№3141-32-v2 П1всп, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-05",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 7734.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,5-Симпл-О-У3, исполнение общепромышленное, РБ№3141-8-v2 П8, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-05",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 8568.0
+  },
+  {
+   "order": "№ 2210 Вилейская ЦРБ",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,5-Вариус-ГК-У3, исполнение гигиеническое, РБ№3214-1-v3 П1 Система автоматического управления",
+   "qty": 6,
+   "opDate": "2026-10-05",
+   "norm": 6,
+   "tdg": null,
+   "comment": "",
+   "sum": 16758.0
+  },
+  {
+   "order": "№ 1586 ИООО «Эко-Энерго»",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-0,4-Симпл-О-У3, исполнение общепромышленное, РБ№2750-1-v1 П1, Система автоматического управления",
+   "qty": 4,
+   "opDate": "2026-10-05",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 6132.0
+  },
+  {
+   "order": "№ 1586 ИООО «Эко-Энерго»",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Вариус-О-У1, исполнение общепромышленное, РБ№2750-3-v1 П1, Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-05",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 28446.0
+  },
+  {
+   "order": "№ 1586 ИООО «Эко-Энерго»",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-5,0-Оптима-О-У1,исполнение общепромышленное, РБ№2750-2-v1 П2В2, Система автоматического управления",
+   "qty": 7,
+   "opDate": "2026-10-05",
+   "norm": 7,
+   "tdg": null,
+   "comment": "",
+   "sum": 28440.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-22,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-6-v2 ПВ6, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 9,
+   "opDate": "2026-10-06",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 58374.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Вариус-ГК-У3, исполнение гигиеническое, РБ№3141-10-v2 П10, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 6,
+   "opDate": "2026-10-06",
+   "norm": 6,
+   "tdg": null,
+   "comment": "",
+   "sum": 12546.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-3,0-Симпл-ГК-У3, исполнение гигиеническое, РБ№3141-15-v2 П15, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 4,
+   "opDate": "2026-10-06",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 10674.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-8,5-Симпл-О-У3, исполнение общепромышленное, РБ№3141-20-v2 П18.1 Система автоматического управления",
+   "qty": 2,
+   "opDate": "2026-10-06",
+   "norm": 2,
+   "tdg": null,
+   "comment": "",
+   "sum": 10194.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-3,0-Симпл-О-У3, исполнение общепромышленное, РБ№3141-22-v2 П20, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-06",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 11064.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,5-Симпл-ГК-У3, исполнение гигиеническое, РБ№3141-9-v2 П9, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 5,
+   "opDate": "2026-10-06",
+   "norm": 5,
+   "tdg": null,
+   "comment": "",
+   "sum": 10908.0
+  },
+  {
+   "order": "№ 2167 УП \"УКС Мингорисполкома\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-3,0-Оптима-О-У3, исполнение общепромышленное, РБ№2583-1-v1 ПВ1, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 10,
+   "opDate": "2026-10-06",
+   "norm": 10,
+   "tdg": null,
+   "comment": "",
+   "sum": 31248.0
+  },
+  {
+   "order": "№ 2228 ООО \"ЭРГОТЕРМ\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,0-Симпл-О-У1, исполнение общепромышленное, РБ№3081-1-v2 П1, Система автоматического управления",
+   "qty": 4,
+   "opDate": "2026-10-06",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 10188.0
+  },
+  {
+   "order": "№ 2228 ООО \"ЭРГОТЕРМ\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Симпл-О-У1, исполнение общепромышленное, РБ№3081-2-v2 П2, Система автоматического управления",
+   "qty": 4,
+   "opDate": "2026-10-06",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 9324.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-27,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-17-v2 ПВ17, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 10,
+   "opDate": "2026-10-14",
+   "norm": 10,
+   "tdg": null,
+   "comment": "",
+   "sum": 86376.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-27,5-Симпл-О-У3, исполнение общепромышленное, РБ№3141-16-v2 П16, Система автоматического управления",
+   "qty": 2,
+   "opDate": "2026-10-14",
+   "norm": 2,
+   "tdg": null,
+   "comment": "",
+   "sum": 24474.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-8,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-4-v2 ПВ4, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 7,
+   "opDate": "2026-10-14",
+   "norm": 7,
+   "tdg": null,
+   "comment": "",
+   "sum": 25944.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-8,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-5-v2 ПВ5, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 7,
+   "opDate": "2026-10-14",
+   "norm": 7,
+   "tdg": null,
+   "comment": "",
+   "sum": 24024.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-8,5-Вариус-ГК-У3, исполнение гигиеническое, РБ№3141-11-v2 П11, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 10,
+   "opDate": "2026-10-14",
+   "norm": 10,
+   "tdg": null,
+   "comment": "",
+   "sum": 29640.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-10,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-12-v2 ПВ12, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 9,
+   "opDate": "2026-10-15",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 65100.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-10,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-19-v2 ПВ18, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 9,
+   "opDate": "2026-10-15",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 63690.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-7,0-Оптима-О-У3, исполнение общепромышленное, РБ№3141-14-v2 ПВ14, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 9,
+   "opDate": "2026-10-15",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 49962.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-3,0-Вариус-ГК-У3, исполнение гигиеническое, РБ№3141-24-v2 П22, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 8,
+   "opDate": "2026-10-15",
+   "norm": 8,
+   "tdg": null,
+   "comment": "",
+   "sum": 17406.0
+  },
+  {
+   "order": "№ 2243 ГП \"Белоруснефть-Промсервис\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,5-Симпл-О-У3, исполнение общепромышленное, РБ№3001-2-v2 П2 Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-15",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 7662.0
+  },
+  {
+   "order": "№ 2243 ГП \"Белоруснефть-Промсервис\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-7,0-Оптима-О-У3, исполнение общепромышленное, РБ№3001-1-v2 П1В1 Система автоматического управления",
+   "qty": 7,
+   "opDate": "2026-10-15",
+   "norm": 7,
+   "tdg": null,
+   "comment": "",
+   "sum": 30864.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Симпл-О-У3, исполнение общепромышленное, РБ№3141-33-v2 П2всп, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 3,
+   "opDate": "2026-10-16",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 1134.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-8,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-21-v2 ПВ19, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 7,
+   "opDate": "2026-10-16",
+   "norm": 7,
+   "tdg": null,
+   "comment": "",
+   "sum": 47106.0
+  },
+  {
+   "order": "№ 2293 ГП \"Главное управление капитального строительства\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-8,5-Оптима-О-У3, исполнение общепромышленное, РБ№3141-13-v2 ПВ13, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 7,
+   "opDate": "2026-10-16",
+   "norm": 7,
+   "tdg": null,
+   "comment": "",
+   "sum": 44622.0
+  },
+  {
+   "order": "№ 2087 ОАО \"Стройтрест 35\" филиал \"МСУ\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-0,4-Оптима-О-У3, исполнение общепромышленное, РБ№3221-1-v1 П12 В12",
+   "qty": 8,
+   "opDate": "2026-10-16",
+   "norm": 8,
+   "tdg": null,
+   "comment": "",
+   "sum": 12756.0
+  },
+  {
+   "order": "№ 1498 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-0,4-Симпл-О-У3, исполнение общепромышленное, РБ№2201-8-v1 П8, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 4,
+   "opDate": "2026-10-16",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 7722.0
+  },
+  {
+   "order": "№ 1498 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-0,4-Симпл-О-У3, исполнение общепромышленное, РБ№2201-9-v1 П9, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 4,
+   "opDate": "2026-10-16",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 7722.0
+  },
+  {
+   "order": "№ 1887 «БЕЛТЕХКОМ» ООО (Москва)",
+   "prodOrder": "",
+   "product": "Приточно-вытяжная установка ПВ3.У: приточная часть производительностью 10360м3/ч, напор Рn=400Па, n=1900об/мин, эл.дв. N=5,5кВт, 400В/3ф/50Гц; вытяжная часть производительностью 8830м3/ч, напор Рn=400Па, n=1830об/мин, эл.дв. N=3,0кВт, 400В/3ф/50Гц. W-TYPE® W40 CE/L/R",
+   "qty": 13,
+   "opDate": "2026-10-19",
+   "norm": 13,
+   "tdg": null,
+   "comment": "",
+   "sum": 41664.0
+  },
+  {
+   "order": "№ 1887 «БЕЛТЕХКОМ» ООО (Москва)",
+   "prodOrder": "",
+   "product": "Приточно-вытяжная установка ПВ3.К: приточная часть производительностью 12230м3/ч, напор Рn=400Па, n=",
+   "qty": 14,
+   "opDate": "2026-10-19",
+   "norm": 14,
+   "tdg": null,
+   "comment": "",
+   "sum": 43842.0
+  },
+  {
+   "order": "№ 1887 «БЕЛТЕХКОМ» ООО (Москва)",
+   "prodOrder": "",
+   "product": "Приточно-вытяжная установка ПВ1.Ф:: приточная часть производительностью 5760м3/ч, напор Рn=370Па, n=3022об/мин, эл.дв. N=3,0кВт, 400В/3ф/50Гц; вытяжная часть производительностью 5760м3/ч, напор Рn=450Па, n=2941об/мин, эл.дв. N=3,0кВт,400В/3ф/50Гц, S-TYPE® S70 RE/R/L",
+   "qty": 13,
+   "opDate": "2026-10-19",
+   "norm": 13,
+   "tdg": null,
+   "comment": "",
+   "sum": 38969.4
+  },
+  {
+   "order": "№ 1887 «БЕЛТЕХКОМ» ООО (Москва)",
+   "prodOrder": "",
+   "product": "Приточно-вытяжная установка ПВ1.У: приточная часть производительностью 10710м3/ч, напор Рn=400Па, n=1900об/мин, эл.дв. N=5,5кВт, 400В/3ф/50Гц; вытяжная часть производительностью 9120м3/ч, напор Рn=400Па, n=1540об/мин, эл.дв. N=3,0кВт, 400В/3ф/50Гц. W-TYPE® W40 CE/L/R",
+   "qty": 13,
+   "opDate": "2026-10-19",
+   "norm": 13,
+   "tdg": null,
+   "comment": "",
+   "sum": 41937.0
+  },
+  {
+   "order": "№ 1887 «БЕЛТЕХКОМ» ООО (Москва)",
+   "prodOrder": "",
+   "product": "Приточно-вытяжная установка ПВ19.У: приточная часть производительностью 9380м3/ч, напор Рn=400Па, n=2100об/мин, эл.дв. N=5,5кВт, 400В/3ф/50Гц; вытяжная часть производительностью 9380м3/ч, напор Рn=400Па, n=1830об/мин, эл.дв. N=4,0кВт, 400В/3ф/50Гц. W-TYPE® W40 CE/R/L",
+   "qty": 12,
+   "opDate": "2026-10-19",
+   "norm": 12,
+   "tdg": null,
+   "comment": "",
+   "sum": 41234.4
+  },
+  {
+   "order": "№ 2172 ОАО \"Ремстрой\" г. Пружаны",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-0,8-Оптима-О-У3, исполнение общепромышленное, РБ№2180-9-v1 ПВ10, система автоматического управления",
+   "qty": 5,
+   "opDate": "2026-10-20",
+   "norm": 5,
+   "tdg": null,
+   "comment": "",
+   "sum": 16800.0
+  },
+  {
+   "order": "№ 2172 ОАО \"Ремстрой\" г. Пружаны",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-0,8-Симпл-Г-У3, исполнение гигиеническое, РБ№2180-10-v1 П11, система автоматического управления",
+   "qty": 6,
+   "opDate": "2026-10-20",
+   "norm": 6,
+   "tdg": null,
+   "comment": "",
+   "sum": 9246.0
+  },
+  {
+   "order": "№ 2172 ОАО \"Ремстрой\" г. Пружаны",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,5-Симпл-Г-У3, исполнение гигиеническое, РБ№2180-4-v1 П4, система автоматического управления",
+   "qty": 6,
+   "opDate": "2026-10-20",
+   "norm": 6,
+   "tdg": null,
+   "comment": "",
+   "sum": 10722.0
+  },
+  {
+   "order": "№ 2172 ОАО \"Ремстрой\" г. Пружаны",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-6,0-Симпл-Г-У3, исполнение гигиеническое, РБ№2180-5-v1 П5, система автоматического управления",
+   "qty": 6,
+   "opDate": "2026-10-20",
+   "norm": 6,
+   "tdg": null,
+   "comment": "",
+   "sum": 17730.0
+  },
+  {
+   "order": "№ 2379 УВСР ОАО \"Стройтрест № 1\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,0-Вариус-О-У3, исполнение общепромышленное, РБ№3260-1-v1 П1",
+   "qty": 3,
+   "opDate": "2026-10-20",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 14376.0
+  },
+  {
+   "order": "№ 2355 ГП \"Санаторий \"Приозерный\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-22,5-Оптима-О-У3, исполнение общепромышленное, РБ№2990-1-v2 П1В1, Система автоматического управления",
+   "qty": 11,
+   "opDate": "2026-10-21",
+   "norm": 11,
+   "tdg": null,
+   "comment": "",
+   "sum": 189012.0
+  },
+  {
+   "order": "№ 2172 ОАО \"Ремстрой\" г. Пружаны",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,0-Симпл-Г-У3, исполнение гигиеническое, РБ№2180-6-v1 П6, система автоматического управления",
+   "qty": 8,
+   "opDate": "2026-10-21",
+   "norm": 8,
+   "tdg": null,
+   "comment": "",
+   "sum": 12192.0
+  },
+  {
+   "order": "№ 2172 ОАО \"Ремстрой\" г. Пружаны",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,0-Вариус-Г-У3, исполнение гигиеническое, РБ№2180-8-v1 П8, система автоматического управления, ККБ с комплектом обвязки, парогенератор",
+   "qty": 12,
+   "opDate": "2026-10-21",
+   "norm": 12,
+   "tdg": null,
+   "comment": "",
+   "sum": 44400.0
+  },
+  {
+   "order": "№ 1498 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-8,5-Вариус-О-У3, исполнение общепромышленное, РБ№2201-3-v1 П3, Система автоматического управления",
+   "qty": 4,
+   "opDate": "2026-10-22",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 14958.0
+  },
+  {
+   "order": "№ 1498 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-0,4-Симпл-О-У3, исполнение общепромышленное, РБ№2201-6-v1 П6, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 4,
+   "opDate": "2026-10-22",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 7680.0
+  },
+  {
+   "order": "№ 1498 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-0,4-Симпл-О-У3,исполнение общепромышленное, РБ№2201-7-v1 П7 САУ УР-УПКП",
+   "qty": 4,
+   "opDate": "2026-10-22",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 7722.0
+  },
+  {
+   "order": "№ 1498 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-8,5-Вариус-О-У3, исполнение общепромышленное, РБ№2201-2-v1 П2, Система автоматического управления",
+   "qty": 4,
+   "opDate": "2026-10-22",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 13926.0
+  },
+  {
+   "order": "№ 2172 ОАО \"Ремстрой\" г. Пружаны",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-6,0-Симпл-Г-У3, исполнение гигиеническое, РБ№2180-1-v1 П1, система автоматического управления",
+   "qty": 8,
+   "opDate": "2026-10-22",
+   "norm": 8,
+   "tdg": null,
+   "comment": "",
+   "sum": 31200.0
+  },
+  {
+   "order": "№2482 ОАО \"Белэнергосвязь\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-7,0-Симпл-О-У3, исполнение общепромышленное, РБ№3437-1-v1 П1 Система автома",
+   "qty": 4,
+   "opDate": "2026-10-22",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 17400.0
+  },
+  {
+   "order": "№ 2205 ОАО \"Строительный трест №12.\"Управляющая компания холдинга \"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-6,0-Симпл-О-У1, исполнение общепромышленное, РБ№3319-2-v1 П19.1 Система автоматического управления",
+   "qty": 2,
+   "opDate": "2026-10-22",
+   "norm": 2,
+   "tdg": null,
+   "comment": "",
+   "sum": 9888.0
+  },
+  {
+   "order": "№ 2311 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-8,5-Вариус-О-У3, исполнение общепромышленное, РБ№2201-1-v1 П1, Система автоматического управления",
+   "qty": 4,
+   "opDate": "2026-10-23",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 14958.0
+  },
+  {
+   "order": "№ 2311 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-8,5-Вариус-О-У3, исполнение общепромышленное, РБ№2201-5-v1 П5, Система автоматического управления",
+   "qty": 4,
+   "opDate": "2026-10-23",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 14958.0
+  },
+  {
+   "order": "№ 1985 УВСР ОАО \"Стройтрест № 1\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,0-Вариус-О-У3, исполнение общепромышленное, РБ№3260-1-v1 П1",
+   "qty": 3,
+   "opDate": "2026-10-23",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 14376.0
+  },
+  {
+   "order": "№ 2305 Филиал \"Белмит\" ЗАО \"Серволюкс Агро\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-3,0-Симпл-О-У3, исполнение общепромышленное, РБ№2253-3-v2 П1, Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-23",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 6570.0
+  },
+  {
+   "order": "№ 1498 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-17,5-Симпл-О-У3, исполнение общепромышленное, РБ№2201-4-v1 П4, Система автоматического управления",
+   "qty": 5,
+   "opDate": "2026-10-23",
+   "norm": 5,
+   "tdg": null,
+   "comment": "",
+   "sum": 35196.0
+  },
+  {
+   "order": "№ 2342 СПК \"Восходящая Заря\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-4,0-Симпл-О-У3, исполнение общепромышленное, РБ№3321-1-v1 П1, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 4,
+   "opDate": "2026-10-23",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 12072.0
+  },
+  {
+   "order": "№ 2342 СПК \"Восходящая Заря\"",
+   "prodOrder": "",
+   "product": "Установка вытяжная УПКП-2,5-Симпл-О-У3, исполнение общепромышленное, РБ№3321-2-v1 В1 Система автоматического управления",
+   "qty": 1,
+   "opDate": "2026-10-23",
+   "norm": 1,
+   "tdg": null,
+   "comment": "",
+   "sum": 3666.0
+  },
+  {
+   "order": "№ 2329 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка притчная УПКП-15,0 Оптима-О-У3, исполнение общепромышленное, в комплекте с САУ и узлом регулирования УР-УПКП, П3В3",
+   "qty": 9,
+   "opDate": "2026-10-26",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 91524.0
+  },
+  {
+   "order": "№1906 Филиал \"ЭМУ-4\" ОАО \"БЭМ\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-5,0-Оптима-О-У1-X, исполнение общепромышленное, РБ№2983-1-v1 П1В1, Система автоматического управления, ККБ с комплектом обвязки",
+   "qty": 9,
+   "opDate": "2026-10-26",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 58386.0
+  },
+  {
+   "order": "№ 2167 УП \"УКС Мингорисполкома\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,5-Симпл-О-У3, исполнение общепромышленное, РБ№2583-2-v1 П2 Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-26",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 8664.0
+  },
+  {
+   "order": "№ 2167 УП \"УКС Мингорисполкома\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-0,4-Симпл-О-У3, исполнение общепромышленное, РБ№2583-3-v1 П3 Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-26",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 6912.0
+  },
+  {
+   "order": "№ 2167 УП \"УКС Мингорисполкома\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,5-Симпл-О-У3, исполнение общепромышленное, РБ№2583-4-v1 П4 Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-26",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 7680.0
+  },
+  {
+   "order": "№1906 Филиал \"ЭМУ-4\" ОАО \"БЭМ\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-1,2-Оптима-О-У1-X, исполнение общепромышленное, РБ№2983-2-v1 П2В2, Система автоматического управления, ККБ с комплектом обвязки",
+   "qty": 6,
+   "opDate": "2026-10-26",
+   "norm": 6,
+   "tdg": null,
+   "comment": "",
+   "sum": 14844.0
+  },
+  {
+   "order": "№ 2429 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка притчная УПКП-15,0 Оптима-О-У3, исполнение общепромышленное, в комплекте с САУ и узлом регулирования УР-УПКП, П2В2, Узел регулирования УР-УПКП",
+   "qty": 9,
+   "opDate": "2026-10-27",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 91524.0
+  },
+  {
+   "order": "№ 1981 ОАО \"СТ№8\" филиал \"СУ №158\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-2,0-Оптима-О-У3, исполнение общепромышленное, РБ№2834-1-v1 ПВ1, Система автоматического управления",
+   "qty": 11,
+   "opDate": "2026-10-27",
+   "norm": 11,
+   "tdg": null,
+   "comment": "",
+   "sum": 15444.0
+  },
+  {
+   "order": "№ 2406 ООО \"ВентСтройСистем\"",
+   "prodOrder": "",
+   "product": "Секция под узел регулирования в наружном исполнении",
+   "qty": 2,
+   "opDate": "2026-10-27",
+   "norm": 2,
+   "tdg": null,
+   "comment": "",
+   "sum": 3636.0
+  },
+  {
+   "order": "№ 2406 ООО \"ВентСтройСистем\"",
+   "prodOrder": "",
+   "product": "Секция под узел регулирования в наружном исполнении (гликоль)",
+   "qty": 1,
+   "opDate": "2026-10-27",
+   "norm": 1,
+   "tdg": null,
+   "comment": "",
+   "sum": 4074.0
+  },
+  {
+   "order": "№ 1981 ОАО \"СТ№8\" филиал \"СУ №158\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-2,0-Оптима-О-У3, исполнение общепромышленное, РБ№2834-2-v1 ПВ2, Система автоматического управления",
+   "qty": 11,
+   "opDate": "2026-10-28",
+   "norm": 11,
+   "tdg": null,
+   "comment": "",
+   "sum": 16320.0
+  },
+  {
+   "order": "№ 1966 ОАО \"СТ №8\" филиал \"СУ №158\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-15,0-Оптима-О-У1, исполнение общепромышленное, РБ№2807-2-v1 П2В2 Система автоматического управления",
+   "qty": 8,
+   "opDate": "2026-10-28",
+   "norm": 8,
+   "tdg": null,
+   "comment": "",
+   "sum": 82962.0
+  },
+  {
+   "order": "№2439 ООО \"БугСети\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,2-Симпл-О-У3,исполнение общепромышленное, РБ№3182-1-v1 П1",
+   "qty": 4,
+   "opDate": "2026-10-28",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 8256.0
+  },
+  {
+   "order": "№ 2142 ООО \"МегалитПромСтрой\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-1,5-Оптима-О-У1, исполнение общепромышленное, РБ№2502-1-v1 П1В1, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 9,
+   "opDate": "2026-10-28",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 21768.0
+  },
+  {
+   "order": "№ 2142 ООО \"МегалитПромСтрой\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-4,0-Симпл-О-У1, исполнение, общепромышленное, РБ№2502-2-v1 П2, Система автоматического управления, Узел регулирования УР-УПКП",
+   "qty": 4,
+   "opDate": "2026-10-28",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 18300.0
+  },
+  {
+   "order": "№ 2142 ООО \"МегалитПромСтрой\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-1,2-Оптима-О-У1, исполнение общепромышленное, РБ№2502-3-v1, П10В10, Система автоматического управления",
+   "qty": 9,
+   "opDate": "2026-10-29",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 21498.0
+  },
+  {
+   "order": "№2471 «БЕЛТЕХКОМ» ООО (Москва)",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-35,0-Симпл-О-У1, исп общепром, РБ№287-2-v1 П2 Система автоматич. управл.",
+   "qty": 3,
+   "opDate": "2026-10-29",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 35599.98
+  },
+  {
+   "order": "№ 1582 ОАО \"Трест Белсантехмонтаж №1\" Новополоцкое монтажное управл",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-7,0-Вариус-О-У3, исполнение общепромышленное, РБ№2843-2-v1 П2 Система автоматического управления",
+   "qty": 5,
+   "opDate": "2026-10-29",
+   "norm": 5,
+   "tdg": null,
+   "comment": "",
+   "sum": 17718.0
+  },
+  {
+   "order": "№ 1582 ОАО \"Трест Белсантехмонтаж №1\" Новополоцкое монтажное управл",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,5-Симпл-О-У3, исполнение общепромышленное, РБ№2843-3-v1 П3 Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-29",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 5754.0
+  },
+  {
+   "order": "№ 1582 ОАО \"Трест Белсантехмонтаж №1\" Новополоцкое монтажное управл",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-1,5-Симпл-О-У3, исполнение общепромышленное, РБ№2843-4-v1 П4 Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-29",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 5754.0
+  },
+  {
+   "order": "№ 1582 ОАО \"Трест Белсантехмонтаж №1\" Новополоцкое монтажное управл",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-6,0-Симпл-О-У3, исполнение общепромышленное, РБ№2843-5-v1 П5 Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-29",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 11820.0
+  },
+  {
+   "order": "№ 1966 ОАО \"СТ №8\" филиал \"СУ №158\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-8,5-Оптима-О-У1, исполнение общепромышленное, РБ№2807-1-v1 П1В1 Система автоматического управления",
+   "qty": 8,
+   "opDate": "2026-10-29",
+   "norm": 8,
+   "tdg": null,
+   "comment": "",
+   "sum": 45846.0
+  },
+  {
+   "order": "№ 2527 Филиал \"УПТК\" ОАО \"Стройтреста № 25\"",
+   "prodOrder": "",
+   "product": "Установка притчная УПКП-15,0 Оптима-О-У3, исполнение общепромышленное, в комплекте с САУ и узлом регулирования УР-УПКП, П1В1",
+   "qty": 9,
+   "opDate": "2026-10-30",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 91512.0
+  },
+  {
+   "order": "№ 2259 ЗАО \"Вольна\"",
+   "prodOrder": "",
+   "product": "Установка приточно-вытяжная УПКП-7,0-Оптима-О-У3, исполнение общепромышленное, РБ№3038-1-v1 ПВ1, Система автоматического управления",
+   "qty": 9,
+   "opDate": "2026-10-30",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 34974.0
+  },
+  {
+   "order": "№ 2259 ЗАО \"Вольна\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-0,8-Симпл-О-У3, исполнение общепромышленное, РБ№3038-2-v1 П2, Система автоматического управления",
+   "qty": 3,
+   "opDate": "2026-10-30",
+   "norm": 3,
+   "tdg": null,
+   "comment": "",
+   "sum": 5340.0
+  },
+  {
+   "order": "№ 2413 Филиал \"СУ-10\"",
+   "prodOrder": "",
+   "product": "Приточная вентиляц. установка с электрообогревом  УПКП-315/18,0 \"Компакт-М\"с сист. автоматики (380В)",
+   "qty": 1,
+   "opDate": "2026-10-30",
+   "norm": 1,
+   "tdg": null,
+   "comment": "",
+   "sum": 8130.0
+  },
+  {
+   "order": "№ 2491 «БЕЛТЕХКОМ» ООО (Москва)",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-15,0-Вариус-ГК-У3, РБ№2325-1-v1 П1",
+   "qty": 4,
+   "opDate": "2026-10-30",
+   "norm": 4,
+   "tdg": null,
+   "comment": "",
+   "sum": 40054.32
+  },
+  {
+   "order": "№ 2413 Филиал \"СУ-10\"",
+   "prodOrder": "",
+   "product": "Установка приточная УПКП-2,0-Вариус-О-У3,исполнение общепромышленное, РБ№3384-1-v1 П1 Система автоматического управления",
+   "qty": 9,
+   "opDate": "2026-10-30",
+   "norm": 9,
+   "tdg": null,
+   "comment": "",
+   "sum": 17208.0
+  }
+ ]
 }</script>
-<script>
-'use strict';
+<script>'use strict';
 /* ================= data ================= */
 const SNAP = JSON.parse(document.getElementById('snapshot-data').textContent);
 const CONTRACTS = SNAP.contracts || {};
@@ -759,7 +2101,13 @@ function currentTheme(){
 function applyTheme(theme){
   if(typeof document !== 'undefined' && document.documentElement) document.documentElement.dataset.theme = theme;
   const b = typeof document !== 'undefined' && document.getElementById('btnTheme');
-  if(b) b.textContent = theme === 'dark' ? '☀️' : '🌙';
+  if(b){
+    b.dataset.mode = theme;
+    b.title = theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему';
+    if(b.setAttribute) b.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+  }
+  const label = typeof document !== 'undefined' && document.getElementById('themeLabel');
+  if(label) label.textContent = theme === 'dark' ? 'Тёмная' : 'Светлая';
 }
 function toggleTheme(){
   const next = currentTheme() === 'dark' ? 'light' : 'dark';
@@ -980,9 +2328,19 @@ function loadSites(){
         // миграция: убрать старый снимок ОП, добавить недостающие live-участки
         arr = arr.filter(s => s.id !== 's_snap');
         defs.forEach(d => { if(!arr.some(s => s.id === d.id)) arr.push(d); });
-        // миграция: ресурсы сборщики×норма и общая норма УПКП
+        // Миграция: восстанавливаем не только ресурс, но и живой источник УПКП.
+        // В старых сохранениях пустой rows навсегда оставался пустым при ошибке сети.
         arr.forEach(s => {
-          if(s.id === 's_upkp'){ s.workers = 11; s.perWorker = 0; s.teamTotal = true; s.fondMin = 330; }
+          if(s.id === 's_upkp'){
+            const fallback = defs.find(d => d.id === 's_upkp');
+            s.workers = 11; s.perWorker = 0; s.teamTotal = true; s.fondMin = 330;
+            s.sourceType = 'url'; s.sourceUrl = fallback.sourceUrl; s.autoMonth = true;
+            s.format = 'upkp'; s.unit = 'секц.';
+            if((!Array.isArray(s.rows) || !s.rows.length) && fallback.rows.length){
+              s.rows = fallback.rows; s.syncOk = false;
+              s.syncErr = 'Показана резервная копия. Нажмите «Обновить» для связи с Google Sheets.';
+            }
+          }
           else if(s.workers && s.perWorker){ s.fondMin = s.workers * s.perWorker; }
           else if(s.id === 's_op'){ s.workers = 4; s.perWorker = 450; s.fondMin = 1800; }
           else if(s.id === 's_sau' || s.id === 's_bv'){ s.workers = 6; s.perWorker = 450; s.fondMin = 2700; }
@@ -1420,6 +2778,7 @@ function render(){
   const team = !!site.teamTotal;
   $('workersInput').value = site.workers || '';
   $('resMul').style.display = team ? 'none' : '';
+  $('perWorkerWrap').style.display = team ? 'none' : '';
   if(!team) $('perWorkerInput').value = site.perWorker || '';
   $('fondTotalInput').readOnly = !team;
   $('fondTotalInput').value = fondOf(site);
@@ -1427,7 +2786,7 @@ function render(){
   const pinBtn = $('btnPinBoard');
   if(pinBtn){
     pinBtn.classList.toggle('primary', !!site.onBoard);
-    pinBtn.textContent = site.onBoard ? '📌 На общей доске ✓' : '📌 На общую доску';
+    pinBtn.innerHTML = '<svg><use href="#i-pin"/></svg><span>' + (site.onBoard ? 'На общей доске ✓' : 'На общую доску') + '</span>';
     pinBtn.title = site.onBoard
       ? 'Участок выведен на общую доску: виден в обзорных секциях видов «Доска», «Список дней» и «Все участки». Нажмите, чтобы убрать'
       : 'Вывести этот участок на общую доску — его дни и загрузка (со своим ресурсом) будут видны в видах «Доска», «Список дней» и «Все участки»';
@@ -1441,6 +2800,7 @@ function render(){
     const host = {board:$('boardLayout'), list:$('listView'), shifts:$('shiftsView'), multi:$('multiView')}[state.view];
     markEnter(host);
   }
+  if(typeof renderWorkspace === 'function') renderWorkspace(site);
   }finally{ passEnd(); }
 }
 /* v7: пакетный рендер — серия событий за один кадр даёт один рендер, а не несколько */
@@ -2004,7 +3364,9 @@ async function fetchSiteRows(url, site){
     if(!g) throw new Error('Не получилось разобрать ссылку на Google Sheets');
     u = gvizUrl(g.id, g.gid, site && site.autoMonth ? curMonthSheet() : '');
   }
-  const res = await fetch(u, {mode:'cors'});
+  // Google и браузер могут держать CSV в кэше: для ручного обновления нужен живой ответ.
+  u += (u.includes('?') ? '&' : '?') + '_plannerRefresh=' + Date.now();
+  const res = await fetch(u, {mode:'cors', cache:'no-store'});
   if(!res.ok) throw new Error('HTTP ' + res.status);
   const text = await res.text();
   if(/^\s*<html/i.test(text) || /войдите|sign in/i.test(text.slice(0, 500))) throw new Error('Таблица закрыта — откройте доступ «по ссылке» (просмотр)');
@@ -2572,6 +3934,9 @@ async function refreshSite(site){
   if(site.sourceType !== 'url' || !site.sourceUrl) return false;
   try{
     const res = await fetchSiteRows(site.sourceUrl, site);
+    if(!res.rows.length && site.rows.length){
+      throw new Error('Google Sheets вернула 0 операций. Сохранённые данные оставлены без изменений.');
+    }
     site.rows = makeRows(res.rows);
     site.format = res.format || site.format;
     if(!site.unit) site.unit = res.format === 'upkp' ? 'секц.' : 'мин';
@@ -2595,10 +3960,15 @@ function renderSyncStatus(){
   const shared = site.sharedOn ? (site.sharedOk !== false ? ' · совместно ✓' : ' · совместно ✗') : '';
   if(site.syncOk){
     const t = site.syncAt ? new Date(site.syncAt) : null;
-    el.textContent = '✓ синхронизировано' + (t ? ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) : '') + shared;
+    el.textContent = '● ' + site.rows.length + ' операций' + (t ? ' · ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) : '') + shared;
     el.style.color = site.sharedOk === false ? 'var(--red)' : 'var(--green)';
+    el.title = 'Google Sheets синхронизирован' + (site.syncErr ? '\n' + site.syncErr : '');
+  } else if(site.rows.length){
+    el.textContent = '◐ Резервная копия · ' + site.rows.length + ' операций' + shared;
+    el.style.color = 'var(--amber)';
+    el.title = (site.syncErr || 'Нет связи с Google Sheets') + '\nДанные не очищены. Нажмите «Обновить» после восстановления связи.';
   } else {
-    el.textContent = '✗ нет связи с Google Sheets' + shared;
+    el.textContent = '○ Нет данных · проверьте связь' + shared;
     el.style.color = 'var(--red)';
     el.title = site.syncErr || site.sharedErr || 'проверьте интернет и доступ к таблице';
   }
@@ -2655,10 +4025,725 @@ if(typeof window !== 'undefined'){
     parseNotes, distributeQty, distributeMinutes, buildSplitRecord, buildSplitRecordQtys, splitQtysByFond, assignSplitDates, applyPlanToSite, findPart,
     positionKey, upkpOrderLabel, upkpCustomer, upkpProductLabel, displayProduct, displayCustomer,
     logChange, readLog, LOG_KEY, fmtTs, currentTheme, toggleTheme,
-    sharedKey, pullShared, pushShared, ghCfg, ghSharedPath, enableSharing, shareSettings };
+    sharedKey, pullShared, pushShared, ghCfg, ghSharedPath, enableSharing, shareSettings,
+    refreshSite, render, scheduleRender, saveSites, todayISO, addDays, isWorkday, siteResLine };
   if(typeof document !== 'undefined' && document.getElementById && typeof window.addEventListener !== 'undefined'){
     window.addEventListener('DOMContentLoaded', init);
     if(document.readyState !== 'loading') init();
+  }
+}
+
+
+'use strict';
+/* ==========================================================================
+   ПОТОК / workspace extensions
+   Карусель панелей, виджеты, расчёт загрузки, профили и нативный WebMCP.
+   Файл выполняется после app.js в том же standalone-бандле.
+   ========================================================================== */
+var workspaceReady = false;
+
+/* ---------- small utilities -------------------------------------------- */
+function w$(id){ return document.getElementById(id); }
+function wEsc(value){
+  return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  })[ch]);
+}
+function wStoreGet(key, fallback){
+  try{
+    const value = JSON.parse(localStorage.getItem(key));
+    return value == null ? fallback : value;
+  }catch(error){ return fallback; }
+}
+function wStoreSet(key, value){
+  try{ localStorage.setItem(key, JSON.stringify(value)); }catch(error){}
+}
+function wPlanner(){ return window.PLANNER; }
+function wActiveSite(){
+  const planner = wPlanner();
+  return planner.state.sites.find(site => site.id === planner.state.activeId) || planner.state.sites[0];
+}
+function wFmt(value){ return Math.round(value || 0).toLocaleString('ru-RU'); }
+function wIsIsoDate(value){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
+  const date = new Date(value + 'T00:00:00Z');
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+/* ---------- workload calculations -------------------------------------- */
+function workloadPeriod(site, period, anchor){
+  const planner = wPlanner();
+  const today = anchor || planner.todayISO();
+  let from = today;
+  let to = today;
+  if(period === 'week'){
+    const day = new Date(today + 'T00:00:00').getDay();
+    from = planner.addDays(today, day === 0 ? -6 : 1 - day);
+    to = planner.addDays(from, 6);
+  }else if(period === 'month'){
+    from = today.slice(0, 8) + '01';
+    const next = new Date(from + 'T00:00:00');
+    next.setMonth(next.getMonth() + 1);
+    next.setDate(0);
+    to = next.getFullYear() + '-' + String(next.getMonth() + 1).padStart(2, '0') + '-' + String(next.getDate()).padStart(2, '0');
+  }
+  const rows = planner.effRows(site).filter(row => row.dateEff && row.dateEff >= from && row.dateEff <= to);
+  const load = rows.reduce((sum, row) => sum + (row.minutes || 0), 0);
+  let workdays = period === 'day' ? 1 : 0;
+  if(period !== 'day'){
+    for(let date = from; date <= to; date = planner.addDays(date, 1)){
+      if(planner.isWorkday(site, date)) workdays++;
+    }
+  }
+  const capacity = Math.max(1, planner.fondOf(site) * workdays);
+  return {
+    period, from, to, load, capacity, workdays, rows:rows.length,
+    pct:Math.round(load / capacity * 100), unit:site.unit || 'мин', siteId:site.id
+  };
+}
+function workloadLabel(period){ return period === 'day' ? 'День' : period === 'week' ? 'Неделя' : 'Месяц'; }
+function workloadBar(load, compact){
+  const over = load.pct > 100;
+  return '<div class="load-track"><i class="' + (over ? 'over' : '') + '" style="width:' + Math.min(100, Math.max(0, load.pct)) + '%"></i></div>' +
+    (compact ? '' : '<small>' + wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + wEsc(load.unit) + ' · ' + load.rows + ' операций</small>');
+}
+
+/* ---------- panel carousel --------------------------------------------- */
+const DOCK_PANELS = [
+  ['Дни загрузки', 'Навигация по сменам'],
+  ['Загрузка', 'Ресурс и фактическая норма'],
+  ['Автоплан с Kimi', 'Явный запрос · без API-ключа'],
+  ['Мои виджеты', 'Персональная сводка']
+];
+let dockIndexState = Math.max(0, Math.min(3, Number(localStorage.getItem('planner.dockPanel')) || 0));
+let dockMoveTimer = 0;
+function setDockPanel(index){
+  dockIndexState = (index + DOCK_PANELS.length) % DOCK_PANELS.length;
+  const track = w$('dockTrack');
+  if(!track) return;
+  track.classList.add('moving');
+  track.style.transform = 'translateX(' + (-dockIndexState * 100) + '%)';
+  clearTimeout(dockMoveTimer);
+  dockMoveTimer = setTimeout(() => track.classList.remove('moving'), 420);
+  w$('dockTitle').textContent = DOCK_PANELS[dockIndexState][0];
+  w$('dockFooterName').textContent = DOCK_PANELS[dockIndexState][1];
+  w$('dockIndex').textContent = String(dockIndexState + 1).padStart(2, '0');
+  document.querySelectorAll('.dock-dot').forEach((dot, i) => {
+    dot.classList.toggle('on', i === dockIndexState);
+    dot.setAttribute('aria-current', i === dockIndexState ? 'true' : 'false');
+  });
+  document.querySelectorAll('.dock-panel').forEach((panel, i) => {
+    panel.setAttribute('aria-hidden', i === dockIndexState ? 'false' : 'true');
+    panel.inert = i !== dockIndexState;
+  });
+  try{ localStorage.setItem('planner.dockPanel', String(dockIndexState)); }catch(error){}
+}
+
+/* ---------- widgets ----------------------------------------------------- */
+const WIDGET_KEY = 'planner.widgets.v1';
+const WIDGET_CATALOG = {
+  load:{ title:'Загрузка', description:'Норма за выбранный период' },
+  resource:{ title:'Ресурс', description:'Состав и фонд участка' },
+  operations:{ title:'Операции', description:'Позиции и сумма норм' },
+  deadlines:{ title:'Сроки', description:'Просрочка и ближайшие ТДГ' },
+  sync:{ title:'Синхронизация', description:'Источник и резервная копия' },
+  activity:{ title:'Изменения', description:'Последние записи журнала' },
+  actions:{ title:'Быстрые действия', description:'План, отчёт и экспорт' },
+  boards:{ title:'Общая доска', description:'Выведенные участки' }
+};
+let customWidgets = wStoreGet(WIDGET_KEY, ['load', 'resource', 'actions']);
+if(!Array.isArray(customWidgets)) customWidgets = ['load', 'resource', 'actions'];
+customWidgets = customWidgets.filter((id, index, all) => WIDGET_CATALOG[id] && all.indexOf(id) === index);
+let loadPeriodState = localStorage.getItem('planner.loadPeriod') || 'day';
+if(!['day', 'week', 'month'].includes(loadPeriodState)) loadPeriodState = 'day';
+
+function renderLoadStrip(site){
+  const host = w$('siteLoadStrip');
+  if(!host) return;
+  host.innerHTML = ['day', 'week', 'month'].map(period => {
+    const load = workloadPeriod(site, period);
+    return '<div class="top-load' + (load.pct > 100 ? ' over' : '') + '" title="' + workloadLabel(period) + ': ' + wEsc(load.from) + ' — ' + wEsc(load.to) + '">' +
+      '<span>' + workloadLabel(period) + '</span><b>' + load.pct + '%</b><small>' + wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + wEsc(load.unit) + '</small></div>';
+  }).join('');
+}
+function renderLoadPanel(){
+  const host = w$('loadWidgets');
+  if(!host) return;
+  const planner = wPlanner();
+  const active = wActiveSite();
+  const hero = workloadPeriod(active, loadPeriodState);
+  let html = '<div class="load-hero' + (hero.pct > 100 ? ' over' : '') + '"><div class="load-hero-head"><b>' + wEsc(active.name) + '</b><strong>' + hero.pct + '%</strong></div>' +
+    '<div class="load-numbers">' + wFmt(hero.load) + ' / ' + wFmt(hero.capacity) + ' ' + wEsc(hero.unit) + '</div>' + workloadBar(hero) +
+    '<small>' + workloadLabel(loadPeriodState) + ' · ' + wEsc(hero.from) + ' — ' + wEsc(hero.to) + ' · рабочих дней: ' + hero.workdays + '</small></div>';
+  html += '<div class="section-label">Все участки · ' + workloadLabel(loadPeriodState).toLowerCase() + '</div><div class="load-site-list">';
+  planner.state.sites.forEach(site => {
+    const load = workloadPeriod(site, loadPeriodState);
+    html += '<div class="load-row" data-load-site="' + wEsc(site.id) + '"><div class="load-row-head"><b>' + wEsc(site.name) + '</b><span>' + load.pct + '%</span></div>' + workloadBar(load, true) +
+      '<small>' + wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + wEsc(load.unit) + '</small></div>';
+  });
+  host.innerHTML = html + '</div>';
+}
+function widgetBody(id, site){
+  const planner = wPlanner();
+  if(id === 'load'){
+    const load = workloadPeriod(site, loadPeriodState);
+    return '<strong class="widget-big">' + load.pct + '%</strong>' + workloadBar(load) + '<span class="widget-caption">' + workloadLabel(loadPeriodState) + ' · ресурс участка учтён отдельно</span>';
+  }
+  if(id === 'resource'){
+    return '<strong class="widget-big">' + wFmt(planner.fondOf(site)) + ' <small>' + wEsc(site.unit || 'мин') + '</small></strong><span class="widget-caption">' + wEsc(planner.siteResLine(site)) + '</span>';
+  }
+  if(id === 'operations'){
+    const rows = planner.effRows(site);
+    const total = rows.reduce((sum, row) => sum + (row.minutes || 0), 0);
+    return '<strong class="widget-big">' + rows.length + '</strong><span class="widget-caption">операций · ' + planner.buildPositions(site).size + ' позиций</span><span class="widget-caption">Сумма норм: ' + wFmt(total) + ' ' + wEsc(site.unit || 'мин') + '</span>';
+  }
+  if(id === 'deadlines'){
+    const rows = planner.effRows(site);
+    const late = rows.filter(row => row.tdg && row.dateEff && row.dateEff > row.tdg);
+    const next = rows.filter(row => row.tdg && row.dateEff && row.dateEff <= row.tdg).sort((a, b) => a.tdg.localeCompare(b.tdg)).slice(0, 3);
+    return '<strong class="widget-big"' + (late.length ? ' style="color:var(--red)"' : '') + '>' + late.length + '</strong><span class="widget-caption">операций после ТДГ</span>' +
+      (next.length ? '<ul class="widget-list">' + next.map(row => '<li><b>' + wEsc(row.tdg) + '</b> · ' + wEsc(row.prodOrder || row.custOrder) + '</li>').join('') + '</ul>' : '<span class="widget-caption">Просроченных сроков нет</span>');
+  }
+  if(id === 'sync'){
+    const status = site.syncOk ? 'Синхронизировано' : site.rows.length ? 'Резервная копия сохранена' : 'Нет данных';
+    return '<strong class="widget-big">' + site.rows.length + '</strong><span class="widget-caption">операций в источнике</span><span class="widget-caption">' + status + (site.syncAt ? ' · ' + wEsc(new Date(site.syncAt).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})) : '') + '</span>';
+  }
+  if(id === 'activity'){
+    const entries = planner.readLog().filter(entry => entry.site === site.id).slice(-3).reverse();
+    return entries.length ? '<ul class="widget-list">' + entries.map(entry => '<li><b>' + wEsc(entry.action) + '</b><br>' + wEsc(entry.details).slice(0, 120) + '</li>').join('') + '</ul>' : '<span class="widget-caption">Изменений пока нет</span>';
+  }
+  if(id === 'actions'){
+    return '<div class="widget-actions"><button class="btn" data-widget-action="autoplan">Автоплан</button><button class="btn" data-widget-action="log">Отчёт</button><button class="btn" data-widget-action="export">CSV</button><button class="btn" data-widget-action="today">Сегодня</button></div>';
+  }
+  if(id === 'boards'){
+    const pinned = planner.state.sites.filter(item => item.onBoard);
+    return pinned.length ? '<ul class="widget-list">' + pinned.map(item => '<li><b>' + wEsc(item.name) + '</b><br>' + wEsc(planner.siteResLine(item)) + '</li>').join('') + '</ul>' : '<span class="widget-caption">Нажмите «На общую доску» у нужного участка</span>';
+  }
+  return '';
+}
+function renderCustomWidgets(site){
+  const picker = w$('widgetPicker');
+  const host = w$('customWidgets');
+  if(!picker || !host) return;
+  const available = Object.keys(WIDGET_CATALOG).filter(id => !customWidgets.includes(id));
+  picker.innerHTML = available.length
+    ? available.map(id => '<option value="' + id + '">' + wEsc(WIDGET_CATALOG[id].title) + ' — ' + wEsc(WIDGET_CATALOG[id].description) + '</option>').join('')
+    : '<option value="">Все виджеты добавлены</option>';
+  w$('btnAddWidget').disabled = !available.length || !wCan('widgets');
+  host.innerHTML = customWidgets.length ? customWidgets.map((id, index) =>
+    '<article class="widget-card" data-widget="' + id + '"><div class="widget-head"><b>' + wEsc(WIDGET_CATALOG[id].title) + '</b>' +
+    '<button data-widget-up="' + index + '" title="Выше" ' + (index === 0 ? 'disabled' : '') + '>↑</button>' +
+    '<button data-widget-down="' + index + '" title="Ниже" ' + (index === customWidgets.length - 1 ? 'disabled' : '') + '>↓</button>' +
+    '<button data-widget-remove="' + id + '" title="Убрать">×</button></div><div class="widget-body">' + widgetBody(id, site) + '</div></article>'
+  ).join('') : '<div class="hint">Добавьте первый виджет из списка выше.</div>';
+}
+
+/* ---------- profiles: UI permissions, not server authentication -------- */
+const PROFILE_KEY = 'planner.profiles.v1';
+const ACTIVE_PROFILE_KEY = 'planner.activeProfile';
+const OWNER_PROFILE = { id:'owner', name:'Владелец', role:'admin' };
+const ROLE_NAMES = { admin:'Администратор · полный доступ', planner:'Планировщик · план и ресурсы', viewer:'Наблюдатель · только просмотр' };
+let profiles = wStoreGet(PROFILE_KEY, [OWNER_PROFILE]);
+if(!Array.isArray(profiles)) profiles = [OWNER_PROFILE];
+profiles = profiles.filter(profile => profile && ROLE_NAMES[profile.role] && profile.id && profile.name);
+if(!profiles.some(profile => profile.id === 'owner')) profiles.unshift(OWNER_PROFILE);
+profiles = profiles.map(profile => profile.id === 'owner' ? OWNER_PROFILE : profile);
+let currentProfile = OWNER_PROFILE;
+
+function encodeProfile(profile){
+  const json = JSON.stringify({ v:1, id:profile.id, name:profile.name, role:profile.role });
+  return btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+function decodeProfile(value){
+  try{
+    const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+    const data = JSON.parse(decodeURIComponent(escape(atob(normalized))));
+    if(data.v !== 1 || !ROLE_NAMES[data.role] || !data.id || !data.name) return null;
+    return { id:String(data.id).slice(0, 80), name:String(data.name).slice(0, 80), role:data.role };
+  }catch(error){ return null; }
+}
+function initProfile(){
+  if(typeof location === 'undefined') return;
+  const params = new URLSearchParams(location.search || '');
+  if(params.has('access')){
+    const linked = decodeProfile(params.get('access') || '');
+    currentProfile = linked || { id:'guest', name:'Гость по ссылке', role:'viewer' };
+    if(linked && !profiles.some(profile => profile.id === linked.id)) profiles.push(linked);
+  }else{
+    const savedId = localStorage.getItem(ACTIVE_PROFILE_KEY);
+    currentProfile = profiles.find(profile => profile.id === savedId) || OWNER_PROFILE;
+  }
+  wStoreSet(PROFILE_KEY, profiles);
+  try{ localStorage.setItem(ACTIVE_PROFILE_KEY, currentProfile.id); }catch(error){}
+}
+function wCan(permission){
+  if(currentProfile.role === 'admin') return true;
+  if(currentProfile.role === 'viewer') return permission === 'export';
+  return ['edit', 'resource', 'sync', 'widgets', 'export'].includes(permission);
+}
+function activateProfile(id){
+  const profile = profiles.find(item => item.id === id);
+  if(!profile) return;
+  currentProfile = profile;
+  try{ localStorage.setItem(ACTIVE_PROFILE_KEY, id); }catch(error){}
+  if(typeof history !== 'undefined' && history.replaceState && typeof location !== 'undefined'){
+    const url = new URL(location.href);
+    if(id === 'owner') url.searchParams.delete('access');
+    else url.searchParams.set('access', encodeProfile(profile));
+    history.replaceState(null, '', url);
+  }
+  renderProfiles();
+  renderWorkspace(wActiveSite());
+  w$('profilesModal').classList.remove('open');
+  if(window.PLANNER) window.PLANNER.render();
+}
+function profileLink(profile){
+  const url = new URL(location.href);
+  url.hash = '';
+  url.search = '';
+  url.searchParams.set('access', encodeProfile(profile));
+  return url.toString();
+}
+async function copyProfileLink(profile){
+  const link = profileLink(profile);
+  try{
+    await navigator.clipboard.writeText(link);
+    toast('Ссылка профиля скопирована — секретов в ней нет');
+  }catch(error){ prompt('Скопируйте ссылку профиля:', link); }
+}
+function renderProfiles(){
+  document.body.dataset.role = currentProfile.role;
+  w$('profileName').textContent = currentProfile.name;
+  w$('profileAvatar').textContent = currentProfile.name.trim().charAt(0).toUpperCase() || 'П';
+  const current = w$('profileCurrent');
+  if(current) current.innerHTML = '<b>' + wEsc(currentProfile.name) + '</b><span>' + wEsc(ROLE_NAMES[currentProfile.role]) + '</span>';
+  const list = w$('profilesList');
+  if(!list) return;
+  list.innerHTML = profiles.map(profile =>
+    '<div class="profile-item"><div><b>' + wEsc(profile.name) + '<span class="profile-role">' + wEsc(profile.role) + '</span></b><small>' + wEsc(ROLE_NAMES[profile.role]) + '</small></div>' +
+    '<button class="btn profile-use" data-profile-use="' + wEsc(profile.id) + '">' + (profile.id === currentProfile.id ? 'Активен' : 'Открыть') + '</button>' +
+    '<button class="btn" data-profile-copy="' + wEsc(profile.id) + '" title="Скопировать ссылку">Ссылка</button></div>'
+  ).join('');
+  w$('btnCreateProfile').disabled = currentProfile.role !== 'admin';
+}
+function applyPermissions(){
+  const editControls = ['btnAutoplan', 'planApply', 'splitCreate', 'btnPinBoard', 'btnKimiRequest'];
+  const adminControls = ['btnDelSite', 'btnAddSite', 'nsCreate', 'btnShare', 'btnShareCfg', 'logClear'];
+  editControls.forEach(id => { if(w$(id)) w$(id).disabled = !wCan('edit'); });
+  adminControls.forEach(id => { if(w$(id)) w$(id).disabled = currentProfile.role !== 'admin'; });
+  ['workersInput', 'perWorkerInput', 'fondTotalInput'].forEach(id => { if(w$(id)) w$(id).disabled = !wCan('resource'); });
+  if(w$('btnRefresh')) w$('btnRefresh').disabled = !wCan('sync');
+  if(w$('kimiNotes')) w$('kimiNotes').disabled = !wCan('edit');
+  if(w$('kimiStrict')) w$('kimiStrict').disabled = !wCan('edit');
+  if(w$('planNotes')) w$('planNotes').disabled = !wCan('edit');
+  if(w$('planStrict')) w$('planStrict').disabled = !wCan('edit');
+}
+
+/* ---------- Kimi Work / native WebMCP ---------------------------------- */
+let kimiContext = null;
+let kimiPending = null;
+let kimiSequence = 0;
+let kimiWaitResolve = null;
+let kimiUiState = 'idle';
+function kimiToolResult(data){
+  return { content:[{ type:'text', text:JSON.stringify(data) }], structuredContent:data };
+}
+function kimiStatus(message, state){
+  const host = w$('kimiStatus');
+  if(!host) return;
+  host.className = 'connection-card' + (state ? ' ' + state : '');
+  host.textContent = message;
+}
+function kimiPublicRequest(pending){
+  return {
+    requestId:pending.id,
+    sequence:pending.sequence,
+    generatedAt:pending.generatedAt,
+    site:pending.site,
+    instructions:pending.instructions,
+    operations:pending.operations,
+    baseline:pending.baseline,
+    responseContract:{
+      requestId:'string — повторить requestId',
+      assignments:'массив {rowId, date}; вернуть ровно все ID из baseline.assignments, даты YYYY-MM-DD',
+      rationale:'короткое объяснение на русском',
+      warnings:'массив предупреждений о сроках и перегрузе'
+    }
+  };
+}
+function prepareKimiRequest(){
+  if(!wCan('edit')) throw new Error('В этом профиле автоплан доступен только для просмотра.');
+  const planner = wPlanner();
+  const site = wActiveSite();
+  site.notes = w$('kimiNotes').value.trim();
+  site.planStrict = w$('kimiStrict').checked;
+  planner.saveSites();
+  const result = planner.autoplain(site);
+  const operations = planner.effRows(site).map(row => ({
+    rowId:row.id,
+    positionKey:planner.positionKey(row, site),
+    contract:row.custOrder || '',
+    productionOrder:row.prodOrder || '',
+    customer:row.customer || '',
+    product:row.prod || '',
+    quantity:row.qty || 0,
+    norm:row.minutes || 0,
+    unit:site.unit || 'мин',
+    currentDate:row.dateEff || null,
+    deadline:row.tdg || null,
+    contractDate:row.contractDate || null,
+    splitPart:!!row.splitPart
+  }));
+  const id = 'plan-' + Date.now().toString(36) + '-' + (++kimiSequence);
+  const pending = {
+    id, sequence:kimiSequence, generatedAt:new Date().toISOString(), siteId:site.id,
+    sourceSignature:site.rows.map(row => row.id).join('|'), result,
+    site:{
+      id:site.id, name:site.name, unit:site.unit || 'мин', format:site.format,
+      resourcePerDay:planner.fondOf(site), workdays:site.workdays,
+      strictSequence:site.planStrict, today:planner.todayISO()
+    },
+    instructions:site.notes || 'Дополнительных пожеланий нет. Соблюдать сроки, последовательность и ресурс участка.',
+    operations,
+    baseline:{
+      assignments:Object.entries(result.plan).map(([rowId, date]) => ({ rowId, date })),
+      autoSplits:result.autoSplits.map(record => ({
+        key:record.key, product:record.prod,
+        parts:record.parts.map(part => ({ rowId:part.id, quantity:part.qty, norm:part.minutes, date:part.date }))
+      })),
+      late:result.late,
+      explanation:'Базовый локальный расчёт. Kimi может улучшить порядок и даты, но обязан сохранить все ID и не терять операции.'
+    }
+  };
+  kimiPending = pending;
+  kimiUiState = 'waiting';
+  w$('planNotes').value = site.notes;
+  w$('planStrict').checked = site.planStrict;
+  const payload = kimiPublicRequest(pending);
+  if(kimiWaitResolve){
+    const resolve = kimiWaitResolve;
+    kimiWaitResolve = null;
+    resolve(kimiToolResult(payload));
+  }
+  kimiStatus('Запрос № ' + pending.sequence + ' готов. Ожидающий сеанс Kimi получил данные; если сеанс ещё не запущен, попросите Kimi в активном чате ожидать автоплан и подготовьте запрос ещё раз.', 'pending');
+  return payload;
+}
+function applyKimiPlan(input){
+  if(!wCan('edit')) throw new Error('Профиль не имеет права изменять план.');
+  if(!kimiPending) throw new Error('Нет активного запроса. Сначала нажмите «Подготовить запрос для Kimi».');
+  if(!input || input.requestId !== kimiPending.id) throw new Error('requestId не совпадает с активным запросом.');
+  if(!Array.isArray(input.assignments)) throw new Error('Нужен массив assignments.');
+  const planner = wPlanner();
+  const site = planner.state.sites.find(item => item.id === kimiPending.siteId);
+  if(!site) throw new Error('Участок запроса больше не существует.');
+  if(site.rows.map(row => row.id).join('|') !== kimiPending.sourceSignature) throw new Error('Операции участка изменились после запроса. Подготовьте новый запрос.');
+  const expected = Object.keys(kimiPending.result.plan);
+  const beforeRows = planner.effRows(site);
+  const beforeDates = new Map(beforeRows.map(row => [row.id, row.dateEff || null]));
+  const meta = new Map();
+  beforeRows.forEach(row => meta.set(row.id, { key:planner.positionKey(row, site), deadline:row.tdg || row.contractDate || null }));
+  kimiPending.result.autoSplits.forEach(record => record.parts.forEach(part => {
+    meta.set(part.id, { key:record.key, deadline:record.tdg || record.contractDate || null });
+  }));
+  const baselineGroups = new Map();
+  const nextGroups = new Map();
+  expected.forEach(id => {
+    const key = meta.get(id) ? meta.get(id).key : id;
+    if(!baselineGroups.has(key)) baselineGroups.set(key, []);
+    baselineGroups.get(key).push(kimiPending.result.plan[id]);
+  });
+  const seen = new Set();
+  const plan = {};
+  input.assignments.forEach(item => {
+    if(!item || typeof item.rowId !== 'string' || seen.has(item.rowId)) throw new Error('Пустой или повторяющийся rowId.');
+    if(!expected.includes(item.rowId)) throw new Error('Неизвестный rowId: ' + item.rowId);
+    if(!wIsIsoDate(item.date)) throw new Error('Некорректная ISO-дата для ' + item.rowId);
+    if(item.date < planner.todayISO()) throw new Error('Автоплан не должен ставить операции в прошлое: ' + item.rowId);
+    const info = meta.get(item.rowId);
+    const baselineDate = kimiPending.result.plan[item.rowId];
+    if(info && info.deadline && item.date > info.deadline && item.date > baselineDate) throw new Error('План увеличивает просрочку для ' + item.rowId + '.');
+    seen.add(item.rowId);
+    plan[item.rowId] = item.date;
+    const key = info ? info.key : item.rowId;
+    if(!nextGroups.has(key)) nextGroups.set(key, []);
+    nextGroups.get(key).push(item.date);
+  });
+  const missing = expected.filter(id => !seen.has(id));
+  if(missing.length) throw new Error('План неполный: отсутствует операций ' + missing.length + '.');
+  const span = dates => {
+    const values = dates.map(date => Date.parse(date + 'T00:00:00'));
+    return Math.max(...values) - Math.min(...values);
+  };
+  nextGroups.forEach((dates, key) => {
+    const baseline = baselineGroups.get(key) || [];
+    if(new Set(dates).size > new Set(baseline).size || span(dates) > span(baseline)) throw new Error('Позиция разбросана по дням сильнее базового расчёта: ' + key + '. Упакуйте её последовательно.');
+  });
+  const changedCount = expected.filter(id => (beforeDates.get(id) || null) !== plan[id]).length;
+  planner.applyPlanToSite(site, plan, kimiPending.result.autoSplits);
+  planner.saveSites();
+  const rationale = String(input.rationale || 'План проверен и возвращён Kimi.').slice(0, 3000);
+  const warnings = Array.isArray(input.warnings) ? input.warnings.slice(0, 30).map(item => String(item).slice(0, 300)) : [];
+  planner.logChange(site, 'автоплан · Kimi', 'изменено дат: ' + changedCount + '; операций: ' + expected.length + '; ' + rationale);
+  kimiPending = null;
+  kimiUiState = 'done';
+  if(site.sharedOn) planner.pushShared(site).catch(() => {});
+  planner.render();
+  w$('kimiResult').innerHTML = '<div class="kimi-result-card"><b>План Kimi применён · ' + expected.length + ' операций</b>' + wEsc(rationale) +
+    (warnings.length ? '<ul class="widget-list">' + warnings.map(item => '<li>' + wEsc(item) + '</li>').join('') + '</ul>' : '') + '</div>';
+  kimiStatus('Готово. Изменения записаны в журнал участка; API-запросов и списания кредитов через эту интеграцию нет.', 'ok');
+  return kimiToolResult({ ok:true, siteId:site.id, operations:expected.length, rationale, warnings });
+}
+function registerKimiTools(){
+  const host = document.modelContext || navigator.modelContext;
+  if(!host || typeof host.registerTool !== 'function'){
+    kimiStatus('Канал Kimi Work недоступен в этом браузере. Откройте страницу во встроенном браузере Kimi Work; локальный автоплан продолжит работать.', 'error');
+    return;
+  }
+  kimiContext = host;
+  try{
+    host.registerTool({
+      name:'planner_get_autoplan_request',
+      description:'Прочитать текущий явно подготовленный запрос автоплана производственного участка. Ничего не изменяет.',
+      inputSchema:{ type:'object', properties:{}, additionalProperties:false },
+      annotations:{ readOnlyHint:true },
+      execute:async () => kimiToolResult(kimiPending ? { pending:true, ...kimiPublicRequest(kimiPending) } : { pending:false })
+    });
+    host.registerTool({
+      name:'planner_wait_for_autoplan',
+      description:'Ожидать нажатие пользователем кнопки «Подготовить запрос для Kimi». Один pending-вызов; не опрашивать страницу. Вернуть запрос с sequence больше afterSequence.',
+      inputSchema:{ type:'object', properties:{ afterSequence:{ type:'integer', minimum:0, default:0 } }, additionalProperties:false },
+      annotations:{ readOnlyHint:true },
+      execute:async args => {
+        const after = args && Number.isInteger(args.afterSequence) ? args.afterSequence : 0;
+        if(kimiPending && kimiPending.sequence > after) return kimiToolResult(kimiPublicRequest(kimiPending));
+        if(kimiWaitResolve) throw new Error('Уже есть ожидающий вызов planner_wait_for_autoplan.');
+        return new Promise(resolve => { kimiWaitResolve = resolve; });
+      }
+    });
+    host.registerTool({
+      name:'planner_apply_autoplan',
+      description:'Проверить и применить полный план Kimi. Изменяет даты участка и пишет журнал. Все rowId из baseline.assignments обязательны ровно один раз.',
+      inputSchema:{
+        type:'object', required:['requestId', 'assignments'], additionalProperties:false,
+        properties:{
+          requestId:{ type:'string' },
+          assignments:{ type:'array', minItems:1, items:{ type:'object', required:['rowId', 'date'], additionalProperties:false, properties:{ rowId:{type:'string'}, date:{type:'string', pattern:'^\\d{4}-\\d{2}-\\d{2}$'} } } },
+          rationale:{ type:'string' }, warnings:{ type:'array', items:{type:'string'} }
+        }
+      },
+      annotations:{ readOnlyHint:false },
+      execute:async input => applyKimiPlan(input)
+    });
+    kimiStatus('Канал Kimi Work доступен. Нужен активный сеанс агента, ожидающий запрос; страница сама ничего не отправляет в фоне.', 'ok');
+  }catch(error){
+    kimiContext = null;
+    kimiStatus('Не удалось зарегистрировать канал Kimi: ' + error.message, 'error');
+  }
+}
+
+/* ---------- rendering and event wiring --------------------------------- */
+function renderSiteRail(){
+  const host = w$('siteRailList');
+  if(!host) return;
+  const planner = wPlanner();
+  w$('siteCount').textContent = planner.state.sites.length;
+  host.innerHTML = planner.state.sites.map(site => {
+    const load = workloadPeriod(site, 'day');
+    const short = site.name.replace(/\s*\(live\)/gi, '').replace(/—.*$/, '').trim();
+    const letters = short.split(/[\s/]+/).filter(Boolean).slice(0, 2).map(part => part.charAt(0)).join('').toUpperCase();
+    return '<button class="site-rail-item' + (site.id === planner.state.activeId ? ' on' : '') + '" data-rail-site="' + wEsc(site.id) + '"><span class="site-monogram">' + wEsc(letters) + '</span><span class="site-rail-copy"><b>' + wEsc(short) + '</b><small>' + site.rows.length + ' операций · ' + wFmt(planner.fondOf(site)) + ' ' + wEsc(site.unit || 'мин') + '/день</small></span><span class="site-mini-load' + (load.pct > 100 ? ' over' : '') + '">' + load.pct + '%</span></button>';
+  }).join('');
+}
+function syncKimiFields(site){
+  const notes = w$('kimiNotes');
+  if(!notes) return;
+  if(notes.dataset.siteId !== site.id && document.activeElement !== notes){
+    notes.value = site.notes || '';
+    notes.dataset.siteId = site.id;
+  }
+  if(document.activeElement !== w$('kimiStrict')) w$('kimiStrict').checked = site.planStrict !== false;
+}
+function renderWorkspace(site){
+  if(!workspaceReady || !site || !document.querySelector) return;
+  const planner = wPlanner();
+  const date = new Date();
+  w$('headerDate').textContent = new Intl.DateTimeFormat('ru-RU', { weekday:'long', day:'numeric', month:'long' }).format(date);
+  w$('stageSiteName').textContent = site.name.replace(/\s*\(live\)/gi, '');
+  renderSiteRail();
+  renderLoadStrip(site);
+  renderLoadPanel();
+  renderCustomWidgets(site);
+  syncKimiFields(site);
+  applyPermissions();
+}
+function guardPermissions(event){
+  const target = event.target.closest ? event.target.closest('button, [data-split], [data-unsplit], [data-unpin]') : null;
+  if(!target) return;
+  const id = target.id;
+  let permission = null;
+  if(['btnAutoplan', 'planApply', 'splitCreate', 'btnPinBoard', 'btnKimiRequest'].includes(id) || target.hasAttribute('data-split') || target.hasAttribute('data-unsplit') || target.hasAttribute('data-unpin')) permission = 'edit';
+  if(['btnDelSite', 'btnAddSite', 'nsCreate', 'btnShare', 'btnShareCfg', 'logClear', 'btnCreateProfile'].includes(id)) permission = 'admin';
+  if(permission && (permission === 'admin' ? currentProfile.role !== 'admin' : !wCan(permission))){
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    alert('Профиль «' + currentProfile.name + '» не имеет права на это действие. Роли на этой статической странице ограничивают интерфейс.');
+  }
+}
+function wireWorkspace(){
+  w$('dockPrev').addEventListener('click', () => setDockPanel(dockIndexState - 1));
+  w$('dockNext').addEventListener('click', () => setDockPanel(dockIndexState + 1));
+  w$('dockDots').innerHTML = DOCK_PANELS.map((panel, index) => '<button class="dock-dot" data-dock="' + index + '" title="' + wEsc(panel[0]) + '" aria-label="' + wEsc(panel[0]) + '"></button>').join('');
+  w$('dockDots').addEventListener('click', event => {
+    const dot = event.target.closest('[data-dock]');
+    if(dot) setDockPanel(Number(dot.dataset.dock));
+  });
+  w$('controlDock').addEventListener('keydown', event => {
+    if(event.key === 'ArrowLeft') setDockPanel(dockIndexState - 1);
+    if(event.key === 'ArrowRight') setDockPanel(dockIndexState + 1);
+  });
+  let touchX = null;
+  w$('controlDock').addEventListener('touchstart', event => { touchX = event.touches[0].clientX; }, { passive:true });
+  w$('controlDock').addEventListener('touchend', event => {
+    if(touchX == null) return;
+    const delta = event.changedTouches[0].clientX - touchX;
+    if(Math.abs(delta) > 60) setDockPanel(dockIndexState + (delta < 0 ? 1 : -1));
+    touchX = null;
+  }, { passive:true });
+  w$('btnDock').addEventListener('click', () => document.body.classList.toggle('dock-open'));
+  w$('loadPeriod').value = loadPeriodState;
+  w$('loadPeriod').addEventListener('change', event => {
+    loadPeriodState = event.target.value;
+    try{ localStorage.setItem('planner.loadPeriod', loadPeriodState); }catch(error){}
+    renderWorkspace(wActiveSite());
+  });
+  w$('btnAddWidget').addEventListener('click', () => {
+    const id = w$('widgetPicker').value;
+    if(!WIDGET_CATALOG[id] || customWidgets.includes(id) || !wCan('widgets')) return;
+    customWidgets.push(id);
+    wStoreSet(WIDGET_KEY, customWidgets);
+    renderCustomWidgets(wActiveSite());
+  });
+  w$('customWidgets').addEventListener('click', event => {
+    const target = event.target.closest('button');
+    if(!target) return;
+    if(target.dataset.widgetAction){
+      const map = { autoplan:'btnAutoplan', log:'btnLog', export:'btnExport', today:'btnToday' };
+      w$(map[target.dataset.widgetAction]).click();
+      return;
+    }
+    if(!wCan('widgets')) return;
+    if(target.dataset.widgetRemove){
+      customWidgets = customWidgets.filter(id => id !== target.dataset.widgetRemove);
+    }else if(target.dataset.widgetUp !== undefined){
+      const index = Number(target.dataset.widgetUp);
+      if(index > 0) [customWidgets[index - 1], customWidgets[index]] = [customWidgets[index], customWidgets[index - 1]];
+    }else if(target.dataset.widgetDown !== undefined){
+      const index = Number(target.dataset.widgetDown);
+      if(index < customWidgets.length - 1) [customWidgets[index + 1], customWidgets[index]] = [customWidgets[index], customWidgets[index + 1]];
+    }else return;
+    wStoreSet(WIDGET_KEY, customWidgets);
+    renderCustomWidgets(wActiveSite());
+  });
+  w$('btnKimiRequest').addEventListener('click', () => {
+    try{ prepareKimiRequest(); }catch(error){ kimiStatus(error.message, 'error'); }
+  });
+  w$('kimiNotes').addEventListener('change', () => {
+    const site = wActiveSite();
+    site.notes = w$('kimiNotes').value;
+    wPlanner().saveSites();
+  });
+  w$('kimiStrict').addEventListener('change', () => {
+    const site = wActiveSite();
+    site.planStrict = w$('kimiStrict').checked;
+    wPlanner().saveSites();
+  });
+  w$('btnProfiles').addEventListener('click', () => { renderProfiles(); w$('profilesModal').classList.add('open'); });
+  w$('profilesClose').addEventListener('click', () => w$('profilesModal').classList.remove('open'));
+  w$('btnCreateProfile').addEventListener('click', () => {
+    if(currentProfile.role !== 'admin') return;
+    const name = w$('newProfileName').value.trim();
+    const role = w$('newProfileRole').value;
+    if(!name || !ROLE_NAMES[role]) return;
+    const id = 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+    profiles.push({ id, name:name.slice(0, 80), role });
+    wStoreSet(PROFILE_KEY, profiles);
+    w$('newProfileName').value = '';
+    renderProfiles();
+  });
+  w$('profilesList').addEventListener('click', event => {
+    const use = event.target.closest('[data-profile-use]');
+    const copy = event.target.closest('[data-profile-copy]');
+    if(use) activateProfile(use.dataset.profileUse);
+    if(copy){
+      const profile = profiles.find(item => item.id === copy.dataset.profileCopy);
+      if(profile) copyProfileLink(profile);
+    }
+  });
+  w$('siteRailList').addEventListener('click', event => {
+    const item = event.target.closest('[data-rail-site]');
+    if(!item) return;
+    w$('siteSelect').value = item.dataset.railSite;
+    w$('siteSelect').dispatchEvent(new Event('change'));
+  });
+  w$('loadWidgets').addEventListener('click', event => {
+    const item = event.target.closest('[data-load-site]');
+    if(!item) return;
+    w$('siteSelect').value = item.dataset.loadSite;
+    w$('siteSelect').dispatchEvent(new Event('change'));
+  });
+  document.addEventListener('click', guardPermissions, true);
+  document.addEventListener('dragstart', event => {
+    if(!wCan('edit') && event.target.closest('[draggable="true"][data-id]')){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, true);
+  /* FLIP: одна анимация только для фактически перенесённой карточки. */
+  let flip = null;
+  document.addEventListener('drop', event => {
+    const activeDragId = typeof dragId !== 'undefined' ? dragId : '';
+    const source = activeDragId ? document.querySelector('[data-id="' + activeDragId + '"]') : null;
+    if(source && source.getBoundingClientRect){
+      const rect = source.getBoundingClientRect();
+      flip = { id:source.dataset.id, x:rect.left, y:rect.top };
+    }
+  }, true);
+  document.addEventListener('drop', () => {
+    if(!flip || !document.querySelector) return;
+    const moved = flip;
+    flip = null;
+    requestAnimationFrame(() => {
+      const target = document.querySelector('[data-id="' + moved.id + '"]');
+      if(!target || !target.animate || !target.getBoundingClientRect) return;
+      const rect = target.getBoundingClientRect();
+      target.animate([
+        { transform:'translate(' + (moved.x - rect.left) + 'px,' + (moved.y - rect.top) + 'px)', opacity:.75 },
+        { transform:'translate(0,0)', opacity:1 }
+      ], { duration:300, easing:'cubic-bezier(.16,1,.3,1)' });
+    });
+  });
+}
+function initWorkspace(){
+  if(initWorkspace._done || !document.querySelector || !window.PLANNER) return;
+  initWorkspace._done = true;
+  initProfile();
+  wireWorkspace();
+  workspaceReady = true;
+  setDockPanel(dockIndexState);
+  renderProfiles();
+  renderWorkspace(wActiveSite());
+  registerKimiTools();
+}
+if(typeof window !== 'undefined'){
+  window.PLANNER_WORKSPACE = {
+    workloadPeriod, setDockPanel, prepareKimiRequest, applyKimiPlan,
+    renderWorkspace, initWorkspace, wCan,
+    get profiles(){ return profiles; }, get currentProfile(){ return currentProfile; },
+    get pendingKimiRequest(){ return kimiPending; }
+  };
+  if(typeof document !== 'undefined' && document.addEventListener){
+    document.addEventListener('DOMContentLoaded', initWorkspace);
+    if(document.readyState !== 'loading') initWorkspace();
   }
 }
 </script>
