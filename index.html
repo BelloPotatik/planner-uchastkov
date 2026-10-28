@@ -84,7 +84,7 @@
   .seg button{border:0;background:transparent;padding:5px 14px;border-radius:999px;cursor:pointer;color:var(--muted);font-weight:600;font-size:12px;transition:color .18s var(--ease);position:relative;z-index:1}
   .seg button:hover{color:var(--ink)}
   .seg button.on{color:var(--green-deep)}
-  .btn{font:12.5px var(--font);border:1px solid var(--line-strong);background:#fff;border-radius:10px;padding:6px 13px;cursor:pointer;font-weight:600;color:var(--ink);transition:all .16s var(--ease)}
+  .btn{font:12.5px var(--font);border:1px solid var(--line-strong);background:#fff;border-radius:10px;padding:6px 13px;cursor:pointer;font-weight:600;color:var(--ink);transition:background .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease),box-shadow .16s var(--ease),transform .16s var(--ease),filter .16s var(--ease)}
   .btn:hover{background:#f1f5f9;border-color:#c3cfdb}
   .btn:active{transform:scale(.96)}
   .btn.primary{background:linear-gradient(135deg,var(--green-bright),var(--green-dark));border-color:transparent;color:#fff;box-shadow:0 4px 12px -4px var(--green-glow)}
@@ -187,7 +187,7 @@
   .hint{color:var(--muted);font-size:12px}
   textarea{width:100%;box-sizing:border-box;font:inherit;padding:9px 11px;border:1px solid var(--line-strong);border-radius:var(--r-md);resize:vertical;background:#fff}
   textarea:focus{border-color:var(--green-bright);box-shadow:0 0 0 4px rgba(16,185,129,.14);outline:none}
-  .mini{border:1px solid var(--line-strong);background:#fff;border-radius:999px;font-size:10.5px;padding:2px 8px;cursor:pointer;line-height:16px;color:var(--muted);font-weight:600;transition:all .14s var(--ease)}
+  .mini{border:1px solid var(--line-strong);background:#fff;border-radius:999px;font-size:10.5px;padding:2px 8px;cursor:pointer;line-height:16px;color:var(--muted);font-weight:600;transition:background .14s var(--ease),color .14s var(--ease),border-color .14s var(--ease),box-shadow .14s var(--ease)}
   .mini:hover{background:var(--amber-light);color:var(--ink);border-color:#e8cf9a}
   /* ================= v4: тёмная тема (переопределения) ================= */
   html[data-theme="dark"] body{background:
@@ -304,10 +304,11 @@
   .card.compact:hover{transform:none}
   .card.compact .card-prod{font-size:11px}
   /* ================= v5: «аврора» — фирменный визуал ================= */
-  /* зернистая плёнка поверх всего (кроме модалок/тостов) */
-  body::after{content:"";position:fixed;inset:0;z-index:65;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  /* зернистая плёнка поверх всего (кроме модалок/тостов) — v7: без blend-mode,
+     обычная прозрачность не заставляет композитор смешивать всю страницу каждый кадр */
+  body::after{content:"";position:fixed;inset:0;z-index:65;pointer-events:none;opacity:.045;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
-  html[data-theme="dark"] body::after{opacity:.08;mix-blend-mode:soft-light}
+  html[data-theme="dark"] body::after{opacity:.06}
   /* живое сияние в шапке */
   header{overflow:hidden}
   header::before{content:"";position:absolute;inset:-40% -10%;pointer-events:none;
@@ -341,14 +342,16 @@
   /* стекло суббара посильнее */
   .subbar{backdrop-filter:blur(18px) saturate(1.7)}
   .seg{box-shadow:inset 0 1px 3px rgba(15,23,42,.08)}
-  /* today: вращающееся конусное кольцо поверх мягкого свечения */
-  @property --ring{syntax:'<angle>';initial-value:0deg;inherits:false}
+  /* today: вращающееся конусное кольцо — v7 GPU-версия: маска статична,
+     вращается только внутренний слой через transform (композитор, без перерисовки) */
   .day-col.today,.bcol.today{position:relative;box-shadow:0 0 26px -8px var(--green-glow),var(--shadow-md)}
-  .day-col.today::before,.bcol.today::before{content:"";position:absolute;inset:-1.5px;border-radius:inherit;padding:1.6px;pointer-events:none;z-index:2;
-    background:conic-gradient(from var(--ring),#10b981,#6ee7b7,#059669,#34d399,#a7f3d0,#10b981);
-    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
-    animation:ringspin 7s linear infinite}
-  @keyframes ringspin{to{--ring:360deg}}
+  .ring{position:absolute;inset:-1.5px;border-radius:inherit;padding:1.6px;pointer-events:none;z-index:2;overflow:hidden;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+  .ring::before{content:"";position:absolute;inset:-160%;
+    background:conic-gradient(from 0deg,#10b981,#6ee7b7,#059669,#34d399,#a7f3d0,#10b981);
+    animation:ringspin 7s linear infinite;will-change:transform}
+  @keyframes ringspin{to{transform:rotate(360deg)}}
   /* шиммер на полосах загрузки */
   .loadbar i,.mini-bar i,.ss-bar i{position:relative;overflow:hidden}
   .loadbar i::after,.ss-bar i::after{content:"";position:absolute;inset:0;transform:translateX(-110%);
@@ -402,6 +405,14 @@
   html[data-theme="dark"] input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:pointer}
   /* тёмная тема: активная кнопка вида — только цвет (фон даёт скользящая плашка) */
   html[data-theme="dark"] .seg button.on{background:transparent;color:var(--green-bright)}
+  /* ================= v7: оптимизация верстки и рендера ================= */
+  /* изоляция пересчёта: изменение одной карточки не пересчитывает всю доску */
+  .card,.day-item,.lcell,.kpi{contain:layout style}
+  /* заэкранные секции общей доски и ленты участков не отрисовываются */
+  .bcol{content-visibility:auto;contain-intrinsic-size:196px 240px}
+  .lane{content-visibility:auto;contain-intrinsic-size:auto 130px}
+  /* will-change только на время стаггер-анимации — класс снимается через ~1.1 с */
+  .enter-anim .days > .day-col,.enter-anim > .l-day,.enter-anim > .shift-day,.enter-anim > .lane{will-change:transform,opacity}
   /* ================= адаптив ================= */
   @media(max-width:1180px){aside#dayPanel{width:232px;flex-basis:232px}}
   @media(max-width:980px){
@@ -955,6 +966,19 @@ function loadSites(){
 }
 function saveSites(){ localStorage.setItem(LS_KEY, JSON.stringify(state.sites)); }
 
+/* ---------- v7: кэш одного прохода рендера ----------
+   effRows/buildPositions/computeDays вызываются по много раз за один рендер
+   (KPI, доска, сменные, общие секции). Кэш живёт только внутри синхронного
+   passBegin()/passEnd() — снаружи функции работают как раньше, без кэша,
+   поэтому прямые мутации данных вне рендера всегда дают свежий результат. */
+const _pass = { depth:0, eff:null, pos:null, days:null };
+function passBegin(){
+  if(_pass.depth++ === 0){ _pass.eff = new WeakMap(); _pass.pos = new WeakMap(); _pass.days = new WeakMap(); }
+}
+function passEnd(){
+  if(--_pass.depth <= 0){ _pass.depth = 0; _pass.eff = _pass.pos = _pass.days = null; }
+}
+
 /* ---------- совместный доступ: общие правки через репозиторий GitHub ----------
    Общие переносы/разбивки/примечания/ресурс хранятся в файлах папки shared/
    репозитория планировщика (например shared/ОП.json). Планировщик сам читает
@@ -1110,6 +1134,7 @@ function suggestFond(site){
   return Math.ceil(mx/step)*step;
 }
 function effRows(site){
+  if(_pass.eff && _pass.eff.has(site)) return _pass.eff.get(site);
   const splits = site.splits || {};
   const keys = new Set(Object.keys(splits));
   const out = [];
@@ -1130,7 +1155,9 @@ function effRows(site){
         dateEff: (site.overrides && site.overrides[p.id]) || p.date || null });
     }
   }
-  return out.filter(r => r.prodOrder || r.custOrder);
+  const effRes = out.filter(r => r.prodOrder || r.custOrder);
+  if(_pass.eff) _pass.eff.set(site, effRes);
+  return effRes;
 }
 /* ---------- split: разбивка позиции на части (напр. 30 шт = 10+10+10) ---------- */
 function findPart(site, id){
@@ -1221,6 +1248,7 @@ function nextWorkDay(site, iso){
 
 /* ---------- positions (split detection) ---------- */
 function buildPositions(site){
+  if(_pass.pos && _pass.pos.has(site)) return _pass.pos.get(site);
   const m = new Map();
   for(const r of effRows(site)){
     const k = r.prodOrder + '|' + r.prod;
@@ -1233,11 +1261,17 @@ function buildPositions(site){
     p.totalQty = p.parts.reduce((a,r) => a + (r.qty||0), 0);
     p.totalMin = p.parts.reduce((a,r) => a + (r.minutes||0), 0);
   }
+  if(_pass.pos) _pass.pos.set(site, m);
   return m;
 }
 
 /* ---------- days ---------- */
 function computeDays(site){
+  const ck = (state.rangeFrom||'') + '|' + (state.rangeTo||'') + '|' + todayISO();
+  if(_pass.days && _pass.days.has(site)){
+    const c = _pass.days.get(site);
+    if(c.k === ck) return c.v;
+  }
   const rows = effRows(site);
   const map = new Map();
   const nodate = [];
@@ -1262,7 +1296,9 @@ function computeDays(site){
       work:isWorkday(site,d), has:map.has(d) });
   }
   all = all.filter(d => d.has || d.work); // рабочие дни + дни с данными
-  return { days:all, nodate };
+  const daysRes = { days:all, nodate };
+  if(_pass.days) _pass.days.set(site, { k:ck, v:daysRes });
+  return daysRes;
 }
 
 /* ---------- render ---------- */
@@ -1336,6 +1372,8 @@ function renderKPIs(site, daysInfo){
     chip('доступный ресурс, ' + unit, fmtMin(avail), avail < 0 ? 'bad' : (avail < fond*3 ? 'warn' : ''));
 }
 function render(){
+  passBegin();
+  try{
   const site = activeSite();
   if(!site){ return; }
   const entering = state._enterView; state._enterView = false;
@@ -1368,6 +1406,14 @@ function render(){
     const host = {board:$('boardLayout'), list:$('listView'), shifts:$('shiftsView'), multi:$('multiView')}[state.view];
     markEnter(host);
   }
+  }finally{ passEnd(); }
+}
+/* v7: пакетный рендер — серия событий за один кадр даёт один рендер, а не несколько */
+let renderQueued = false;
+function scheduleRender(){
+  if(renderQueued) return;
+  renderQueued = true;
+  raf(() => { renderQueued = false; render(); });
 }
 function showOnly(name){
   $('boardLayout').style.display = name === 'board' ? '' : 'none';
@@ -1471,6 +1517,7 @@ function renderBoard(site, daysInfo, posMap){
       (isToday ? '<span class="today-chip">сегодня</span>' : '') + '</div>' +
       '<div class="loadbar"><i style="width:' + Math.min(100,pct) + '%"></i></div>' +
       '<div class="di">' + uMin(site, d.total) + ' / ' + uMin(site, fond) + ' · ' + d.rows.length + ' опер.' + (pct>100?' · <b>перегруз +' + fmtMin(d.total-fond) + '</b>':'') + '</div></div>';
+    if(isToday) col.insertAdjacentHTML('beforeend', '<i class="ring"></i>'); // v7: GPU-кольцо today
     const body = document.createElement('div');
     body.className = 'day-body';
     if(!d.rows.length) body.innerHTML = '<div class="day-empty">пусто — перетащите сюда операцию</div>';
@@ -1646,7 +1693,7 @@ function boardSectionHTML(site){
   html += '<div class="bcols">';
   for(const d of days){
     const pct = Math.round(d.total / fond * 100);
-    html += '<div class="bcol' + (d.date === t ? ' today' : '') + '">' +
+    html += '<div class="bcol' + (d.date === t ? ' today' : '') + '">' + (d.date === t ? '<i class="ring"></i>' : '') +
       '<div class="bc-head' + (pct > 100 ? ' over' : '') + '">' + WD[wdOf(d.date)] + ', ' + fmtD(d.date) +
       '<span class="bc-pct">' + pct + '%</span>' +
       '<div class="bc-load">' + uMin(site, d.total) + ' / ' + uMin(site, fond) + '</div></div>' +
@@ -2014,6 +2061,8 @@ function posMatches(p, token){
     || p.parts.some(r => (r.prod || '').toLowerCase().includes(t));
 }
 function autoplain(site){
+  passBegin();
+  try{
   const t = todayISO();
   const fond = fondOf(site);
   const strict = site.planStrict !== false;
@@ -2140,6 +2189,7 @@ function autoplain(site){
     if(end && end > p.deadline) late.push({ prodOrder: p.prodOrder, prod: p.prod, end, deadline: p.deadline });
   }
   return { plan, changes, tooBig, total: rows.length, notes, autoSplits, late };
+  }finally{ passEnd(); }
 }
 function applyPlanToSite(site, plan, autoSplits){
   site.overrides = site.overrides || {};
@@ -2305,8 +2355,12 @@ function wire(){
     if(wrap && wrap.classList.contains('open') && !(e.target.closest && e.target.closest('#siteCSelect')) && !(e.target.closest && e.target.closest('.cs-menu'))) csOpen(false);
   });
   document.addEventListener('keydown', e => { if(e.key === 'Escape') csOpen(false); });
-  window.addEventListener('resize', () => { csOpen(false); segSync(); });
-  window.addEventListener('scroll', () => csOpen(false), true);
+  window.addEventListener('resize', () => { csOpen(false); segSync(); }, { passive:true });
+  // v7: passive + ранний выход, если меню закрыто — скролл страницы не трогает DOM
+  window.addEventListener('scroll', () => {
+    const m = $('csMenu');
+    if(m && m.classList.contains('open')) csOpen(false);
+  }, { passive:true, capture:true });
   // журнал изменений
   $('btnLog').addEventListener('click', openLogModal);
   $('logClose').addEventListener('click', () => $('logModal').classList.remove('open'));
@@ -2386,13 +2440,21 @@ function wire(){
     const after = fondOf(site);
     if(before !== after) logChange(site, 'ресурс', (site.teamTotal ? 'бригада ' + site.workers + ' чел' : site.workers + ' × ' + site.perWorker) +
       ': фонд ' + fmtMin(before) + ' → ' + fmtMin(after) + ' ' + (site.unit || 'мин') + '/день');
-    render();
+    scheduleRender();
   };
   $('workersInput').addEventListener('change', onResourceChange);
   $('perWorkerInput').addEventListener('change', onResourceChange);
   $('fondTotalInput').addEventListener('change', onResourceChange);
-  $('searchInput').addEventListener('input', render);
-  $('onlyBad').addEventListener('change', render);
+  // v7: поиск — дебаунс 110 мс и пропуск неизменного запроса; рендер пакетный
+  let searchT = 0, lastQ = null;
+  $('searchInput').addEventListener('input', () => {
+    const q = $('searchInput').value;
+    if(q === lastQ) return;
+    lastQ = q;
+    clearTimeout(searchT);
+    searchT = setTimeout(scheduleRender, 110);
+  });
+  $('onlyBad').addEventListener('change', scheduleRender);
   $('btnPinBoard').addEventListener('click', () => {
     const site = activeSite();
     site.onBoard = !site.onBoard;
@@ -2406,14 +2468,14 @@ function wire(){
     state.rangeFrom = $('rangeFrom').value || null;
     state.rangeTo = $('rangeTo').value || null;
     state.selectedDate = null;
-    render();
+    scheduleRender();
   };
   $('rangeFrom').addEventListener('change', onRange);
   $('rangeTo').addEventListener('change', onRange);
   $('rangeClear').addEventListener('click', () => {
     $('rangeFrom').value = ''; $('rangeTo').value = '';
     state.rangeFrom = null; state.rangeTo = null; state.selectedDate = null;
-    render();
+    scheduleRender();
   });
   $('btnToday').addEventListener('click', () => {
     $('rangeFrom').value = ''; $('rangeTo').value = '';
@@ -2515,6 +2577,8 @@ async function refreshActive(){
 
 /* ---------- init ---------- */
 function init(){
+  if(init._done) return; // защита от двойного запуска (DOMContentLoaded + readyState)
+  init._done = true;
   applyTheme(currentTheme());
   state.sites = loadSites();
   state.activeId = state.sites[0].id;
@@ -2530,7 +2594,7 @@ function init(){
     await Promise.allSettled(state.sites.filter(s => s.sourceType === 'url' && s.sourceUrl).map(s =>
       refreshSite(s).then(ok => { if(ok) okCount++; }).catch(() => { failCount++; })
     ));
-    render();
+    scheduleRender();
     if(failCount && !okCount) toast('Нет связи с Google Sheets — показаны сохранённые данные. Проверьте интернет и откройте страницу по ссылке Kimi (localhost), а не как файл.');
     else if(okCount) toast('Синхронизировано участков: ' + okCount + (failCount ? ' (не удалось: ' + failCount + ')' : ''));
   }, 600);
@@ -2542,7 +2606,7 @@ function init(){
       if(!s.sharedOn) continue;
       if(await pullShared(s)) changed = true;
     }
-    if(changed) render();
+    if(changed) scheduleRender(); // v7: опрос нескольких участков — один рендер на кадр
   }, 20000);
 }
 if(typeof window !== 'undefined'){
