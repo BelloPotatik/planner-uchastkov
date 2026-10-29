@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": 1793276070182,
+  "updatedAt": 1793284992913,
   "categories": [
     "Заготовка",
     "Сборка",
@@ -406,5 +406,7 @@
       "resourceConfirmed": true
     }
   },
-  "deleted": []
+  "deleted": [
+    "ops:критическая спецификация сау"
+  ]
 }
