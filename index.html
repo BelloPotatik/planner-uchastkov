@@ -416,12 +416,67 @@ textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft);
 @keyframes widget-in{from{opacity:0;transform:translateY(7px) scale(.98)}to{opacity:1;transform:none}}
 
 /* 07b. Resizable dock, period pickers and widget catalog ----------------- */
-.control-dock{position:relative}
-.dock-resize-handle{position:absolute;left:-5px;top:0;bottom:0;width:12px;z-index:8;display:flex;align-items:center;justify-content:center;cursor:col-resize;touch-action:none}
-.dock-resize-handle i{display:block;width:3px;height:42px;border-radius:4px;background:var(--line-strong);box-shadow:0 0 0 1px var(--surface);transition:height .2s,background .2s,box-shadow .2s}
-.dock-resize-handle:hover i,.dock-resize-handle:focus-visible i,body.dock-resizing .dock-resize-handle i{height:64px;background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
-.dock-resize-handle:focus-visible{outline:0}
+.control-dock{position:relative;overflow:visible}
+.dock-resize-handle{position:absolute;left:-9px;top:0;bottom:0;width:18px;z-index:42;display:flex;align-items:center;justify-content:center;cursor:col-resize;touch-action:none;outline:0}
+.dock-resize-handle::before{content:"";position:absolute;top:0;bottom:0;left:8px;width:2px;background:var(--green);opacity:0;transform:scaleY(.96);transition:opacity .18s,transform .28s var(--ease-out)}
+.dock-resize-handle i{position:relative;display:block;width:4px;height:48px;border-radius:5px;background:var(--line-strong);box-shadow:0 0 0 1px var(--surface);transition:height .24s var(--ease-out),background .18s,box-shadow .18s}
+.dock-resize-handle i::before,.dock-resize-handle i::after{content:"";position:absolute;left:1px;width:2px;height:2px;border-radius:50%;background:var(--surface);opacity:.8}
+.dock-resize-handle i::before{top:21px}.dock-resize-handle i::after{top:25px}
+.dock-resize-handle:hover::before,.dock-resize-handle:focus-visible::before,body.dock-resizing .dock-resize-handle::before{opacity:.8;transform:none}
+.dock-resize-handle:hover i,.dock-resize-handle:focus-visible i,body.dock-resizing .dock-resize-handle i{height:68px;background:var(--green);box-shadow:0 0 0 4px var(--green-soft),0 4px 14px rgba(23,33,29,.14)}
+.dock-resize-handle:hover i::before,.dock-resize-handle:hover i::after,.dock-resize-handle:focus-visible i::before,.dock-resize-handle:focus-visible i::after,body.dock-resizing .dock-resize-handle i::before,body.dock-resizing .dock-resize-handle i::after{top:30px}
+.dock-resize-handle:hover i::after,.dock-resize-handle:focus-visible i::after,body.dock-resizing .dock-resize-handle i::after{top:35px}
 body.dock-resizing{cursor:col-resize;user-select:none}
+body.dock-resizing .control-dock{border-left-color:var(--green)}
+
+/* Фирменный picker вместо не стилизуемого системного окна браузера. */
+.pl-calendar-input{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23727d76' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M7 3v4M17 3v4M3 10h18'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 8px center!important;background-size:15px 15px!important;padding-right:30px!important;transition:border-color .18s,box-shadow .18s,background-color .18s}
+.pl-calendar-input::-webkit-calendar-picker-indicator{display:none;-webkit-appearance:none;opacity:0;width:0}
+.pl-calendar-input::-webkit-datetime-edit-fields-wrapper{padding:0}
+.pl-calendar-input[aria-expanded="true"]{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.potok-calendar{position:fixed;z-index:240;padding:0;overflow:hidden;border:1px solid var(--line-strong);border-radius:14px;background:var(--surface);color:var(--ink);box-shadow:0 24px 70px rgba(10,18,13,.22),0 3px 12px rgba(10,18,13,.08);opacity:0;transform:translateY(7px) scale(.975);transform-origin:top center;pointer-events:none;transition:opacity .16s ease,transform .24s var(--ease-out);contain:layout style}
+.potok-calendar[data-placement="top"]{transform:translateY(-7px) scale(.975);transform-origin:bottom center}
+.potok-calendar.open{opacity:1;transform:none;pointer-events:auto}
+.pc-accent{height:3px;background:linear-gradient(90deg,var(--green) 0 34%,var(--mint) 34% 48%,var(--surface-3) 48%)}
+.pc-header{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;gap:6px;padding:12px 12px 10px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.pc-heading{min-width:0;text-align:center}
+.pc-heading strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:750;letter-spacing:-.15px}
+.pc-heading span{display:block;margin-top:2px;color:var(--faint);font-size:8px}
+.pc-nav{width:32px;height:32px;padding:0 0 2px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;font:22px/1 var(--font);transition:color .16s,border-color .16s,background .16s,transform .16s}
+.pc-nav:hover{border-color:var(--green);background:var(--green-soft);color:var(--green);transform:translateY(-1px)}
+.pc-nav:active{transform:scale(.94)}
+.pc-body{padding:10px 12px 12px}
+.pc-weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:5px;color:var(--faint);font:8px var(--mono);text-align:center;text-transform:uppercase}
+.pc-weekdays span{height:22px;display:grid;place-items:center}
+.pc-date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.pc-day{position:relative;height:33px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--ink-soft);cursor:pointer;font:10px var(--mono);transition:background .14s,border-color .14s,color .14s,transform .14s}
+.pc-day:hover{border-color:var(--line-strong);background:var(--surface-3);color:var(--ink);transform:translateY(-1px)}
+.pc-day.outside{color:var(--faint);opacity:.55}
+.pc-day.today{color:var(--green);font-weight:800}
+.pc-day.today::after{content:"";position:absolute;left:50%;bottom:3px;width:3px;height:3px;border-radius:50%;background:currentColor;transform:translateX(-50%)}
+.pc-day.selected,.pc-week-row.selected,.pc-month.selected{border-color:var(--green);background:var(--green);color:#fff;font-weight:750;box-shadow:0 3px 10px color-mix(in srgb,var(--green) 24%,transparent)}
+html[data-theme="dark"] .pc-day.selected,html[data-theme="dark"] .pc-week-row.selected,html[data-theme="dark"] .pc-month.selected{color:#102219}
+.pc-day.selected.today::after{background:currentColor}
+.pc-week-head{grid-template-columns:30px repeat(7,1fr);gap:0}
+.pc-week-list{display:flex;flex-direction:column;gap:3px}
+.pc-week-row{width:100%;min-height:35px;padding:3px 0;display:grid;grid-template-columns:30px repeat(7,1fr);align-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink-soft);cursor:pointer;font:10px var(--mono);transition:background .14s,border-color .14s,color .14s,transform .14s}
+.pc-week-row:hover{border-color:var(--line-strong);background:var(--surface-3);transform:translateX(2px)}
+.pc-week-row>span{position:relative;display:grid;place-items:center;height:27px;text-align:center}
+.pc-week-row .pc-week-number{border-right:1px solid var(--line);color:var(--faint);font-size:8px}
+.pc-week-row .outside{color:var(--faint);opacity:.55}
+.pc-week-row .today{color:var(--green);font-weight:800}
+.pc-week-row .today::after{content:"";position:absolute;bottom:0;width:3px;height:3px;border-radius:50%;background:currentColor}
+.pc-week-row.selected .pc-week-number{border-right-color:rgba(255,255,255,.35);color:inherit}
+.pc-week-row.selected .today{color:inherit}
+.pc-month-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:2px 0}
+.pc-month{height:45px;padding:4px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink-soft);cursor:pointer;font-size:10px;transition:background .14s,border-color .14s,color .14s,transform .14s}
+.pc-month:hover{border-color:var(--green);background:var(--green-soft);color:var(--green);transform:translateY(-2px)}
+.pc-month.today:not(.selected){border-color:var(--green);color:var(--green);font-weight:750}
+.pc-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border-top:1px solid var(--line);background:var(--surface-2)}
+.pc-footer>span{color:var(--faint);font:8px var(--mono);text-transform:uppercase}
+.pc-footer button{min-height:27px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--green);cursor:pointer;font-size:9px;font-weight:700;transition:background .14s,border-color .14s}
+.pc-footer button:hover{border-color:var(--green);background:var(--green-soft)}
+body.dock-resizing .potok-calendar{transition:none}
 body.dock-resizing .dock-track,body.dock-resizing .widget-card{transition:none!important;animation:none!important}
 .dock-size-controls{display:flex;align-items:center;gap:5px}
 .dock-size-controls button{width:20px;height:20px;padding:0;display:grid;place-items:center;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);color:var(--muted);cursor:pointer;line-height:1;transition:background .15s,color .15s,border-color .15s}
@@ -700,7 +755,7 @@ body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cur
   </main>
 
   <aside class="control-dock" id="controlDock" aria-label="Панели управления">
-    <div class="dock-resize-handle" id="dockResizeHandle" role="separator" aria-label="Ширина панели виджетов" aria-orientation="vertical" tabindex="0" title="Потяните для изменения ширины · двойной клик сбрасывает размер"><i></i></div>
+    <div class="dock-resize-handle" id="dockResizeHandle" role="separator" aria-label="Ширина панели виджетов. Потяните влево или вправо; стрелки меняют размер, Home сбрасывает его" aria-orientation="vertical" tabindex="0" title="Потяните границу влево или вправо · двойной клик сбрасывает ширину"><i></i></div>
     <div class="dock-header">
       <button class="dock-arrow" id="dockPrev" title="Предыдущая панель" aria-label="Предыдущая панель"><svg><use href="#i-chevron"/></svg></button>
       <div><div class="eyebrow">Панель <span id="dockIndex">01</span> / 04</div><h2 id="dockTitle">Дни загрузки</h2></div>
@@ -713,7 +768,7 @@ body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cur
           <aside id="dayPanel"><div class="panel-intro">Быстрый переход к смене. Нажатие прокручивает доску к нужной дате.</div><h3>Дни загрузки</h3><div id="dayList"></div></aside>
         </section>
         <section class="dock-panel" data-panel="1" aria-label="Загрузка участков">
-          <div class="panel-intro">Выберите конкретную дату, календарную неделю или месяц. Текущий месяц считается только с сегодняшнего дня.</div>
+          <div class="panel-intro">Выберите дату, календарную неделю или месяц. Текущие неделя и месяц считаются с сегодняшнего дня; другие периоды открываются полностью.</div>
           <div class="inline-control"><label for="loadPeriod">Период расчёта</label><select id="loadPeriod"><option value="day">День</option><option value="week">Неделя</option><option value="month">Месяц</option></select></div>
           <div class="load-picker-row">
             <label id="loadDayWrap"><span>Дата</span><input type="date" id="loadDay"></label>
@@ -2162,7 +2217,8 @@ const CONTRACTS = SNAP.contracts || {};
 const LS_KEY = 'planner_sites_v2';
 // Менять при обновлении встроенного снимка УПКП: устаревший localStorage
 // не должен маскироваться под актуальный план после выкладки новой версии.
-const UPKP_SNAPSHOT_VERSION = '2026-10-29.1';
+const UPKP_SNAPSHOT_VERSION = '2026-10-29.2';
+const UPKP_DAILY_CAPACITY = 30; // секций в день на бригаду УПКП целиком
 const WD = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 const state = { sites: [], activeId: null, view: 'board', selectedDate: null, rangeFrom: null, rangeTo: null, _enterView: false };
 let pendingPlan = null;
@@ -2394,7 +2450,7 @@ function defaultSites(){
   // УПКП: 30 секций в день — на бригаду из 11 человек ВСЕГО (не на человека)
   const upkp = { id:'s_upkp', name:'УПКП — план (live)', sourceType:'url', sourceUrl:SNAP.upkpUrl||'',
     autoMonth:true, format:'upkp', unit:'секц.', workers:11, perWorker:0, teamTotal:true,
-    fondMin:330, workdays:[1,2,3,4,5], rows:upkpRows, overrides:{},
+    fondMin:UPKP_DAILY_CAPACITY, workdays:[1,2,3,4,5], rows:upkpRows, overrides:{},
     snapshotVersion:UPKP_SNAPSHOT_VERSION };
   return [op, sau, bv, upkp];
 }
@@ -2413,22 +2469,32 @@ function loadSites(){
         arr.forEach(s => {
           if(s.id === 's_upkp'){
             const fallback = defs.find(d => d.id === 's_upkp');
-            s.workers = 11; s.perWorker = 0; s.teamTotal = true; s.fondMin = 330;
+            s.workers = 11; s.perWorker = 0; s.teamTotal = true; s.fondMin = UPKP_DAILY_CAPACITY;
             s.sourceType = 'url'; s.sourceUrl = fallback.sourceUrl; s.autoMonth = true;
             s.format = 'upkp'; s.unit = 'секц.';
             const staleSnapshot = s.snapshotVersion !== fallback.snapshotVersion;
             if((staleSnapshot || !Array.isArray(s.rows) || !s.rows.length) && fallback.rows.length){
               s.rows = fallback.rows;
-              // Ручные переносы и разбивки сохраняем только для операций,
-              // которые действительно присутствуют в новом снимке.
-              const validIds = new Set(fallback.rows.map(row => row.id));
-              const validKeys = new Set(fallback.rows.map(row => positionKey(row, fallback)));
-              s.overrides = Object.fromEntries(Object.entries(s.overrides || {}).filter(([id]) => validIds.has(id) || String(id).startsWith('sp')));
-              s.splits = Object.fromEntries(Object.entries(s.splits || {}).filter(([key]) => validKeys.has(key)));
+              if(staleSnapshot){
+                // Раньше УПКП читал чужие переносы из shared/default.json. Чтобы
+                // участок снова совпал с Google Таблицей, старый план архивируем,
+                // а не применяем его поверх нового источника.
+                const overrides = s.overrides || {}, splits = s.splits || {};
+                if(Object.keys(overrides).length || Object.keys(splits).length){
+                  s.sourceMigrationBackup = { fromVersion:s.snapshotVersion || 'legacy', savedAt:new Date().toISOString(), overrides, splits };
+                }
+                s.overrides = {}; s.splits = {}; s.sharedTs = 0;
+              }else{
+                // При восстановлении пустого снимка сохраняем только совместимые правки.
+                const validIds = new Set(fallback.rows.map(row => row.id));
+                const validKeys = new Set(fallback.rows.map(row => positionKey(row, fallback)));
+                s.overrides = Object.fromEntries(Object.entries(s.overrides || {}).filter(([id]) => validIds.has(id) || String(id).startsWith('sp')));
+                s.splits = Object.fromEntries(Object.entries(s.splits || {}).filter(([key]) => validKeys.has(key)));
+              }
               s.snapshotVersion = fallback.snapshotVersion;
               s.syncOk = false; s.syncAt = null;
               s.syncErr = staleSnapshot
-                ? 'Резервный снимок УПКП обновлён. Нажмите «Обновить» для проверки живой таблицы.'
+                ? 'Снимок УПКП обновлён; прежние переносы архивированы. Нажмите «Обновить» для проверки живой таблицы.'
                 : 'Показана резервная копия. Нажмите «Обновить» для связи с Google Sheets.';
             }
           }
@@ -2477,6 +2543,8 @@ function ghCfg(){
   return { token, repo };
 }
 function sharedKey(site){
+  // УПКП не должен читать общий default: там оказались переносы другого плана.
+  if(site.id === 's_upkp' || site.format === 'upkp') return 'УПКП';
   if(site.sharedKey) return site.sharedKey;
   const u = site.sourceUrl || '';
   let m = u.match(/[?&]sheet=([^&]+)/);
@@ -2518,8 +2586,10 @@ async function pushShared(site){
   const payload = { site: sharedKey(site), overrides: site.overrides || {},
     splits: site.splits || {}, notes: site.notes || '',
     planStrict: site.planStrict !== false,
-    workers: site.workers || 0, perWorker: site.perWorker || 0,
-    fondMin: site.fondMin || 0, teamTotal: !!site.teamTotal, ts: Date.now() };
+    workers: site.id === 's_upkp' ? 11 : (site.workers || 0),
+    perWorker: site.id === 's_upkp' ? 0 : (site.perWorker || 0),
+    fondMin: site.id === 's_upkp' ? UPKP_DAILY_CAPACITY : (site.fondMin || 0),
+    teamTotal: site.id === 's_upkp' ? true : !!site.teamTotal, ts: Date.now() };
   try{
     const f = await ghGetFile(site);
     let res = await ghPut(site, cfg, f.sha, payload);
@@ -2539,7 +2609,7 @@ async function pushShared(site){
 async function pullShared(site){
   if(!site || !site.sharedOn) return false;
   const cfg = ghCfg();
-  if(!cfg.token){ site.sharedOk = false; site.sharedErr = 'нет токена GitHub'; return false; }
+  if(!cfg.token){ site.sharedOk = false; site.sharedErr = 'нет токен GitHub'; return false; }
   try{
     const f = await ghGetFile(site);
     if(!f.content) return false;
@@ -2556,6 +2626,11 @@ async function pullShared(site){
     if(typeof st.perWorker === 'number'){ site.perWorker = st.perWorker; }
     if(st.fondMin){ site.fondMin = st.fondMin; }
     if(typeof st.teamTotal === 'boolean'){ site.teamTotal = st.teamTotal; }
+    if(site.id === 's_upkp'){
+      // Даже старый shared-файл не может вернуть ошибочные 330 секций.
+      site.workers = 11; site.perWorker = 0; site.teamTotal = true;
+      site.fondMin = UPKP_DAILY_CAPACITY;
+    }
     site.sharedOk = true; site.sharedErr = null;
     applyingRemote = true;
     try{ saveSites(); }finally{ applyingRemote = false; }
@@ -4189,16 +4264,18 @@ function currentLoadSelection(){
 function workloadPeriod(site, period, anchor, fullPeriod){
   const planner = wPlanner();
   const reference = anchor || planner.todayISO();
+  const partial = (period === 'week' || period === 'month') && !fullPeriod;
   let from = reference;
   let to = reference;
   if(period === 'week'){
     const day = new Date(reference + 'T00:00:00').getDay();
-    from = planner.addDays(reference, day === 0 ? -6 : 1 - day);
-    to = planner.addDays(from, 6);
+    const weekStart = planner.addDays(reference, day === 0 ? -6 : 1 - day);
+    // Текущая неделя — только остаток; другую неделю можно открыть полностью.
+    from = fullPeriod ? weekStart : reference;
+    to = planner.addDays(weekStart, 6);
   }else if(period === 'month'){
     const monthStart = reference.slice(0, 8) + '01';
     // По умолчанию месяц означает остаток: с выбранного/сегодняшнего дня.
-    // Полный диапазон используется только для явно выбранного другого месяца.
     from = fullPeriod ? monthStart : reference;
     const next = new Date(monthStart + 'T00:00:00');
     next.setMonth(next.getMonth() + 1);
@@ -4207,17 +4284,17 @@ function workloadPeriod(site, period, anchor, fullPeriod){
   }
   const rows = planner.effRows(site).filter(row => row.dateEff && row.dateEff >= from && row.dateEff <= to);
   const load = rows.reduce((sum, row) => sum + (row.minutes || 0), 0);
-  let workdays = period === 'day' ? 1 : 0;
+  let workdays = period === 'day' ? (planner.isWorkday(site, from) ? 1 : 0) : 0;
   if(period !== 'day'){
     for(let date = from; date <= to; date = planner.addDays(date, 1)){
       if(planner.isWorkday(site, date)) workdays++;
     }
   }
-  const capacity = Math.max(1, planner.fondOf(site) * workdays);
+  const capacity = planner.fondOf(site) * workdays;
   const week = period === 'week' ? isoWeekInfo(from) : null;
   return {
-    period, reference, from, to, load, capacity, workdays, rows:rows.length,
-    pct:Math.round(load / capacity * 100), unit:site.unit || 'мин', siteId:site.id,
+    period, reference, from, to, load, capacity, workdays, rows:rows.length, partial,
+    pct:capacity > 0 ? Math.round(load / capacity * 100) : (load > 0 ? 100 : 0), unit:site.unit || 'мин', siteId:site.id,
     weekNumber:week ? week.week : null, weekYear:week ? week.year : null,
     weekKey:week ? week.key : null, monthKey:period === 'month' ? reference.slice(0, 7) : null
   };
@@ -4225,7 +4302,10 @@ function workloadPeriod(site, period, anchor, fullPeriod){
 function selectedWorkload(site){
   const period = loadPeriodState;
   const selection = loadSelectionState[period];
-  if(period === 'week') return workloadPeriod(site, period, isoWeekStart(selection) || wPlanner().todayISO(), true);
+  if(period === 'week'){
+    const today = wPlanner().todayISO(), current = selection === isoWeekInfo(today).key;
+    return workloadPeriod(site, period, current ? today : (isoWeekStart(selection) || today), !current);
+  }
   if(period === 'month'){
     const today = wPlanner().todayISO();
     const current = selection === today.slice(0, 7);
@@ -4235,11 +4315,9 @@ function selectedWorkload(site){
 }
 function workloadLabel(period){ return period === 'day' ? 'День' : period === 'week' ? 'Неделя' : 'Месяц'; }
 function workloadPeriodNote(load){
-  if(load.period === 'week') return 'Неделя № ' + load.weekNumber + ' · ' + load.from + ' — ' + load.to;
-  if(load.period === 'month'){
-    const origin = load.reference === wPlanner().todayISO() ? 'с сегодня' : 'с выбранной даты';
-    return 'Месяц · ' + load.from + ' — ' + load.to + (load.from === load.reference ? ' · ' + origin : ' · полный месяц');
-  }
+  const origin = load.reference === wPlanner().todayISO() ? 'с сегодня' : 'с выбранной даты';
+  if(load.period === 'week') return 'Неделя № ' + load.weekNumber + ' · ' + load.from + ' — ' + load.to + (load.partial ? ' · ' + origin : ' · полная неделя');
+  if(load.period === 'month') return 'Месяц · ' + load.from + ' — ' + load.to + (load.partial ? ' · ' + origin : ' · полный месяц');
   return 'День · ' + load.from;
 }
 function workloadBar(load, compact){
@@ -5194,6 +5272,293 @@ if(typeof window !== 'undefined'){
     if(document.readyState !== 'loading') initWorkspace();
   }
 }
+
+
+'use strict';
+/* ==========================================================================
+   ПОТОК / календари
+   Единый popover для date, week и month. Сами input остаются на месте:
+   приложение получает обычные value, input и change, а браузерный нативный
+   picker больше не выпадает поверх фирменного интерфейса.
+   ========================================================================== */
+(() => {
+  const DAY = 86400000;
+  const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  let panel = null;
+  let activeInput = null;
+  let cursor = null;
+  let closeTimer = 0;
+  let openFrame = 0;
+  let positionFrame = 0;
+
+  function iso(date){ return date.toISOString().slice(0, 10); }
+  function fromISO(value){ return new Date(value + 'T00:00:00Z'); }
+  function validDate(value){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
+    const date = fromISO(value);
+    return !Number.isNaN(date.getTime()) && iso(date) === value;
+  }
+  function addDays(value, amount){ const date = fromISO(value); date.setUTCDate(date.getUTCDate() + amount); return iso(date); }
+  function today(){
+    if(window.PLANNER && typeof window.PLANNER.todayISO === 'function') return window.PLANNER.todayISO();
+    const now = new Date();
+    return iso(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())));
+  }
+  function weekStart(value){
+    const date = fromISO(value);
+    const day = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 1 - day);
+    return iso(date);
+  }
+  function weekKey(value){
+    const date = fromISO(value);
+    const day = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - day);
+    const year = date.getUTCFullYear();
+    const first = new Date(Date.UTC(year, 0, 1));
+    const week = Math.ceil(((date - first) / DAY + 1) / 7);
+    return year + '-W' + String(week).padStart(2, '0');
+  }
+  function weekFromKey(key){
+    const match = String(key || '').match(/^(\d{4})-W(\d{2})$/);
+    if(!match) return null;
+    const date = new Date(Date.UTC(Number(match[1]), 0, 4));
+    const day = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 1 - day + (Number(match[2]) - 1) * 7);
+    return weekKey(iso(date)) === key ? iso(date) : null;
+  }
+  function validMonth(value){
+    const match = String(value || '').match(/^(\d{4})-(\d{2})$/);
+    return !!match && Number(match[2]) >= 1 && Number(match[2]) <= 12;
+  }
+  function currentValue(mode){
+    const date = today();
+    return mode === 'week' ? weekKey(date) : mode === 'month' ? date.slice(0, 7) : date;
+  }
+  function initialCursor(input){
+    if(input.type === 'week') return weekFromKey(input.value) || today();
+    if(input.type === 'month' && validMonth(input.value)) return input.value + '-01';
+    return validDate(input.value) ? input.value : today();
+  }
+  function monthTitle(){
+    const month = MONTHS[cursor.getUTCMonth()];
+    return month + ' ' + cursor.getUTCFullYear() + (activeInput.type === 'month' ? '' : '');
+  }
+  function dateGrid(){
+    const first = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), 1));
+    const start = weekStart(iso(first));
+    const selected = activeInput.value;
+    const current = today();
+    let html = '<div class="pc-weekdays" aria-hidden="true">' + WEEKDAYS.map(day => '<span>' + day + '</span>').join('') + '</div><div class="pc-date-grid">';
+    for(let index = 0; index < 42; index++){
+      const value = addDays(start, index);
+      const date = fromISO(value);
+      const outside = date.getUTCMonth() !== cursor.getUTCMonth();
+      const classes = ['pc-day'];
+      if(outside) classes.push('outside');
+      if(value === current) classes.push('today');
+      if(value === selected) classes.push('selected');
+      const label = new Intl.DateTimeFormat('ru-RU', { day:'numeric', month:'long', year:'numeric', weekday:'long', timeZone:'UTC' }).format(date);
+      html += '<button type="button" class="' + classes.join(' ') + '" data-date="' + value + '" aria-label="' + label + '" aria-pressed="' + (value === selected) + '"' + (outside ? ' tabindex="-1"' : '') + '>' + date.getUTCDate() + '</button>';
+    }
+    return html + '</div>';
+  }
+  function weekGrid(){
+    const first = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), 1));
+    const start = weekStart(iso(first));
+    const current = today();
+    const selected = activeInput.value;
+    let html = '<div class="pc-weekdays pc-week-head" aria-hidden="true"><span>№</span>' + WEEKDAYS.map(day => '<span>' + day + '</span>').join('') + '</div><div class="pc-week-list">';
+    for(let row = 0; row < 6; row++){
+      const monday = addDays(start, row * 7);
+      const key = weekKey(monday);
+      const number = Number(key.slice(-2));
+      html += '<button type="button" class="pc-week-row' + (key === selected ? ' selected' : '') + '" data-week="' + key + '" aria-label="Неделя № ' + number + ', с ' + monday + '" aria-pressed="' + (key === selected) + '"><span class="pc-week-number">' + number + '</span>';
+      for(let column = 0; column < 7; column++){
+        const value = addDays(monday, column);
+        const date = fromISO(value);
+        const classes = [];
+        if(date.getUTCMonth() !== cursor.getUTCMonth()) classes.push('outside');
+        if(value === current) classes.push('today');
+        html += '<span class="' + classes.join(' ') + '">' + date.getUTCDate() + '</span>';
+      }
+      html += '</button>';
+    }
+    return html + '</div>';
+  }
+  function monthGrid(){
+    const year = cursor.getUTCFullYear();
+    return '<div class="pc-month-grid">' + MONTHS.map((month, index) => {
+      const value = year + '-' + String(index + 1).padStart(2, '0');
+      const classes = ['pc-month'];
+      if(value === today().slice(0, 7)) classes.push('today');
+      if(value === activeInput.value) classes.push('selected');
+      return '<button type="button" class="' + classes.join(' ') + '" data-month="' + value + '" aria-pressed="' + (value === activeInput.value) + '">' + month + '</button>';
+    }).join('') + '</div>';
+  }
+  function position(){
+    positionFrame = 0;
+    if(!activeInput || !panel || panel.hidden) return;
+    const rect = activeInput.getBoundingClientRect();
+    if(!rect.width && !rect.height){ closeCalendar(false); return; }
+    const margin = 8;
+    const width = Math.min(318, window.innerWidth - margin * 2);
+    const left = Math.max(margin, Math.min(window.innerWidth - width - margin, rect.left));
+    panel.style.width = width + 'px';
+    const height = panel.offsetHeight || 360;
+    const below = window.innerHeight - rect.bottom - margin;
+    const above = rect.top - margin;
+    const top = below >= height + 6 || below >= above
+      ? Math.min(window.innerHeight - height - margin, rect.bottom + 6)
+      : Math.max(margin, rect.top - height - 6);
+    panel.style.left = Math.round(left) + 'px';
+    panel.style.top = Math.round(top) + 'px';
+    panel.dataset.placement = top >= rect.bottom ? 'bottom' : 'top';
+  }
+  function schedulePosition(){
+    if(positionFrame || !activeInput) return;
+    positionFrame = requestAnimationFrame(position);
+  }
+  function render(){
+    if(!activeInput || !panel) return;
+    const mode = activeInput.type;
+    const title = mode === 'month' ? String(cursor.getUTCFullYear()) : monthTitle();
+    const currentLabel = mode === 'week' ? 'Текущая неделя' : mode === 'month' ? 'Текущий месяц' : 'Сегодня';
+    const hint = mode === 'week' ? 'Выберите всю календарную неделю' : mode === 'month' ? 'Выберите месяц' : 'Выберите дату';
+    panel.innerHTML = '<div class="pc-accent"></div><header class="pc-header"><button type="button" class="pc-nav" data-nav="-1" aria-label="Назад">‹</button><div class="pc-heading"><strong>' + title + '</strong><span>' + hint + '</span></div><button type="button" class="pc-nav" data-nav="1" aria-label="Вперёд">›</button></header><div class="pc-body">' + (mode === 'week' ? weekGrid() : mode === 'month' ? monthGrid() : dateGrid()) + '</div><footer class="pc-footer"><span>' + (mode === 'week' ? 'Пн — Вс · ISO' : 'ПОТОК · период') + '</span><button type="button" data-current>' + currentLabel + '</button></footer>';
+    panel.setAttribute('aria-label', mode === 'week' ? 'Выбор календарной недели' : mode === 'month' ? 'Выбор месяца' : 'Выбор даты');
+    position();
+  }
+  function closeCalendar(restoreFocus){
+    clearTimeout(closeTimer);
+    if(openFrame){ cancelAnimationFrame(openFrame); openFrame = 0; }
+    if(positionFrame){ cancelAnimationFrame(positionFrame); positionFrame = 0; }
+    const input = activeInput;
+    activeInput = null;
+    if(input) input.setAttribute('aria-expanded', 'false');
+    if(!panel) return;
+    panel.classList.remove('open');
+    closeTimer = setTimeout(() => { if(!activeInput) panel.hidden = true; }, 180);
+    if(restoreFocus !== false && input && input.isConnected) input.focus({ preventScroll:true });
+  }
+  function openCalendar(target, focusGrid){
+    const input = typeof target === 'string' ? document.getElementById(target) : target;
+    if(!input || !['date', 'week', 'month'].includes(input.type) || !panel) return;
+    clearTimeout(closeTimer);
+    if(activeInput && activeInput !== input) activeInput.setAttribute('aria-expanded', 'false');
+    activeInput = input;
+    cursor = fromISO(initialCursor(input));
+    if(input.type === 'month') cursor.setUTCDate(1);
+    input.setAttribute('aria-expanded', 'true');
+    panel.hidden = false;
+    panel.classList.remove('open');
+    render();
+    openFrame = requestAnimationFrame(() => {
+      openFrame = 0;
+      if(!activeInput) return;
+      panel.classList.add('open');
+      if(focusGrid){
+        const selected = panel.querySelector('.selected') || panel.querySelector('[data-date], [data-week], [data-month]');
+        if(selected) selected.focus({ preventScroll:true });
+      }
+    });
+  }
+  function moveCursor(direction){
+    if(!activeInput) return;
+    // С 31-го числа обычный setUTCMonth(+1) мог бы перескочить месяц.
+    cursor.setUTCDate(1);
+    if(activeInput.type === 'month') cursor.setUTCFullYear(cursor.getUTCFullYear() + direction);
+    else cursor.setUTCMonth(cursor.getUTCMonth() + direction);
+    render();
+    const selected = panel.querySelector('.selected');
+    if(selected) selected.focus({ preventScroll:true });
+    else panel.querySelector('[data-nav="-1"]').focus({ preventScroll:true });
+  }
+  function choose(value){
+    const input = activeInput;
+    if(!input) return;
+    input.value = value;
+    closeCalendar();
+    input.dispatchEvent(new Event('input', { bubbles:true }));
+    input.dispatchEvent(new Event('change', { bubbles:true }));
+  }
+  function onPanelClick(event){
+    const button = event.target.closest('button');
+    if(!button || !panel.contains(button)) return;
+    if(button.dataset.nav) moveCursor(Number(button.dataset.nav));
+    else if(button.dataset.date) choose(button.dataset.date);
+    else if(button.dataset.week) choose(button.dataset.week);
+    else if(button.dataset.month) choose(button.dataset.month);
+    else if(button.hasAttribute('data-current')) choose(currentValue(activeInput.type));
+  }
+  function onGridKeys(event){
+    if(!activeInput || !panel || panel.hidden) return;
+    if(event.key === 'Escape'){
+      event.preventDefault(); event.stopPropagation(); closeCalendar(); return;
+    }
+    if(!panel.contains(event.target)) return;
+    if(event.target.dataset.nav && ['ArrowLeft', 'ArrowRight'].includes(event.key)){
+      event.preventDefault(); moveCursor(event.key === 'ArrowLeft' ? -1 : 1); return;
+    }
+    const buttons = [...panel.querySelectorAll('[data-date], [data-week], [data-month]')];
+    const index = buttons.indexOf(event.target.closest('button'));
+    if(index < 0) return;
+    const columns = activeInput.type === 'month' ? 3 : activeInput.type === 'week' ? 1 : 7;
+    const moves = { ArrowLeft:-1, ArrowRight:1, ArrowUp:-columns, ArrowDown:columns };
+    if(!(event.key in moves)) return;
+    event.preventDefault();
+    const next = Math.max(0, Math.min(buttons.length - 1, index + moves[event.key]));
+    buttons[next].focus({ preventScroll:true });
+  }
+  function enhance(input){
+    if(input.dataset.potokCalendar) return;
+    input.dataset.potokCalendar = 'true';
+    input.classList.add('pl-calendar-input');
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('aria-haspopup', 'dialog');
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('aria-controls', 'potokCalendar');
+    input.addEventListener('click', event => { event.preventDefault(); openCalendar(input, false); });
+    input.addEventListener('keydown', event => {
+      if(['ArrowDown', 'Enter', ' '].includes(event.key)){
+        event.preventDefault(); openCalendar(input, true);
+      }else if(event.key === 'Escape' && activeInput === input){
+        event.preventDefault(); closeCalendar(false);
+      }
+    });
+  }
+  function initCalendars(){
+    if(initCalendars.done || !document.body || !document.querySelectorAll) return;
+    initCalendars.done = true;
+    panel = document.createElement('section');
+    panel.id = 'potokCalendar';
+    panel.className = 'potok-calendar';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.hidden = true;
+    document.body.appendChild(panel);
+    panel.addEventListener('click', onPanelClick);
+    document.querySelectorAll('input[type="date"], input[type="week"], input[type="month"]').forEach(enhance);
+    document.addEventListener('pointerdown', event => {
+      if(activeInput && event.target !== activeInput && !panel.contains(event.target)) closeCalendar(false);
+    }, true);
+    document.addEventListener('keydown', onGridKeys, true);
+    window.addEventListener('resize', schedulePosition, { passive:true });
+    window.addEventListener('scroll', schedulePosition, { passive:true, capture:true });
+  }
+
+  window.PLANNER_CALENDAR = {
+    open:openCalendar, close:closeCalendar, init:initCalendars,
+    isoWeek:weekKey, isoWeekStart:weekFromKey,
+    get input(){ return activeInput; },
+    get enhancedCount(){ return document.querySelectorAll ? document.querySelectorAll('[data-potok-calendar]').length : 0; }
+  };
+  if(typeof document !== 'undefined' && document.body && document.addEventListener){
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCalendars);
+    else initCalendars();
+  }
+})();
 </script>
 </body>
 </html>
