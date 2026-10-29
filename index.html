@@ -2211,6 +2211,252 @@ body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cur
  ]
 }</script>
 <script>'use strict';
+
+/* Минимальный читатель XLSX для автономной сборки планировщика.
+   Читаем только XML-книгу, связи, строки и листы; изображения и стили не распаковываем. */
+(() => {
+  const MAX_ARCHIVE_BYTES = 32 * 1024 * 1024;
+  const MAX_PART_BYTES = 64 * 1024 * 1024;
+  const MAX_UNPACKED_BYTES = 128 * 1024 * 1024;
+  const MAX_CELLS = 1000000;
+  const decoder = new TextDecoder('utf-8');
+
+  function fail(message){ throw new Error('XLSX: ' + message); }
+  function u16(view, offset){ return view.getUint16(offset, true); }
+  function u32(view, offset){ return view.getUint32(offset, true); }
+
+  function xmlDecode(value){
+    const entities = { amp:'&', lt:'<', gt:'>', quot:'"', apos:"'" };
+    return String(value || '').replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (all, entity) => {
+      if(entity[0] === '#'){
+        const hex = entity[1].toLowerCase() === 'x';
+        const code = parseInt(entity.slice(hex ? 2 : 1), hex ? 16 : 10);
+        if(Number.isFinite(code) && code >= 0 && code <= 0x10ffff){
+          try{ return String.fromCodePoint(code); }catch(e){ return all; }
+        }
+        return all;
+      }
+      return entities[entity.toLowerCase()] ?? all;
+    });
+  }
+
+  function xmlAttrs(source){
+    const attrs = {};
+    const re = /([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+    let match;
+    while((match = re.exec(source))) attrs[match[1]] = xmlDecode(match[2] ?? match[3]);
+    return attrs;
+  }
+
+  function partPath(owner, target){
+    const raw = String(target || '').replace(/\\/g, '/');
+    if(!raw) return '';
+    const parts = raw.startsWith('/') ? [] : owner.split('/').slice(0, -1);
+    for(const part of raw.split('/')){
+      if(!part || part === '.') continue;
+      if(part === '..') parts.pop();
+      else parts.push(part);
+    }
+    return parts.join('/');
+  }
+
+  async function openZip(input){
+    const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+    if(bytes.length > MAX_ARCHIVE_BYTES) fail('архив больше 32 МБ');
+    if(bytes.length < 22) fail('файл слишком мал');
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let eocd = -1;
+    const first = Math.max(0, bytes.length - 65557);
+    for(let i = bytes.length - 22; i >= first; i--){
+      if(u32(view, i) !== 0x06054b50) continue;
+      if(i + 22 + u16(view, i + 20) === bytes.length){ eocd = i; break; }
+    }
+    if(eocd < 0) fail('не найден каталог ZIP');
+    const count = u16(view, eocd + 10);
+    const directorySize = u32(view, eocd + 12);
+    const directoryOffset = u32(view, eocd + 16);
+    if(count === 0xffff || directorySize === 0xffffffff || directoryOffset === 0xffffffff){
+      fail('ZIP64 не поддерживается');
+    }
+    if(count > 4096 || directoryOffset + directorySize > bytes.length) fail('повреждён каталог ZIP');
+
+    const entries = new Map();
+    let offset = directoryOffset;
+    for(let i = 0; i < count; i++){
+      if(offset + 46 > bytes.length || u32(view, offset) !== 0x02014b50) fail('повреждена запись ZIP');
+      const flags = u16(view, offset + 8);
+      const method = u16(view, offset + 10);
+      const compressedSize = u32(view, offset + 20);
+      const uncompressedSize = u32(view, offset + 24);
+      const nameLength = u16(view, offset + 28);
+      const extraLength = u16(view, offset + 30);
+      const commentLength = u16(view, offset + 32);
+      const localOffset = u32(view, offset + 42);
+      const end = offset + 46 + nameLength + extraLength + commentLength;
+      if(end > bytes.length || compressedSize === 0xffffffff || uncompressedSize === 0xffffffff || localOffset === 0xffffffff){
+        fail('повреждены размеры ZIP');
+      }
+      const name = decoder.decode(bytes.subarray(offset + 46, offset + 46 + nameLength));
+      if(name && !name.endsWith('/')) entries.set(name, { flags, method, compressedSize, uncompressedSize, localOffset });
+      offset = end;
+    }
+
+    let unpackedBytes = 0;
+    async function read(name){
+      const entry = entries.get(name);
+      if(!entry) fail('нет части ' + name);
+      if(entry.flags & 1) fail('зашифрованные архивы не поддерживаются');
+      if(entry.uncompressedSize > MAX_PART_BYTES || unpackedBytes + entry.uncompressedSize > MAX_UNPACKED_BYTES){
+        fail('превышен безопасный размер распаковки');
+      }
+      const at = entry.localOffset;
+      if(at + 30 > bytes.length || u32(view, at) !== 0x04034b50) fail('повреждён локальный заголовок ZIP');
+      const start = at + 30 + u16(view, at + 26) + u16(view, at + 28);
+      const end = start + entry.compressedSize;
+      if(start < at || end > bytes.length) fail('данные ZIP выходят за границы файла');
+      const compressed = bytes.subarray(start, end);
+      let result;
+      if(entry.method === 0) result = compressed.slice();
+      else if(entry.method === 8){
+        if(typeof DecompressionStream === 'undefined') fail('браузер не поддерживает deflate');
+        const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        result = new Uint8Array(await new Response(stream).arrayBuffer());
+      } else fail('неподдерживаемый метод сжатия ' + entry.method);
+      if(result.length !== entry.uncompressedSize) fail('не совпал размер распакованной части ' + name);
+      unpackedBytes += result.length;
+      return result;
+    }
+    return { entries, read };
+  }
+
+  async function xml(archive, name){
+    return decoder.decode(await archive.read(name));
+  }
+
+  function sharedStrings(source){
+    if(!source) return [];
+    const values = [];
+    const si = /<(?:\w+:)?si\b[^>]*>([\s\S]*?)<\/(?:\w+:)?si>/g;
+    let item;
+    while((item = si.exec(source))){
+      let text = '';
+      const tags = /<(?:\w+:)?t\b[^>]*>([\s\S]*?)<\/(?:\w+:)?t>/g;
+      let tag;
+      while((tag = tags.exec(item[1]))) text += xmlDecode(tag[1]);
+      values.push(text);
+    }
+    return values;
+  }
+
+  function columnIndex(reference){
+    const match = String(reference || '').match(/^([A-Z]+)/i);
+    if(!match) return null;
+    let index = 0;
+    for(const letter of match[1].toUpperCase()) index = index * 26 + letter.charCodeAt(0) - 64;
+    return index - 1;
+  }
+
+  function excelDate(serial, date1904){
+    if(!Number.isFinite(serial) || serial < 1 || serial > 2958465) return null;
+    const days = Math.floor(serial);
+    const epoch = Date.UTC(date1904 ? 1904 : 1899, date1904 ? 0 : 11, date1904 ? 1 : 30);
+    const date = new Date(epoch + days * 86400000);
+    return String(date.getUTCDate()).padStart(2, '0') + '.' +
+      String(date.getUTCMonth() + 1).padStart(2, '0') + '.' + date.getUTCFullYear();
+  }
+
+  function worksheet(source, shared, date1904, cellBudget){
+    const sparse = new Map();
+    let maxRow = 0;
+    let cells = 0;
+    let lastColumn = -1;
+    const re = /<(?:\w+:)?c\b([^>]*)\/>|<(?:\w+:)?c\b([^>]*)>([\s\S]*?)<\/(?:\w+:)?c>/g;
+    let match;
+    while((match = re.exec(source))){
+      if(++cells > MAX_CELLS || ++cellBudget.count > MAX_CELLS) fail('слишком много ячеек');
+      const attrs = xmlAttrs(match[1] ?? match[2]);
+      const body = match[3] || '';
+      const reference = attrs.r || '';
+      const rowMatch = reference.match(/(\d+)$/);
+      const rowNumber = rowMatch ? Number(rowMatch[1]) : maxRow + 1;
+      if(!Number.isInteger(rowNumber) || rowNumber < 1 || rowNumber > 1000000) fail('некорректная строка ' + reference);
+      let column = columnIndex(reference);
+      if(column === null) column = lastColumn + 1;
+      if(column < 0 || column > 16383) fail('некорректная колонка ' + reference);
+      lastColumn = column;
+      const type = attrs.t || '';
+      const valueMatch = body.match(/<(?:\w+:)?v\b[^>]*>([\s\S]*?)<\/(?:\w+:)?v>/);
+      const rawValue = valueMatch ? xmlDecode(valueMatch[1]) : '';
+      let value = rawValue;
+      if(type === 's') value = shared[Number(rawValue)] ?? '';
+      else if(type === 'inlineStr'){
+        value = '';
+        const texts = /<(?:\w+:)?t\b[^>]*>([\s\S]*?)<\/(?:\w+:)?t>/g;
+        let text;
+        while((text = texts.exec(body))) value += xmlDecode(text[1]);
+      } else if(type === 'b') value = rawValue === '1' ? 'TRUE' : 'FALSE';
+      if(column === 0 && type !== 's' && type !== 'inlineStr' && type !== 'str' && rawValue !== ''){
+        const date = excelDate(Number(rawValue), date1904);
+        if(date) value = date;
+      }
+      if(!sparse.has(rowNumber)) sparse.set(rowNumber, []);
+      sparse.get(rowNumber)[column] = value;
+      maxRow = Math.max(maxRow, rowNumber);
+    }
+    const grid = [];
+    for(let row = 1; row <= maxRow; row++){
+      const values = sparse.get(row) || [];
+      let length = values.length;
+      while(length > 0 && (values[length - 1] === undefined || values[length - 1] === '')) length--;
+      values.length = length;
+      grid.push(Array.from(values, value => value ?? ''));
+    }
+    return grid;
+  }
+
+  async function readWorkbook(input){
+    const archive = await openZip(input);
+    const workbookName = 'xl/workbook.xml';
+    const relsName = 'xl/_rels/workbook.xml.rels';
+    const book = await xml(archive, workbookName);
+    const rels = await xml(archive, relsName);
+    const relationships = new Map();
+    const relRe = /<(?:\w+:)?Relationship\b([^>]*)\/?>(?:[\s\S]*?<\/(?:\w+:)?Relationship>)?/g;
+    let rel;
+    while((rel = relRe.exec(rels))){
+      const attrs = xmlAttrs(rel[1]);
+      if(attrs.Id && attrs.Target) relationships.set(attrs.Id, partPath(workbookName, attrs.Target));
+    }
+    const shared = archive.entries.has('xl/sharedStrings.xml') ? sharedStrings(await xml(archive, 'xl/sharedStrings.xml')) : [];
+    const workbookPr = book.match(/<(?:\w+:)?workbookPr\b([^>]*)\/?>/);
+    const date1904 = workbookPr ? /(?:date1904)\s*=\s*["'](?:1|true)["']/i.test(workbookPr[1]) : false;
+    const sheetRe = /<(?:\w+:)?sheet\b([^>]*)\/?>(?:[\s\S]*?<\/(?:\w+:)?sheet>)?/g;
+    const descriptors = [];
+    let sheet;
+    while((sheet = sheetRe.exec(book))){
+      const attrs = xmlAttrs(sheet[1]);
+      const relationId = attrs['r:id'] || attrs.id;
+      descriptors.push({ name:attrs.name || 'Лист ' + (descriptors.length + 1), path:relationships.get(relationId) || '' });
+    }
+    if(!descriptors.length) fail('в книге нет листов');
+    const sheets = [];
+    const cellBudget = { count:0 };
+    for(const descriptor of descriptors){
+      if(!descriptor.path || !archive.entries.has(descriptor.path)){
+        sheets.push({ name:descriptor.name, grid:[] });
+        continue;
+      }
+      const source = await xml(archive, descriptor.path);
+      sheets.push({ name:descriptor.name, grid:worksheet(source, shared, date1904, cellBudget) });
+    }
+    return { sheets, sheetNames:descriptors.map(item => item.name), sheetCount:descriptors.length };
+  }
+
+  if(typeof window !== 'undefined') window.PLANNER_XLSX = { readWorkbook };
+})();
+
+
+'use strict';
 /* ================= data ================= */
 const SNAP = JSON.parse(document.getElementById('snapshot-data').textContent);
 const CONTRACTS = SNAP.contracts || {};
@@ -2387,23 +2633,39 @@ function parseCSVText(text){
   return out;
 }
 /* ---------- формат «План УПКП»: дневные блоки, позиции со секциями ---------- */
-function parseUPKP(text){
-  const grid = csvToGrid(text);
+function parseUPKPGrid(grid){
   const out = [];
+  let qtyCol = 12; // шаблон октября и позже: L — изделие, M — секции, N — сумма
+  // В сентябре 2026 нет колонки «Покраска», поэтому блок сдвинут на одну ячейку.
+  // Ищем фактический заголовок, чтобы и новые варианты шаблона читались без правок кода.
+  for(const cells of grid.slice(0, 12)){
+    const found = cells.findIndex(cell => /^N\s*секций/i.test(String(cell || '').trim()));
+    if(found > 0){ qtyCol = found; break; }
+  }
+  const productCol = Math.max(0, qtyCol - 1), sumCol = qtyCol + 1;
   let curDate = null;
   for(const cells of grid){
-    const c0 = (cells[0] || '').trim();
+    const c0 = String(cells[0] || '').trim();
     const m = c0.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
     if(m){ curDate = parseDate(c0); continue; }
     if(!curDate || !c0) continue;
-    const product = (cells[11] || '').trim();
-    const qty = num(cells[12]);
-    if(!product || !qty) continue;
+    const product = String(cells[productCol] || '').trim();
+    const qty = num(cells[qtyCol]);
+    if(!product || !qty || /^[-+]?\d+(?:[.,]\d+)?$/.test(product.replace(/\s/g, ''))) continue;
     if(/неделя|^\s*(сб|вс)\s*$/.test(product)) continue;
     out.push({ custOrder:c0, prodOrder:'', prod:product, qty, date:curDate,
-      minutes:qty, tdg:null, comment:'', sum:num(cells[13])||0 });
+      minutes:qty, tdg:null, comment:'', sum:num(cells[sumCol])||0 });
   }
   return out;
+}
+function parseUPKP(text){ return parseUPKPGrid(csvToGrid(text)); }
+async function parseUPKPWorkbook(buffer){
+  if(!window.PLANNER_XLSX) throw new Error('Модуль чтения XLSX не загружен');
+  const book = await window.PLANNER_XLSX.readWorkbook(buffer);
+  const rows = [];
+  // Листы и повторные операции сохраняем в исходном порядке, без дедупликации.
+  for(const sheet of book.sheets) rows.push(...parseUPKPGrid(sheet.grid));
+  return { rows, format:'upkp', sheetNames:book.sheetNames, sheetCount:book.sheetCount };
 }
 function detectFormat(text){
   const first = (text || '').split('\n', 1)[0] || '';
@@ -2414,11 +2676,22 @@ function parseAny(text, format){
   if(format === 'ops') return parseCSVText(text);
   return detectFormat(text) === 'upkp' ? parseUPKP(text) : parseCSVText(text);
 }
-function makeRows(raw){
+function rowIdentity(r){ return [r.prodOrder,r.prod,r.qty,r.date,r.minutes,r.custOrder].join('|'); }
+function makeRows(raw, previousRows){
   const seen = {};
+  const previous = new Map();
+  for(const row of Array.isArray(previousRows) ? previousRows : []){
+    const key = rowIdentity(row);
+    if(!previous.has(key)) previous.set(key, []);
+    previous.get(key).push(row.id);
+  }
   return raw.map((r,i) => {
-    let id = 'r' + hashStr([r.prodOrder,r.prod,r.qty,r.date,r.minutes,r.custOrder].join('|'));
+    const identity = rowIdentity(r);
+    let id = 'r' + hashStr(identity);
     if(seen[id]) id += '_' + i;
+    const oldIds = previous.get(identity);
+    // При добавлении более ранних листов старые ID и их переносы не смещаются.
+    if(oldIds && oldIds.length) id = oldIds.shift();
     seen[id] = 1;
     const c = CONTRACTS[String(orderNum(r.custOrder))] || {};
     return { id, custOrder:r.custOrder, prodOrder:r.prodOrder, prod:r.prod, qty:r.qty,
@@ -3524,11 +3797,23 @@ function gvizUrl(id, gid, sheetName){
 }
 async function fetchSiteRows(url, site){
   let u = String(url || '').trim();
-  if(site && site.autoMonth && !/[?&]sheet=/.test(u)) u += (u.includes('?') ? '&' : '?') + 'sheet=' + encodeURIComponent(curMonthSheet());
+  // autoMonth — сохранённый флаг формата УПКП. Теперь он означает всю книгу:
+  // XLSX содержит все текущие и автоматически добавленные позже листы.
+  if(site && site.autoMonth){
+    const g = parseGUrl(u);
+    if(!g) throw new Error('Не получилось разобрать ссылку на Google Sheets');
+    u = 'https://docs.google.com/spreadsheets/d/' + g.id + '/export?format=xlsx';
+    u += '&_plannerRefresh=' + Date.now();
+    const res = await fetch(u, {mode:'cors', cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const buffer = await res.arrayBuffer();
+    if(!buffer.byteLength) throw new Error('Google Sheets вернула пустую XLSX-книгу');
+    return parseUPKPWorkbook(buffer);
+  }
   if(!u.includes('/gviz/')){
     const g = parseGUrl(u);
     if(!g) throw new Error('Не получилось разобрать ссылку на Google Sheets');
-    u = gvizUrl(g.id, g.gid, site && site.autoMonth ? curMonthSheet() : '');
+    u = gvizUrl(g.id, g.gid, '');
   }
   // Google и браузер могут держать CSV в кэше: для ручного обновления нужен живой ответ.
   u += (u.includes('?') ? '&' : '?') + '_plannerRefresh=' + Date.now();
@@ -4066,6 +4351,7 @@ async function createSiteFromModal(){
   const workdays = [...document.querySelectorAll('#nsDays input:checked')].map(i => Number(i.value));
   try{
     let raw = null, sourceType = 'manual', sourceUrl = '', fmt = null;
+    let sheetNames = [], sheetCount = 0;
     if(file){
       const text = await file.text();
       fmt = detectFormat(text);
@@ -4075,15 +4361,23 @@ async function createSiteFromModal(){
       const res = await fetchSiteRows(url);
       raw = res.rows; fmt = res.format;
       sourceType = 'url'; sourceUrl = url;
+      const wholeBook = fmt === 'upkp' && !/[#?&]gid=/.test(url || '');
+      if(wholeBook){
+        // Первый CSV нужен только для определения формата; затем сразу читаем всю книгу.
+        const full = await fetchSiteRows(url, {autoMonth:true, format:'upkp'});
+        raw = full.rows; sheetNames = full.sheetNames || []; sheetCount = full.sheetCount || 0;
+      }
     } else {
       toast('Укажите ссылку на Google Sheets или выберите CSV-файл');
       return;
     }
     if(!raw.length){ toast('Не удалось прочитать строки операций'); return; }
-    const autoMonth = fmt === 'upkp' && !/[#?&]gid=/.test(url || '');
+    const autoMonth = sourceType === 'url' && fmt === 'upkp' && !/[#?&]gid=/.test(url || '');
     const site = { id:'s' + Date.now().toString(36), name, sourceType, sourceUrl,
       workers, perWorker: teamTotal ? 0 : perWorker, teamTotal, fondMin:fond, workdays:workdays.length?workdays:[1,2,3,4,5], rows:makeRows(raw), overrides:{},
-      format:fmt, unit:fmt === 'upkp' ? 'секц.' : 'мин', autoMonth };
+      format:fmt, unit:fmt === 'upkp' ? 'секц.' : 'мин', autoMonth,
+      syncOk:sourceType === 'url', syncAt:sourceType === 'url' ? new Date().toISOString() : null,
+      syncSheetNames:sheetNames, syncSheetCount:sheetCount };
     state.sites.push(site);
     state.activeId = site.id;
     saveSites();
@@ -4096,28 +4390,39 @@ async function createSiteFromModal(){
     alert('Ошибка загрузки: ' + err.message + '\n\nЕсли таблица закрыта — откройте доступ «по ссылке» (просмотр) или скачайте CSV вручную и загрузите файлом.');
   }
 }
+const siteSyncFlights = new WeakMap(), siteSyncAttempts = new WeakMap();
 async function refreshSite(site){
   if(site.sourceType !== 'url' || !site.sourceUrl) return false;
-  try{
-    const res = await fetchSiteRows(site.sourceUrl, site);
-    if(!res.rows.length && site.rows.length){
-      throw new Error('Google Sheets вернула 0 операций. Сохранённые данные оставлены без изменений.');
+  const active = siteSyncFlights.get(site);
+  if(active) return active;
+  siteSyncAttempts.set(site, Date.now());
+  const flight = (async () => {
+    try{
+      const res = await fetchSiteRows(site.sourceUrl, site);
+      if(!res.rows.length && site.rows.length){
+        throw new Error('Google Sheets вернула 0 операций. Сохранённые данные оставлены без изменений.');
+      }
+      site.rows = makeRows(res.rows, site.rows);
+      site.format = res.format || site.format;
+      site.syncSheetNames = res.sheetNames || [];
+      site.syncSheetCount = res.sheetCount || 0;
+      if(site.id === 's_upkp') site.snapshotVersion = UPKP_SNAPSHOT_VERSION;
+      if(!site.unit) site.unit = res.format === 'upkp' ? 'секц.' : 'мин';
+      site.syncOk = true;
+      site.syncAt = new Date().toISOString();
+      site.syncErr = null;
+      saveSites();
+      return true;
+    }catch(err){
+      site.syncOk = false;
+      site.syncErr = String(err && err.message || err);
+      saveSites();
+      throw err;
     }
-    site.rows = makeRows(res.rows);
-    site.format = res.format || site.format;
-    if(site.id === 's_upkp') site.snapshotVersion = UPKP_SNAPSHOT_VERSION;
-    if(!site.unit) site.unit = res.format === 'upkp' ? 'секц.' : 'мин';
-    site.syncOk = true;
-    site.syncAt = new Date().toISOString();
-    site.syncErr = null;
-    saveSites();
-    return true;
-  }catch(err){
-    site.syncOk = false;
-    site.syncErr = String(err && err.message || err);
-    saveSites();
-    throw err;
-  }
+  })();
+  siteSyncFlights.set(site, flight);
+  try{ return await flight; }
+  finally{ if(siteSyncFlights.get(site) === flight) siteSyncFlights.delete(site); }
 }
 function renderSyncStatus(){
   const el = $('syncStatus');
@@ -4127,9 +4432,10 @@ function renderSyncStatus(){
   const shared = site.sharedOn ? (site.sharedOk !== false ? ' · совместно ✓' : ' · совместно ✗') : '';
   if(site.syncOk){
     const t = site.syncAt ? new Date(site.syncAt) : null;
-    el.textContent = '● ' + site.rows.length + ' операций' + (t ? ' · ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) : '') + shared;
+    const sheets = site.syncSheetCount ? ' · ' + site.syncSheetCount + ' листов' : '';
+    el.textContent = '● ' + site.rows.length + ' операций' + sheets + (t ? ' · ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) : '') + shared;
     el.style.color = site.sharedOk === false ? 'var(--red)' : 'var(--green)';
-    el.title = 'Google Sheets синхронизирован' + (site.syncErr ? '\n' + site.syncErr : '');
+    el.title = 'Google Sheets синхронизирован: вся книга' + (site.syncSheetNames && site.syncSheetNames.length ? '\n' + site.syncSheetNames.join(', ') : '') + (site.syncErr ? '\n' + site.syncErr : '');
   } else if(site.rows.length){
     el.textContent = '◐ Резервная копия · ' + site.rows.length + ' операций' + shared;
     el.style.color = 'var(--amber)';
@@ -4152,6 +4458,22 @@ async function refreshActive(){
   }
 }
 
+async function refreshSiteGroup(sites){
+  const results = await Promise.allSettled(sites.map(site => refreshSite(site)));
+  const okCount = results.filter(result => result.status === 'fulfilled' && result.value).length;
+  const failCount = results.length - okCount;
+  scheduleRender();
+  return { okCount, failCount };
+}
+async function autoRefreshSites(minGap = 60000){
+  if(document.hidden) return { okCount:0, failCount:0 };
+  const now = Date.now();
+  const sites = state.sites.filter(site => site.sourceType === 'url' && site.sourceUrl &&
+    now - (siteSyncAttempts.get(site) || 0) >= minGap);
+  if(!sites.length) return { okCount:0, failCount:0 };
+  return refreshSiteGroup(sites); // без toast: фоновая синхронизация не отвлекает
+}
+
 /* ---------- init ---------- */
 function init(){
   if(init._done) return; // защита от двойного запуска (DOMContentLoaded + readyState)
@@ -4165,16 +4487,19 @@ function init(){
   raf(segSync);
   // после загрузки шрифтов ширины кнопок меняются — пересчитываем плашку
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => segSync());
-  // тихое обновление всех url-участков при загрузке
   setTimeout(async () => {
-    let okCount = 0, failCount = 0;
-    await Promise.allSettled(state.sites.filter(s => s.sourceType === 'url' && s.sourceUrl).map(s =>
-      refreshSite(s).then(ok => { if(ok) okCount++; }).catch(() => { failCount++; })
-    ));
-    scheduleRender();
+    const sites = state.sites.filter(site => site.sourceType === 'url' && site.sourceUrl);
+    const { okCount, failCount } = await refreshSiteGroup(sites);
     if(failCount && !okCount) toast('Нет связи с Google Sheets — показаны сохранённые данные. Проверьте интернет и откройте страницу по ссылке Kimi (localhost), а не как файл.');
     else if(okCount) toast('Синхронизировано участков: ' + okCount + (failCount ? ' (не удалось: ' + failCount + ')' : ''));
   }, 600);
+  // Вся книга перечитывается каждые 10 минут на видимой вкладке. Новый лист
+  // появится в плане без изменения настроек и без перечисления месяцев в коде.
+  setInterval(() => { autoRefreshSites(60000); }, 10 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) autoRefreshSites(60000);
+  });
+  window.addEventListener('online', () => { autoRefreshSites(60000); });
   // совместный режим: опрос общих правок каждые 20 секунд
   setInterval(async () => {
     if(document.hidden) return;
@@ -4187,13 +4512,13 @@ function init(){
   }, 20000);
 }
 if(typeof window !== 'undefined'){
-  window.PLANNER = { parseCSVText, parseUPKP, parseAny, detectFormat, curMonthSheet, orderNum, buildPositions, computeDays, moveRowToDate, autoplain, makeRows,
+  window.PLANNER = { parseCSVText, parseUPKP, parseUPKPGrid, parseUPKPWorkbook, parseAny, detectFormat, curMonthSheet, orderNum, buildPositions, computeDays, moveRowToDate, autoplain, makeRows,
     state, effRows, parseDate, jumpToDate, nextWorkDay, parseGUrl, suggestFond, fondOf, LS_KEY, loadSites, csvToGrid,
     parseNotes, distributeQty, distributeMinutes, buildSplitRecord, buildSplitRecordQtys, splitQtysByFond, assignSplitDates, applyPlanToSite, findPart,
     positionKey, upkpOrderLabel, upkpCustomer, upkpProductLabel, displayProduct, displayCustomer,
     logChange, readLog, LOG_KEY, fmtTs, currentTheme, toggleTheme,
     sharedKey, pullShared, pushShared, ghCfg, ghSharedPath, enableSharing, shareSettings,
-    refreshSite, render, scheduleRender, saveSites, todayISO, addDays, isWorkday, siteResLine };
+    fetchSiteRows, refreshSite, refreshSiteGroup, autoRefreshSites, render, scheduleRender, saveSites, todayISO, addDays, isWorkday, siteResLine };
   if(typeof document !== 'undefined' && document.getElementById && typeof window.addEventListener !== 'undefined'){
     window.addEventListener('DOMContentLoaded', init);
     if(document.readyState !== 'loading') init();
@@ -4563,7 +4888,7 @@ addWidget('sync', 'Синхронизация', 'Состояние данных
   const status = site.syncOk ? 'Синхронизировано' : site.rows.length ? 'Резервная копия' : 'Нет данных';
   return widgetMetric(site.rows.length, 'операций в источнике', status + (site.syncAt ? ' · ' + new Date(site.syncAt).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : ''), site.syncOk ? '' : 'amber');
 });
-addWidget('source', 'Синхронизация', 'Источник участка', 'Тип и адрес источника данных', site => widgetMetric(site.sourceType === 'url' ? 'Google Sheets' : 'CSV / снимок', site.autoMonth ? 'лист текущего месяца' : 'фиксированный источник', site.sourceUrl || 'Локальный источник'));
+addWidget('source', 'Синхронизация', 'Источник участка', 'Тип и адрес источника данных', site => widgetMetric(site.sourceType === 'url' ? 'Google Sheets' : 'CSV / снимок', site.autoMonth ? 'вся книга' + (site.syncSheetCount ? ' · ' + site.syncSheetCount + ' листов' : '') : 'фиксированный источник', site.sourceUrl || 'Локальный источник'));
 addWidget('shared', 'Синхронизация', 'Совместный режим', 'Состояние общих правок GitHub', site => widgetMetric(site.sharedOn ? 'Включён' : 'Выключен', 'совместные правки', site.sharedOn ? (site.sharedOk === false ? 'Есть ошибка синхронизации' : 'Общие данные активны') : 'Ручные правки хранятся локально', site.sharedOn && site.sharedOk === false ? 'red' : ''));
 addWidget('syncTime', 'Синхронизация', 'Время обновления', 'Когда последний раз получены живые данные', site => widgetMetric(site.syncAt ? new Date(site.syncAt).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '—', site.syncAt ? new Date(site.syncAt).toLocaleDateString('ru-RU') : 'живая синхронизация ещё не выполнена', site.syncOk ? 'Данные синхронизированы' : 'Показана сохранённая копия'));
 
