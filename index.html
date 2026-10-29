@@ -126,7 +126,7 @@ button svg,.search-box svg,.period>svg,.rail-add svg,.pin-button svg{width:17px;
 html[data-theme="dark"] .theme-track{background:#426a55}
 html[data-theme="dark"] .theme-track i{transform:translateX(14px);background:var(--mint)}
 .dock-toggle{display:none}
-.workspace-grid{height:calc(100dvh - 64px);display:grid;grid-template-columns:214px minmax(0,1fr) 304px}
+.workspace-grid{height:calc(100dvh - 64px);display:grid;grid-template-columns:214px minmax(0,1fr) var(--dock-width,304px)}
 
 /* 03. Site rail ----------------------------------------------------------- */
 .site-rail{min-width:0;display:flex;flex-direction:column;gap:12px;padding:18px 14px 14px;background:var(--surface-2);border-right:1px solid var(--line);overflow-y:auto;z-index:5}
@@ -415,6 +415,52 @@ textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft);
 .widget-actions .btn{padding:5px;font-size:9px}
 @keyframes widget-in{from{opacity:0;transform:translateY(7px) scale(.98)}to{opacity:1;transform:none}}
 
+/* 07b. Resizable dock, period pickers and widget catalog ----------------- */
+.control-dock{position:relative}
+.dock-resize-handle{position:absolute;left:-5px;top:0;bottom:0;width:12px;z-index:8;display:flex;align-items:center;justify-content:center;cursor:col-resize;touch-action:none}
+.dock-resize-handle i{display:block;width:3px;height:42px;border-radius:4px;background:var(--line-strong);box-shadow:0 0 0 1px var(--surface);transition:height .2s,background .2s,box-shadow .2s}
+.dock-resize-handle:hover i,.dock-resize-handle:focus-visible i,body.dock-resizing .dock-resize-handle i{height:64px;background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.dock-resize-handle:focus-visible{outline:0}
+body.dock-resizing{cursor:col-resize;user-select:none}
+body.dock-resizing .dock-track,body.dock-resizing .widget-card{transition:none!important;animation:none!important}
+.dock-size-controls{display:flex;align-items:center;gap:5px}
+.dock-size-controls button{width:20px;height:20px;padding:0;display:grid;place-items:center;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);color:var(--muted);cursor:pointer;line-height:1;transition:background .15s,color .15s,border-color .15s}
+.dock-size-controls button:hover{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+.dock-size-controls span{font-size:8px;letter-spacing:.3px}
+.load-picker-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:7px;margin:-3px 0 8px}
+.load-picker-row label{min-width:0}
+.load-picker-row label>span{display:block;margin:0 0 4px 2px;color:var(--faint);font-size:8px;font-weight:700;letter-spacing:.45px;text-transform:uppercase}
+.load-picker-row input{width:100%;min-width:0;height:34px;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);color:var(--ink);font:10px var(--mono);color-scheme:light;transition:border-color .16s,box-shadow .16s}
+html[data-theme="dark"] .load-picker-row input{color-scheme:dark}
+.load-picker-row input:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.load-picker-row .btn{height:34px;padding:5px 9px}
+.week-number{margin:0 0 9px;padding:6px 8px;border-left:2px solid var(--green);background:var(--green-soft);color:var(--green);font:9px var(--mono)}
+.week-number:empty{display:none}
+.widget-panel-summary{display:flex;align-items:center;justify-content:space-between;margin:10px 1px;color:var(--faint);font-size:9px}
+.widget-panel-summary b{color:var(--muted);font:9px var(--mono)}
+.custom-widgets{display:flex;flex-direction:column;gap:8px}
+.widget-card{content-visibility:auto;contain-intrinsic-size:280px 130px}
+.widget-card:has(.widget-body[hidden]) .widget-head{border-bottom:0}
+.widget-big{overflow-wrap:anywhere}
+.widget-caption{white-space:pre-line;overflow-wrap:anywhere}
+.widget-list li{overflow-wrap:anywhere}
+.modal.modal-catalog{width:1040px}
+.modal-count{float:right;padding:2px 7px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font:9px var(--mono);letter-spacing:0}
+.widget-catalog-tools{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:9px;margin-bottom:15px}
+.catalog-search{height:36px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--faint);transition:border-color .16s,box-shadow .16s}
+.catalog-search:focus-within{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.catalog-search svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7}
+.catalog-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font-size:11px}
+.widget-catalog-tools select{width:100%;height:36px}
+.widget-catalog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.catalog-item{min-width:0;min-height:148px;padding:12px;display:flex;flex-direction:column;align-items:flex-start;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);transition:transform .18s var(--ease-out),border-color .18s,box-shadow .18s;content-visibility:auto;contain-intrinsic-size:260px 148px}
+.catalog-item:hover{transform:translateY(-2px);border-color:var(--green);box-shadow:var(--shadow-sm)}
+.catalog-item-group{margin-bottom:6px;color:var(--green);font:8px var(--mono);letter-spacing:.55px;text-transform:uppercase}
+.catalog-item>b{font-size:12px}
+.catalog-item p{margin:5px 0 11px;color:var(--muted);font-size:10px;line-height:1.5}
+.catalog-item .btn{margin-top:auto;min-height:29px;padding:4px 9px;font-size:9px}
+.catalog-note{margin-right:auto;color:var(--muted);font-size:9px}
+
 /* 08. Dialogs, forms and reports ----------------------------------------- */
 .modal-wrap{position:fixed;inset:0;z-index:100;padding:18px;display:flex;align-items:center;justify-content:center;background:rgba(8,15,11,0);opacity:0;visibility:hidden;transition:opacity .22s,background .22s,visibility 0s linear .28s}
 .modal-wrap.open{opacity:1;visibility:visible;background:rgba(8,15,11,.55);backdrop-filter:blur(5px);transition:opacity .22s,background .22s,visibility 0s}
@@ -519,7 +565,22 @@ body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cur
   .profile-create{grid-template-columns:1fr}.profile-create .btn{grid-column:auto}
   .profile-item{grid-template-columns:1fr auto}.profile-item .profile-use{grid-column:1/-1}
 }
-@media(pointer:coarse){.card:hover,.site-rail-item:hover,.load-row:hover,.day-item:hover{transform:none}.btn,.icon-action,.mini{min-height:34px}}
+/* Пользовательская ширина важнее стандартных desktop-пресетов. */
+@media(min-width:1181px) and (max-width:1450px){.workspace-grid{grid-template-columns:196px minmax(0,1fr) var(--dock-width,286px)}}
+@media(max-width:1180px){.control-dock{width:min(var(--dock-width,310px),calc(100vw - 20px))}}
+@media(max-width:800px){
+  .widget-catalog-tools{grid-template-columns:1fr}
+  .widget-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .catalog-note{width:100%;margin:0 0 5px}
+  .modal-catalog .mfoot{flex-wrap:wrap}
+}
+@media(max-width:520px){
+  .widget-catalog-grid{grid-template-columns:1fr}
+  .catalog-item{min-height:130px}
+  .load-picker-row{grid-template-columns:minmax(0,1fr) auto}
+  .dock-size-controls span{display:none}
+}
+@media(pointer:coarse){.card:hover,.site-rail-item:hover,.load-row:hover,.day-item:hover,.catalog-item:hover{transform:none}.btn,.icon-action,.mini{min-height:34px}.dock-resize-handle{display:none}}
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
@@ -639,6 +700,7 @@ body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cur
   </main>
 
   <aside class="control-dock" id="controlDock" aria-label="Панели управления">
+    <div class="dock-resize-handle" id="dockResizeHandle" role="separator" aria-label="Ширина панели виджетов" aria-orientation="vertical" tabindex="0" title="Потяните для изменения ширины · двойной клик сбрасывает размер"><i></i></div>
     <div class="dock-header">
       <button class="dock-arrow" id="dockPrev" title="Предыдущая панель" aria-label="Предыдущая панель"><svg><use href="#i-chevron"/></svg></button>
       <div><div class="eyebrow">Панель <span id="dockIndex">01</span> / 04</div><h2 id="dockTitle">Дни загрузки</h2></div>
@@ -651,8 +713,15 @@ body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cur
           <aside id="dayPanel"><div class="panel-intro">Быстрый переход к смене. Нажатие прокручивает доску к нужной дате.</div><h3>Дни загрузки</h3><div id="dayList"></div></aside>
         </section>
         <section class="dock-panel" data-panel="1" aria-label="Загрузка участков">
-          <div class="panel-intro">Фактическая норма и ресурс считаются отдельно для каждого участка.</div>
+          <div class="panel-intro">Выберите конкретную дату, календарную неделю или месяц. Текущий месяц считается только с сегодняшнего дня.</div>
           <div class="inline-control"><label for="loadPeriod">Период расчёта</label><select id="loadPeriod"><option value="day">День</option><option value="week">Неделя</option><option value="month">Месяц</option></select></div>
+          <div class="load-picker-row">
+            <label id="loadDayWrap"><span>Дата</span><input type="date" id="loadDay"></label>
+            <label id="loadWeekWrap" hidden><span>Календарная неделя</span><input type="week" id="loadWeek"></label>
+            <label id="loadMonthWrap" hidden><span>Месяц</span><input type="month" id="loadMonth"></label>
+            <button class="btn" id="loadCurrent" title="Вернуться к текущему периоду">Сейчас</button>
+          </div>
+          <div class="week-number" id="loadWeekNumber"></div>
           <div id="loadWidgets"></div>
         </section>
         <section class="dock-panel" data-panel="2" aria-label="Автоплан с Kimi">
@@ -667,13 +736,14 @@ body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cur
           <details class="how-it-works"><summary>Как проходит запрос</summary><p>Оставьте эту страницу открытой во встроенном браузере. В активном чате Kimi агент должен ожидать запрос через инструмент страницы. Он получит операции и пожелания, проверит план и вернёт его сюда.</p><p>WebMCP не может разбудить уже завершённый диалог. Закрытие или обновление страницы отменяет ожидание.</p></details>
         </section>
         <section class="dock-panel" data-panel="3" aria-label="Мои виджеты">
-          <div class="panel-intro">Соберите собственную сводку. Порядок и состав сохраняются в этом браузере.</div>
-          <div class="widget-picker"><select id="widgetPicker" aria-label="Тип виджета"></select><button class="btn" id="btnAddWidget" title="Добавить виджет"><svg><use href="#i-plus"/></svg></button></div>
+          <div class="panel-intro">Соберите собственную сводку из 48 виджетов. Состав, порядок и сворачивание сохраняются в этом браузере.</div>
+          <button class="btn primary wide" id="btnWidgetCatalog"><svg><use href="#i-plus"/></svg>Открыть каталог виджетов</button>
+          <div class="widget-panel-summary"><span>Выведено на панель</span><b id="widgetCount">0 из 48</b></div>
           <div id="customWidgets" class="custom-widgets"></div>
         </section>
       </div>
     </div>
-    <div class="dock-footer"><span id="dockFooterName">Навигация по сменам</span><span class="keyboard-hint">← →</span></div>
+    <div class="dock-footer"><span id="dockFooterName">Навигация по сменам</span><div class="dock-size-controls"><button id="dockNarrow" title="Сузить панель" aria-label="Сузить панель">−</button><span>Ширина</span><button id="dockWide" title="Расширить панель" aria-label="Расширить панель">+</button></div></div>
   </aside>
 </div>
 </div>
@@ -721,6 +791,12 @@ body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cur
   <div id="profilesList" class="profiles-list"></div>
   <div class="security-note"><b>Честно про права.</b> Это статическая страница: роли ограничивают действия в интерфейсе, но не заменяют серверную авторизацию. Ссылка не содержит секретов. Для защищённых совместных записей права задаются доступом к GitHub-репозиторию; без сервера криптографической защиты профиля нет.</div>
 </div><div class="mfoot"><button class="btn primary" id="profilesClose">Готово</button></div></div></div>
+
+<!-- modal: widget catalog -->
+<div class="modal-wrap" id="widgetCatalogModal"><div class="modal modal-catalog"><h2>Каталог виджетов <span class="modal-count" id="widgetCatalogCount">48</span></h2><div class="mbody">
+  <div class="widget-catalog-tools"><label class="catalog-search"><svg><use href="#i-search"/></svg><input type="search" id="widgetSearch" placeholder="Найти виджет: сроки, ресурс, договор…"></label><select id="widgetGroup" aria-label="Категория виджетов"><option value="">Все категории</option></select></div>
+  <div id="widgetCatalogGrid" class="widget-catalog-grid"></div>
+</div><div class="mfoot"><span class="catalog-note">Добавленные виджеты можно сворачивать, удалять и переставлять.</span><button class="btn primary" id="widgetCatalogClose">Готово</button></div></div></div>
 
 <div class="cs-menu" id="csMenu" role="listbox"></div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -2084,6 +2160,9 @@ body[data-role="viewer"] .card,body[data-role="viewer"] tr[draggable="true"]{cur
 const SNAP = JSON.parse(document.getElementById('snapshot-data').textContent);
 const CONTRACTS = SNAP.contracts || {};
 const LS_KEY = 'planner_sites_v2';
+// Менять при обновлении встроенного снимка УПКП: устаревший localStorage
+// не должен маскироваться под актуальный план после выкладки новой версии.
+const UPKP_SNAPSHOT_VERSION = '2026-10-29.1';
 const WD = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
 const state = { sites: [], activeId: null, view: 'board', selectedDate: null, rangeFrom: null, rangeTo: null, _enterView: false };
 let pendingPlan = null;
@@ -2315,7 +2394,8 @@ function defaultSites(){
   // УПКП: 30 секций в день — на бригаду из 11 человек ВСЕГО (не на человека)
   const upkp = { id:'s_upkp', name:'УПКП — план (live)', sourceType:'url', sourceUrl:SNAP.upkpUrl||'',
     autoMonth:true, format:'upkp', unit:'секц.', workers:11, perWorker:0, teamTotal:true,
-    fondMin:330, workdays:[1,2,3,4,5], rows:upkpRows, overrides:{} };
+    fondMin:330, workdays:[1,2,3,4,5], rows:upkpRows, overrides:{},
+    snapshotVersion:UPKP_SNAPSHOT_VERSION };
   return [op, sau, bv, upkp];
 }
 function loadSites(){
@@ -2336,9 +2416,20 @@ function loadSites(){
             s.workers = 11; s.perWorker = 0; s.teamTotal = true; s.fondMin = 330;
             s.sourceType = 'url'; s.sourceUrl = fallback.sourceUrl; s.autoMonth = true;
             s.format = 'upkp'; s.unit = 'секц.';
-            if((!Array.isArray(s.rows) || !s.rows.length) && fallback.rows.length){
-              s.rows = fallback.rows; s.syncOk = false;
-              s.syncErr = 'Показана резервная копия. Нажмите «Обновить» для связи с Google Sheets.';
+            const staleSnapshot = s.snapshotVersion !== fallback.snapshotVersion;
+            if((staleSnapshot || !Array.isArray(s.rows) || !s.rows.length) && fallback.rows.length){
+              s.rows = fallback.rows;
+              // Ручные переносы и разбивки сохраняем только для операций,
+              // которые действительно присутствуют в новом снимке.
+              const validIds = new Set(fallback.rows.map(row => row.id));
+              const validKeys = new Set(fallback.rows.map(row => positionKey(row, fallback)));
+              s.overrides = Object.fromEntries(Object.entries(s.overrides || {}).filter(([id]) => validIds.has(id) || String(id).startsWith('sp')));
+              s.splits = Object.fromEntries(Object.entries(s.splits || {}).filter(([key]) => validKeys.has(key)));
+              s.snapshotVersion = fallback.snapshotVersion;
+              s.syncOk = false; s.syncAt = null;
+              s.syncErr = staleSnapshot
+                ? 'Резервный снимок УПКП обновлён. Нажмите «Обновить» для проверки живой таблицы.'
+                : 'Показана резервная копия. Нажмите «Обновить» для связи с Google Sheets.';
             }
           }
           else if(s.workers && s.perWorker){ s.fondMin = s.workers * s.perWorker; }
@@ -3939,6 +4030,7 @@ async function refreshSite(site){
     }
     site.rows = makeRows(res.rows);
     site.format = res.format || site.format;
+    if(site.id === 's_upkp') site.snapshotVersion = UPKP_SNAPSHOT_VERSION;
     if(!site.unit) site.unit = res.format === 'upkp' ? 'секц.' : 'мин';
     site.syncOk = true;
     site.syncAt = new Date().toISOString();
@@ -4071,18 +4163,44 @@ function wIsIsoDate(value){
 }
 
 /* ---------- workload calculations -------------------------------------- */
-function workloadPeriod(site, period, anchor){
+function isoWeekInfo(value){
+  const date = new Date(value + 'T00:00:00Z');
+  if(Number.isNaN(date.getTime())) return { week:0, year:0, key:'' };
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const year = date.getUTCFullYear();
+  const yearStart = new Date(Date.UTC(year, 0, 1));
+  const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  return { week, year, key:year + '-W' + String(week).padStart(2, '0') };
+}
+function isoWeekStart(key){
+  const match = String(key || '').match(/^(\d{4})-W(\d{2})$/);
+  if(!match) return null;
+  const year = Number(match[1]), week = Number(match[2]);
+  const date = new Date(Date.UTC(year, 0, 4));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() - day + 1 + (week - 1) * 7);
+  return date.toISOString().slice(0, 10);
+}
+function currentLoadSelection(){
+  const today = wPlanner().todayISO();
+  return { day:today, week:isoWeekInfo(today).key, month:today.slice(0, 7) };
+}
+function workloadPeriod(site, period, anchor, fullPeriod){
   const planner = wPlanner();
-  const today = anchor || planner.todayISO();
-  let from = today;
-  let to = today;
+  const reference = anchor || planner.todayISO();
+  let from = reference;
+  let to = reference;
   if(period === 'week'){
-    const day = new Date(today + 'T00:00:00').getDay();
-    from = planner.addDays(today, day === 0 ? -6 : 1 - day);
+    const day = new Date(reference + 'T00:00:00').getDay();
+    from = planner.addDays(reference, day === 0 ? -6 : 1 - day);
     to = planner.addDays(from, 6);
   }else if(period === 'month'){
-    from = today.slice(0, 8) + '01';
-    const next = new Date(from + 'T00:00:00');
+    const monthStart = reference.slice(0, 8) + '01';
+    // По умолчанию месяц означает остаток: с выбранного/сегодняшнего дня.
+    // Полный диапазон используется только для явно выбранного другого месяца.
+    from = fullPeriod ? monthStart : reference;
+    const next = new Date(monthStart + 'T00:00:00');
     next.setMonth(next.getMonth() + 1);
     next.setDate(0);
     to = next.getFullYear() + '-' + String(next.getMonth() + 1).padStart(2, '0') + '-' + String(next.getDate()).padStart(2, '0');
@@ -4096,12 +4214,34 @@ function workloadPeriod(site, period, anchor){
     }
   }
   const capacity = Math.max(1, planner.fondOf(site) * workdays);
+  const week = period === 'week' ? isoWeekInfo(from) : null;
   return {
-    period, from, to, load, capacity, workdays, rows:rows.length,
-    pct:Math.round(load / capacity * 100), unit:site.unit || 'мин', siteId:site.id
+    period, reference, from, to, load, capacity, workdays, rows:rows.length,
+    pct:Math.round(load / capacity * 100), unit:site.unit || 'мин', siteId:site.id,
+    weekNumber:week ? week.week : null, weekYear:week ? week.year : null,
+    weekKey:week ? week.key : null, monthKey:period === 'month' ? reference.slice(0, 7) : null
   };
 }
+function selectedWorkload(site){
+  const period = loadPeriodState;
+  const selection = loadSelectionState[period];
+  if(period === 'week') return workloadPeriod(site, period, isoWeekStart(selection) || wPlanner().todayISO(), true);
+  if(period === 'month'){
+    const today = wPlanner().todayISO();
+    const current = selection === today.slice(0, 7);
+    return workloadPeriod(site, period, current ? today : selection + '-01', !current);
+  }
+  return workloadPeriod(site, 'day', wIsIsoDate(selection) ? selection : wPlanner().todayISO(), true);
+}
 function workloadLabel(period){ return period === 'day' ? 'День' : period === 'week' ? 'Неделя' : 'Месяц'; }
+function workloadPeriodNote(load){
+  if(load.period === 'week') return 'Неделя № ' + load.weekNumber + ' · ' + load.from + ' — ' + load.to;
+  if(load.period === 'month'){
+    const origin = load.reference === wPlanner().todayISO() ? 'с сегодня' : 'с выбранной даты';
+    return 'Месяц · ' + load.from + ' — ' + load.to + (load.from === load.reference ? ' · ' + origin : ' · полный месяц');
+  }
+  return 'День · ' + load.from;
+}
 function workloadBar(load, compact){
   const over = load.pct > 100;
   return '<div class="load-track"><i class="' + (over ? 'over' : '') + '" style="width:' + Math.min(100, Math.max(0, load.pct)) + '%"></i></div>' +
@@ -4141,101 +4281,318 @@ function setDockPanel(index){
 
 /* ---------- widgets ----------------------------------------------------- */
 const WIDGET_KEY = 'planner.widgets.v1';
-const WIDGET_CATALOG = {
-  load:{ title:'Загрузка', description:'Норма за выбранный период' },
-  resource:{ title:'Ресурс', description:'Состав и фонд участка' },
-  operations:{ title:'Операции', description:'Позиции и сумма норм' },
-  deadlines:{ title:'Сроки', description:'Просрочка и ближайшие ТДГ' },
-  sync:{ title:'Синхронизация', description:'Источник и резервная копия' },
-  activity:{ title:'Изменения', description:'Последние записи журнала' },
-  actions:{ title:'Быстрые действия', description:'План, отчёт и экспорт' },
-  boards:{ title:'Общая доска', description:'Выведенные участки' }
-};
+const WIDGET_COLLAPSE_KEY = 'planner.widgetCollapsed.v1';
+const WIDGET_CATALOG = {};
+const WIDGET_GROUPS = ['Загрузка', 'Операции', 'Сроки', 'Заказы', 'Ресурсы', 'Участки', 'Синхронизация', 'Журнал', 'Действия'];
+function addWidget(id, group, title, description, render){
+  WIDGET_CATALOG[id] = { group, title, description, render };
+}
+function widgetMetric(value, caption, detail, tone){
+  return '<strong class="widget-big"' + (tone ? ' style="color:var(--' + tone + ')"' : '') + '>' + wEsc(value) + '</strong>' +
+    '<span class="widget-caption">' + wEsc(caption) + '</span>' + (detail ? '<span class="widget-caption">' + wEsc(detail) + '</span>' : '');
+}
+function widgetRows(site){ return wPlanner().effRows(site); }
+function widgetSum(rows){ return rows.reduce((sum, row) => sum + (row.minutes || 0), 0); }
+function widgetRowsIn(site, load){
+  return widgetRows(site).filter(row => row.dateEff && row.dateEff >= load.from && row.dateEff <= load.to);
+}
+function widgetRowList(rows, site, limit){
+  const planner = wPlanner();
+  if(!rows.length) return '<span class="widget-caption">Нет операций для отображения</span>';
+  return '<ul class="widget-list">' + rows.slice(0, limit || 4).map(row => {
+    const order = site.format === 'upkp' ? planner.upkpOrderLabel(row.custOrder) : (row.prodOrder || row.custOrder);
+    return '<li><b>' + wEsc(order) + '</b> · ' + wEsc(planner.displayProduct(row, site)) + '<br>' + wEsc(row.dateEff || 'без даты') + ' · ' + wFmt(row.minutes || 0) + ' ' + wEsc(site.unit || 'мин') + '</li>';
+  }).join('') + '</ul>';
+}
+function widgetGroups(rows, key){
+  const groups = new Map();
+  rows.forEach(row => {
+    const name = typeof key === 'function' ? key(row) : row[key];
+    const label = String(name || 'Не указано');
+    if(!groups.has(label)) groups.set(label, { name:label, rows:0, total:0 });
+    const group = groups.get(label);
+    group.rows++; group.total += row.minutes || 0;
+  });
+  return [...groups.values()].sort((a, b) => b.total - a.total);
+}
+function widgetSiteLogs(site){ return wPlanner().readLog().filter(entry => entry.site === site.id); }
+
+/* Загрузка: все показатели вычисляются из реальных операций и фонда. */
+addWidget('load', 'Загрузка', 'Выбранный период', 'Загрузка с учётом выбранного дня, недели или месяца', site => {
+  const load = selectedWorkload(site);
+  return widgetMetric(load.pct + '%', workloadPeriodNote(load), wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + load.unit) + workloadBar(load);
+});
+addWidget('free', 'Загрузка', 'Свободный ресурс', 'Остаток фонда в выбранном периоде', site => {
+  const load = selectedWorkload(site), free = load.capacity - load.load;
+  return widgetMetric(wFmt(Math.max(0, free)) + ' ' + load.unit, free >= 0 ? 'свободно в выбранном периоде' : 'перегруз сверх фонда', free < 0 ? 'Не хватает: ' + wFmt(-free) + ' ' + load.unit : workloadPeriodNote(load), free < 0 ? 'red' : '');
+});
+addWidget('workdays', 'Загрузка', 'Рабочие дни', 'Число рабочих дней и операций периода', site => {
+  const load = selectedWorkload(site);
+  return widgetMetric(load.workdays, 'рабочих дней', load.rows + ' операций · ' + workloadPeriodNote(load));
+});
+addWidget('average', 'Загрузка', 'Средняя загрузка', 'Средняя норма на рабочий день периода', site => {
+  const load = selectedWorkload(site), average = Math.round(load.load / Math.max(1, load.workdays));
+  return widgetMetric(wFmt(average) + ' ' + load.unit, 'в среднем на рабочий день', 'Фонд дня: ' + wFmt(wPlanner().fondOf(site)) + ' ' + load.unit);
+});
+addWidget('peak', 'Загрузка', 'Пиковый день', 'Самый загруженный день выбранного периода', site => {
+  const planner = wPlanner(), load = selectedWorkload(site), rows = widgetRowsIn(site, load);
+  const days = widgetGroups(rows, 'dateEff').sort((a, b) => b.total - a.total);
+  if(!days.length) return widgetMetric('—', 'операций в периоде нет', workloadPeriodNote(load));
+  const peak = days[0], pct = Math.round(peak.total / planner.fondOf(site) * 100);
+  return widgetMetric(wFmt(peak.total) + ' ' + load.unit, peak.name + ' · ' + pct + '% фонда', peak.rows + ' операций', pct > 100 ? 'red' : '');
+});
+addWidget('overload', 'Загрузка', 'Дни перегруза', 'Дни, где норма превышает ресурс участка', site => {
+  const planner = wPlanner(), load = selectedWorkload(site), fond = planner.fondOf(site);
+  const days = widgetGroups(widgetRowsIn(site, load), 'dateEff').filter(day => day.total > fond);
+  return widgetMetric(days.length, 'дней выше фонда', days.length ? days.map(day => day.name + ' · +' + wFmt(day.total - fond)).join('\n') : 'Перегруза в выбранном периоде нет', days.length ? 'red' : '');
+});
+addWidget('today', 'Загрузка', 'Сегодня', 'Загрузка текущего календарного дня', site => {
+  const load = workloadPeriod(site, 'day');
+  return widgetMetric(load.pct + '%', 'сегодня · ' + load.from, wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + load.unit) + workloadBar(load);
+});
+addWidget('tomorrow', 'Загрузка', 'Завтра', 'Плановая загрузка следующего календарного дня', site => {
+  const date = wPlanner().addDays(wPlanner().todayISO(), 1), load = workloadPeriod(site, 'day', date);
+  return widgetMetric(load.pct + '%', 'завтра · ' + date, wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + load.unit) + workloadBar(load);
+});
+addWidget('month', 'Загрузка', 'Остаток месяца', 'С сегодняшнего дня до конца текущего месяца', site => {
+  const load = workloadPeriod(site, 'month');
+  return widgetMetric(load.pct + '%', 'с сегодня до конца месяца', wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + load.unit) + workloadBar(load);
+});
+addWidget('week', 'Загрузка', 'Текущая неделя', 'Календарная неделя с понедельника по воскресенье', site => {
+  const load = workloadPeriod(site, 'week');
+  return widgetMetric(load.pct + '%', 'неделя № ' + load.weekNumber, load.from + ' — ' + load.to) + workloadBar(load);
+});
+
+/* Операции и состав производственного плана. */
+addWidget('operations', 'Операции', 'Все операции', 'Строки, позиции и суммарная норма', site => {
+  const rows = widgetRows(site);
+  return widgetMetric(rows.length, 'операций · ' + wPlanner().buildPositions(site).size + ' позиций', 'Сумма норм: ' + wFmt(widgetSum(rows)) + ' ' + (site.unit || 'мин'));
+});
+addWidget('positions', 'Операции', 'Позиции', 'Уникальные производственные позиции', site => widgetMetric(wPlanner().buildPositions(site).size, 'уникальных позиций', 'Без склеивания разных договоров'));
+addWidget('quantity', 'Операции', 'Количество изделий', 'Сумма количества по всем операциям', site => {
+  const rows = widgetRows(site), qty = rows.reduce((sum, row) => sum + (row.qty || 0), 0);
+  return widgetMetric(wFmt(qty), 'единиц продукции', rows.length + ' операций');
+});
+addWidget('unscheduled', 'Операции', 'Без даты', 'Операции, которые ещё нужно распределить', site => {
+  const rows = widgetRows(site).filter(row => !row.dateEff);
+  return widgetMetric(rows.length, 'операций без даты', wFmt(widgetSum(rows)) + ' ' + (site.unit || 'мин'), rows.length ? 'amber' : '');
+});
+addWidget('split', 'Операции', 'Разбитые позиции', 'Позиции, разнесённые на несколько дней', site => {
+  const positions = [...wPlanner().buildPositions(site).values()].filter(position => position.split);
+  return widgetMetric(positions.length, 'позиций на нескольких днях', positions.length ? positions.slice(0, 3).map(p => (p.prodOrder || p.custOrder) + ': ' + p.dates.length + ' дн.').join('\n') : 'Разбитых позиций нет');
+});
+addWidget('todayOperations', 'Операции', 'Операции сегодня', 'Карточки текущей смены', site => {
+  const rows = widgetRows(site).filter(row => row.dateEff === wPlanner().todayISO());
+  return widgetMetric(rows.length, 'операций сегодня', wFmt(widgetSum(rows)) + ' ' + (site.unit || 'мин')) + widgetRowList(rows, site, 3);
+});
+addWidget('largestOperation', 'Операции', 'Крупнейшая операция', 'Строка с максимальной нормой', site => {
+  const rows = widgetRows(site).slice().sort((a, b) => (b.minutes || 0) - (a.minutes || 0));
+  return rows.length ? widgetRowList(rows, site, 1) : widgetMetric('—', 'операций нет');
+});
+addWidget('productMix', 'Операции', 'Номенклатура', 'Уникальные изделия и основные группы', site => {
+  const groups = widgetGroups(widgetRows(site), row => wPlanner().displayProduct(row, site));
+  return widgetMetric(groups.length, 'уникальных наименований', groups.slice(0, 3).map(group => group.name + ' · ' + group.rows).join('\n'));
+});
+addWidget('problem', 'Операции', 'Проблемные операции', 'Без даты или с датой позже ТДГ', site => {
+  const rows = widgetRows(site).filter(row => !row.dateEff || (row.tdg && row.dateEff > row.tdg));
+  return widgetMetric(rows.length, 'требуют внимания', rows.length ? 'Проверьте даты и сроки' : 'Проблемных операций нет', rows.length ? 'red' : '') + widgetRowList(rows, site, 2);
+});
+
+/* Сроки: раздельно ТДГ и даты договоров. */
+addWidget('deadlines', 'Сроки', 'Сроки и просрочка', 'Просроченные и ближайшие ТДГ', site => {
+  const rows = widgetRows(site), late = rows.filter(row => row.tdg && row.dateEff && row.dateEff > row.tdg);
+  const next = rows.filter(row => row.tdg && row.dateEff && row.dateEff <= row.tdg).sort((a, b) => a.tdg.localeCompare(b.tdg));
+  return widgetMetric(late.length, 'операций после ТДГ', late.length ? 'Нужна корректировка плана' : 'Просроченных сроков нет', late.length ? 'red' : '') + widgetRowList(next, site, 3);
+});
+addWidget('overdue', 'Сроки', 'Просрочка ТДГ', 'Только операции позже требуемой даты', site => {
+  const rows = widgetRows(site).filter(row => row.tdg && row.dateEff && row.dateEff > row.tdg);
+  return widgetMetric(rows.length, 'операций после ТДГ', wFmt(widgetSum(rows)) + ' ' + (site.unit || 'мин'), rows.length ? 'red' : '');
+});
+addWidget('dueToday', 'Сроки', 'ТДГ сегодня', 'Операции с требуемой датой сегодня', site => {
+  const today = wPlanner().todayISO(), rows = widgetRows(site).filter(row => row.tdg === today);
+  return widgetMetric(rows.length, 'операций с ТДГ сегодня', today) + widgetRowList(rows, site, 3);
+});
+addWidget('dueWeek', 'Сроки', 'ТДГ на этой неделе', 'Сроки текущей календарной недели', site => {
+  const load = workloadPeriod(site, 'week'), rows = widgetRows(site).filter(row => row.tdg && row.tdg >= load.from && row.tdg <= load.to);
+  return widgetMetric(rows.length, 'операций · неделя № ' + load.weekNumber, load.from + ' — ' + load.to) + widgetRowList(rows, site, 3);
+});
+addWidget('nextDeadline', 'Сроки', 'Ближайший ТДГ', 'Следующий срок начиная с сегодня', site => {
+  const today = wPlanner().todayISO(), rows = widgetRows(site).filter(row => row.tdg && row.tdg >= today).sort((a, b) => a.tdg.localeCompare(b.tdg));
+  return rows.length ? widgetMetric(rows[0].tdg, 'ближайший ТДГ', rows[0].prodOrder || rows[0].custOrder) + widgetRowList(rows, site, 2) : widgetMetric('—', 'будущих ТДГ нет');
+});
+addWidget('contractLate', 'Сроки', 'После даты договора', 'Операции позже договорной даты', site => {
+  const rows = widgetRows(site).filter(row => row.contractDate && row.dateEff && row.dateEff > row.contractDate);
+  return widgetMetric(rows.length, 'операций после даты договора', rows.length ? 'Проверьте договорные ограничения' : 'Нарушений нет', rows.length ? 'amber' : '');
+});
+
+/* Договоры, заказчики и продукция. */
+addWidget('contracts', 'Заказы', 'Договоры', 'Число уникальных договоров в плане', site => {
+  const groups = widgetGroups(widgetRows(site), row => wPlanner().orderNum(row.custOrder) || row.custOrder);
+  return widgetMetric(groups.length, 'договоров', groups.slice(0, 3).map(group => '№ ' + group.name + ' · ' + group.rows + ' оп.').join('\n'));
+});
+addWidget('customers', 'Заказы', 'Контрагенты', 'Число уникальных контрагентов', site => {
+  const groups = widgetGroups(widgetRows(site), row => wPlanner().displayCustomer(row, site) || row.customer || 'Не указан');
+  return widgetMetric(groups.length, 'контрагентов', groups.slice(0, 3).map(group => group.name).join('\n'));
+});
+addWidget('topCustomer', 'Заказы', 'Крупный контрагент', 'Контрагент с наибольшей суммой норм', site => {
+  const groups = widgetGroups(widgetRows(site), row => wPlanner().displayCustomer(row, site) || row.customer || 'Не указан');
+  return groups.length ? widgetMetric(groups[0].name, wFmt(groups[0].total) + ' ' + (site.unit || 'мин'), groups[0].rows + ' операций') : widgetMetric('—', 'контрагентов нет');
+});
+addWidget('topProduct', 'Заказы', 'Основное изделие', 'Продукция с наибольшей суммой норм', site => {
+  const groups = widgetGroups(widgetRows(site), row => wPlanner().displayProduct(row, site));
+  return groups.length ? widgetMetric(groups[0].name, wFmt(groups[0].total) + ' ' + (site.unit || 'мин'), groups[0].rows + ' операций') : widgetMetric('—', 'продукции нет');
+});
+addWidget('largestContract', 'Заказы', 'Крупный договор', 'Договор с наибольшей суммой норм', site => {
+  const groups = widgetGroups(widgetRows(site), 'custOrder');
+  return groups.length ? widgetMetric(site.format === 'upkp' ? wPlanner().upkpOrderLabel(groups[0].name) : groups[0].name, wFmt(groups[0].total) + ' ' + (site.unit || 'мин'), groups[0].rows + ' операций') : widgetMetric('—', 'договоров нет');
+});
+
+/* Ресурс участка и календарь. */
+addWidget('resource', 'Ресурсы', 'Фонд участка', 'Состав и дневной ресурс', site => widgetMetric(wFmt(wPlanner().fondOf(site)) + ' ' + (site.unit || 'мин'), 'фонд в день', wPlanner().siteResLine(site)));
+addWidget('team', 'Ресурсы', 'Состав бригады', 'Люди и способ расчёта нормы', site => widgetMetric(site.workers || '—', 'человек', site.teamTotal ? 'Норма задана на бригаду целиком' : 'Норма на человека: ' + wFmt(site.perWorker || 0) + ' ' + (site.unit || 'мин')));
+addWidget('workweek', 'Ресурсы', 'Рабочая неделя', 'Настроенные рабочие дни участка', site => {
+  const names = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  return widgetMetric((site.workdays || []).length, 'рабочих дней в неделю', (site.workdays || []).map(day => names[day]).join(', '));
+});
+addWidget('unit', 'Ресурсы', 'Единица планирования', 'Минуты, секции или другая норма', site => widgetMetric(site.unit || 'мин', 'единица загрузки', site.format === 'upkp' ? 'Количество секций равно норме' : 'Норма из исходной таблицы'));
+addWidget('capacity', 'Ресурсы', 'Ресурс периода', 'Фонд всех рабочих дней выбранного периода', site => {
+  const load = selectedWorkload(site);
+  return widgetMetric(wFmt(load.capacity) + ' ' + load.unit, 'доступный ресурс', load.workdays + ' рабочих дней · ' + workloadPeriodNote(load));
+});
+
+/* Сравнение участков и общая доска. */
+addWidget('sites', 'Участки', 'Все участки', 'Число участков и операций в системе', site => {
+  const sites = wPlanner().state.sites, operations = sites.reduce((sum, item) => sum + item.rows.length, 0);
+  return widgetMetric(sites.length, 'участков', operations + ' исходных операций');
+});
+addWidget('compare', 'Участки', 'Сравнение загрузки', 'Все участки за один выбранный период', () => {
+  return '<ul class="widget-list">' + wPlanner().state.sites.map(item => {
+    const load = selectedWorkload(item);
+    return '<li><b>' + wEsc(item.name) + '</b><br>' + load.pct + '% · ' + wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + wEsc(load.unit) + '</li>';
+  }).join('') + '</ul>';
+});
+addWidget('busiestSite', 'Участки', 'Самый загруженный участок', 'Максимальный процент за выбранный период', () => {
+  const items = wPlanner().state.sites.map(site => ({ site, load:selectedWorkload(site) })).sort((a, b) => b.load.pct - a.load.pct);
+  return items.length ? widgetMetric(items[0].load.pct + '%', items[0].site.name, workloadPeriodNote(items[0].load), items[0].load.pct > 100 ? 'red' : '') : widgetMetric('—', 'участков нет');
+});
+addWidget('boards', 'Участки', 'Общая доска', 'Участки, вынесенные на общую доску', () => {
+  const pinned = wPlanner().state.sites.filter(item => item.onBoard);
+  return widgetMetric(pinned.length, 'выведено на общую доску', pinned.length ? pinned.map(item => item.name).join('\n') : 'Используйте кнопку «На общую доску»');
+});
+
+/* Источник и синхронизация. */
+addWidget('sync', 'Синхронизация', 'Состояние данных', 'Live-источник или резервная копия', site => {
+  const status = site.syncOk ? 'Синхронизировано' : site.rows.length ? 'Резервная копия' : 'Нет данных';
+  return widgetMetric(site.rows.length, 'операций в источнике', status + (site.syncAt ? ' · ' + new Date(site.syncAt).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : ''), site.syncOk ? '' : 'amber');
+});
+addWidget('source', 'Синхронизация', 'Источник участка', 'Тип и адрес источника данных', site => widgetMetric(site.sourceType === 'url' ? 'Google Sheets' : 'CSV / снимок', site.autoMonth ? 'лист текущего месяца' : 'фиксированный источник', site.sourceUrl || 'Локальный источник'));
+addWidget('shared', 'Синхронизация', 'Совместный режим', 'Состояние общих правок GitHub', site => widgetMetric(site.sharedOn ? 'Включён' : 'Выключен', 'совместные правки', site.sharedOn ? (site.sharedOk === false ? 'Есть ошибка синхронизации' : 'Общие данные активны') : 'Ручные правки хранятся локально', site.sharedOn && site.sharedOk === false ? 'red' : ''));
+addWidget('syncTime', 'Синхронизация', 'Время обновления', 'Когда последний раз получены живые данные', site => widgetMetric(site.syncAt ? new Date(site.syncAt).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '—', site.syncAt ? new Date(site.syncAt).toLocaleDateString('ru-RU') : 'живая синхронизация ещё не выполнена', site.syncOk ? 'Данные синхронизированы' : 'Показана сохранённая копия'));
+
+/* Журнал изменений. */
+addWidget('activity', 'Журнал', 'Последние изменения', 'Три последние записи по участку', site => {
+  const entries = widgetSiteLogs(site).slice(-3).reverse();
+  return entries.length ? '<ul class="widget-list">' + entries.map(entry => '<li><b>' + wEsc(entry.action) + '</b><br>' + wEsc(entry.details).slice(0, 140) + '</li>').join('') + '</ul>' : widgetMetric('—', 'изменений пока нет');
+});
+addWidget('activityCount', 'Журнал', 'Всего изменений', 'Количество записей журнала по участку', site => widgetMetric(widgetSiteLogs(site).length, 'записей журнала', 'Лимит хранения: 3000 записей'));
+addWidget('lastActivity', 'Журнал', 'Последнее действие', 'Что менялось в последний раз', site => {
+  const entries = widgetSiteLogs(site), last = entries[entries.length - 1];
+  return last ? widgetMetric(last.action, new Date(last.ts).toLocaleString('ru-RU'), last.details) : widgetMetric('—', 'изменений пока нет');
+});
+
+/* Действия не дублируют логику, а вызывают существующие кнопки приложения. */
+addWidget('actions', 'Действия', 'Быстрые действия', 'Автоплан, отчёт, экспорт и переход к сегодня', () => '<div class="widget-actions"><button class="btn" data-widget-action="autoplan">Автоплан</button><button class="btn" data-widget-action="log">Отчёт</button><button class="btn" data-widget-action="export">CSV</button><button class="btn" data-widget-action="today">Сегодня</button></div>');
+addWidget('navigation', 'Действия', 'Форматы плана', 'Быстрое переключение представления', () => '<div class="widget-actions"><button class="btn" data-widget-view="viewBoard">Доска</button><button class="btn" data-widget-view="viewList">Список</button><button class="btn" data-widget-view="viewShifts">Сменные</button><button class="btn" data-widget-view="viewMulti">Все участки</button></div>');
+
 let customWidgets = wStoreGet(WIDGET_KEY, ['load', 'resource', 'actions']);
 if(!Array.isArray(customWidgets)) customWidgets = ['load', 'resource', 'actions'];
 customWidgets = customWidgets.filter((id, index, all) => WIDGET_CATALOG[id] && all.indexOf(id) === index);
+let collapsedWidgets = wStoreGet(WIDGET_COLLAPSE_KEY, []);
+if(!Array.isArray(collapsedWidgets)) collapsedWidgets = [];
 let loadPeriodState = localStorage.getItem('planner.loadPeriod') || 'day';
 if(!['day', 'week', 'month'].includes(loadPeriodState)) loadPeriodState = 'day';
+const loadDefaults = currentLoadSelection();
+let loadSelectionState = Object.assign({}, loadDefaults, wStoreGet('planner.loadSelection.v1', {}));
+if(!wIsIsoDate(loadSelectionState.day)) loadSelectionState.day = loadDefaults.day;
+if(!isoWeekStart(loadSelectionState.week)) loadSelectionState.week = loadDefaults.week;
+if(!/^\d{4}-\d{2}$/.test(loadSelectionState.month || '')) loadSelectionState.month = loadDefaults.month;
 
+function syncLoadControls(){
+  if(!w$('loadPeriod')) return;
+  w$('loadPeriod').value = loadPeriodState;
+  ['day', 'week', 'month'].forEach(period => {
+    const wrap = w$('load' + period.charAt(0).toUpperCase() + period.slice(1) + 'Wrap');
+    if(wrap) wrap.hidden = period !== loadPeriodState;
+  });
+  w$('loadDay').value = loadSelectionState.day;
+  w$('loadWeek').value = loadSelectionState.week;
+  w$('loadMonth').value = loadSelectionState.month;
+  const info = isoWeekInfo(isoWeekStart(loadSelectionState.week));
+  w$('loadWeekNumber').textContent = info.week ? 'Неделя № ' + info.week + ' · ' + info.year : '';
+}
 function renderLoadStrip(site){
   const host = w$('siteLoadStrip');
   if(!host) return;
   host.innerHTML = ['day', 'week', 'month'].map(period => {
     const load = workloadPeriod(site, period);
-    return '<div class="top-load' + (load.pct > 100 ? ' over' : '') + '" title="' + workloadLabel(period) + ': ' + wEsc(load.from) + ' — ' + wEsc(load.to) + '">' +
-      '<span>' + workloadLabel(period) + '</span><b>' + load.pct + '%</b><small>' + wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + wEsc(load.unit) + '</small></div>';
+    const label = period === 'week' ? 'Неделя № ' + load.weekNumber : workloadLabel(period);
+    return '<div class="top-load' + (load.pct > 100 ? ' over' : '') + '" title="' + wEsc(workloadPeriodNote(load)) + '">' +
+      '<span>' + label + '</span><b>' + load.pct + '%</b><small>' + wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + wEsc(load.unit) + '</small></div>';
   }).join('');
 }
 function renderLoadPanel(){
   const host = w$('loadWidgets');
   if(!host) return;
+  syncLoadControls();
   const planner = wPlanner();
   const active = wActiveSite();
-  const hero = workloadPeriod(active, loadPeriodState);
+  const hero = selectedWorkload(active);
   let html = '<div class="load-hero' + (hero.pct > 100 ? ' over' : '') + '"><div class="load-hero-head"><b>' + wEsc(active.name) + '</b><strong>' + hero.pct + '%</strong></div>' +
     '<div class="load-numbers">' + wFmt(hero.load) + ' / ' + wFmt(hero.capacity) + ' ' + wEsc(hero.unit) + '</div>' + workloadBar(hero) +
-    '<small>' + workloadLabel(loadPeriodState) + ' · ' + wEsc(hero.from) + ' — ' + wEsc(hero.to) + ' · рабочих дней: ' + hero.workdays + '</small></div>';
-  html += '<div class="section-label">Все участки · ' + workloadLabel(loadPeriodState).toLowerCase() + '</div><div class="load-site-list">';
+    '<small>' + wEsc(workloadPeriodNote(hero)) + ' · рабочих дней: ' + hero.workdays + '</small></div>';
+  html += '<div class="section-label">Все участки · один выбранный период</div><div class="load-site-list">';
   planner.state.sites.forEach(site => {
-    const load = workloadPeriod(site, loadPeriodState);
+    const load = selectedWorkload(site);
     html += '<div class="load-row" data-load-site="' + wEsc(site.id) + '"><div class="load-row-head"><b>' + wEsc(site.name) + '</b><span>' + load.pct + '%</span></div>' + workloadBar(load, true) +
       '<small>' + wFmt(load.load) + ' / ' + wFmt(load.capacity) + ' ' + wEsc(load.unit) + '</small></div>';
   });
   host.innerHTML = html + '</div>';
 }
-function widgetBody(id, site){
-  const planner = wPlanner();
-  if(id === 'load'){
-    const load = workloadPeriod(site, loadPeriodState);
-    return '<strong class="widget-big">' + load.pct + '%</strong>' + workloadBar(load) + '<span class="widget-caption">' + workloadLabel(loadPeriodState) + ' · ресурс участка учтён отдельно</span>';
-  }
-  if(id === 'resource'){
-    return '<strong class="widget-big">' + wFmt(planner.fondOf(site)) + ' <small>' + wEsc(site.unit || 'мин') + '</small></strong><span class="widget-caption">' + wEsc(planner.siteResLine(site)) + '</span>';
-  }
-  if(id === 'operations'){
-    const rows = planner.effRows(site);
-    const total = rows.reduce((sum, row) => sum + (row.minutes || 0), 0);
-    return '<strong class="widget-big">' + rows.length + '</strong><span class="widget-caption">операций · ' + planner.buildPositions(site).size + ' позиций</span><span class="widget-caption">Сумма норм: ' + wFmt(total) + ' ' + wEsc(site.unit || 'мин') + '</span>';
-  }
-  if(id === 'deadlines'){
-    const rows = planner.effRows(site);
-    const late = rows.filter(row => row.tdg && row.dateEff && row.dateEff > row.tdg);
-    const next = rows.filter(row => row.tdg && row.dateEff && row.dateEff <= row.tdg).sort((a, b) => a.tdg.localeCompare(b.tdg)).slice(0, 3);
-    return '<strong class="widget-big"' + (late.length ? ' style="color:var(--red)"' : '') + '>' + late.length + '</strong><span class="widget-caption">операций после ТДГ</span>' +
-      (next.length ? '<ul class="widget-list">' + next.map(row => '<li><b>' + wEsc(row.tdg) + '</b> · ' + wEsc(row.prodOrder || row.custOrder) + '</li>').join('') + '</ul>' : '<span class="widget-caption">Просроченных сроков нет</span>');
-  }
-  if(id === 'sync'){
-    const status = site.syncOk ? 'Синхронизировано' : site.rows.length ? 'Резервная копия сохранена' : 'Нет данных';
-    return '<strong class="widget-big">' + site.rows.length + '</strong><span class="widget-caption">операций в источнике</span><span class="widget-caption">' + status + (site.syncAt ? ' · ' + wEsc(new Date(site.syncAt).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})) : '') + '</span>';
-  }
-  if(id === 'activity'){
-    const entries = planner.readLog().filter(entry => entry.site === site.id).slice(-3).reverse();
-    return entries.length ? '<ul class="widget-list">' + entries.map(entry => '<li><b>' + wEsc(entry.action) + '</b><br>' + wEsc(entry.details).slice(0, 120) + '</li>').join('') + '</ul>' : '<span class="widget-caption">Изменений пока нет</span>';
-  }
-  if(id === 'actions'){
-    return '<div class="widget-actions"><button class="btn" data-widget-action="autoplan">Автоплан</button><button class="btn" data-widget-action="log">Отчёт</button><button class="btn" data-widget-action="export">CSV</button><button class="btn" data-widget-action="today">Сегодня</button></div>';
-  }
-  if(id === 'boards'){
-    const pinned = planner.state.sites.filter(item => item.onBoard);
-    return pinned.length ? '<ul class="widget-list">' + pinned.map(item => '<li><b>' + wEsc(item.name) + '</b><br>' + wEsc(planner.siteResLine(item)) + '</li>').join('') + '</ul>' : '<span class="widget-caption">Нажмите «На общую доску» у нужного участка</span>';
-  }
-  return '';
+function widgetBody(id, site){ return WIDGET_CATALOG[id] ? WIDGET_CATALOG[id].render(site) : ''; }
+function renderWidgetCatalog(){
+  const host = w$('widgetCatalogGrid');
+  if(!host) return;
+  const query = (w$('widgetSearch').value || '').trim().toLowerCase();
+  const group = w$('widgetGroup').value || '';
+  const entries = Object.entries(WIDGET_CATALOG).filter(([, widget]) =>
+    (!group || widget.group === group) && (!query || (widget.title + ' ' + widget.description + ' ' + widget.group).toLowerCase().includes(query)));
+  w$('widgetCatalogCount').textContent = entries.length + ' из ' + Object.keys(WIDGET_CATALOG).length;
+  host.innerHTML = entries.length ? entries.map(([id, widget]) =>
+    '<article class="catalog-item"><div class="catalog-item-group">' + wEsc(widget.group) + '</div><b>' + wEsc(widget.title) + '</b><p>' + wEsc(widget.description) + '</p>' +
+    '<button class="btn" data-catalog-add="' + id + '" ' + (customWidgets.includes(id) || !wCan('widgets') ? 'disabled' : '') + '>' + (customWidgets.includes(id) ? 'Добавлен' : '+ Добавить') + '</button></article>'
+  ).join('') : '<div class="hint">По этому запросу виджетов нет. Попробуйте другое название или категорию.</div>';
 }
 function renderCustomWidgets(site){
-  const picker = w$('widgetPicker');
   const host = w$('customWidgets');
-  if(!picker || !host) return;
-  const available = Object.keys(WIDGET_CATALOG).filter(id => !customWidgets.includes(id));
-  picker.innerHTML = available.length
-    ? available.map(id => '<option value="' + id + '">' + wEsc(WIDGET_CATALOG[id].title) + ' — ' + wEsc(WIDGET_CATALOG[id].description) + '</option>').join('')
-    : '<option value="">Все виджеты добавлены</option>';
-  w$('btnAddWidget').disabled = !available.length || !wCan('widgets');
-  host.innerHTML = customWidgets.length ? customWidgets.map((id, index) =>
-    '<article class="widget-card" data-widget="' + id + '"><div class="widget-head"><b>' + wEsc(WIDGET_CATALOG[id].title) + '</b>' +
-    '<button data-widget-up="' + index + '" title="Выше" ' + (index === 0 ? 'disabled' : '') + '>↑</button>' +
-    '<button data-widget-down="' + index + '" title="Ниже" ' + (index === customWidgets.length - 1 ? 'disabled' : '') + '>↓</button>' +
-    '<button data-widget-remove="' + id + '" title="Убрать">×</button></div><div class="widget-body">' + widgetBody(id, site) + '</div></article>'
-  ).join('') : '<div class="hint">Добавьте первый виджет из списка выше.</div>';
+  if(!host) return;
+  w$('btnWidgetCatalog').disabled = !wCan('widgets');
+  w$('widgetCount').textContent = customWidgets.length + ' из ' + Object.keys(WIDGET_CATALOG).length;
+  host.innerHTML = customWidgets.length ? customWidgets.map((id, index) => {
+    const collapsed = collapsedWidgets.includes(id);
+    return '<article class="widget-card" data-widget="' + id + '"><div class="widget-head"><b>' + wEsc(WIDGET_CATALOG[id].title) + '</b>' +
+      '<button data-widget-collapse="' + id + '" title="' + (collapsed ? 'Развернуть' : 'Свернуть') + '">' + (collapsed ? '+' : '−') + '</button>' +
+      '<button data-widget-up="' + index + '" title="Выше" ' + (index === 0 ? 'disabled' : '') + '>↑</button>' +
+      '<button data-widget-down="' + index + '" title="Ниже" ' + (index === customWidgets.length - 1 ? 'disabled' : '') + '>↓</button>' +
+      '<button data-widget-remove="' + id + '" title="Убрать">×</button></div><div class="widget-body" ' + (collapsed ? 'hidden' : '') + '>' + widgetBody(id, site) + '</div></article>';
+  }).join('') : '<div class="hint">Откройте каталог и добавьте первый виджет. Можно вывести любой состав из 48 вариантов.</div>';
+  const modal = w$('widgetCatalogModal');
+  if(modal && modal.classList.contains && modal.classList.contains('open')) renderWidgetCatalog();
+}
+function addWidgetToPanel(id){
+  if(!WIDGET_CATALOG[id] || customWidgets.includes(id) || !wCan('widgets')) return;
+  customWidgets.push(id);
+  wStoreSet(WIDGET_KEY, customWidgets);
+  renderCustomWidgets(wActiveSite());
 }
 
 /* ---------- profiles: UI permissions, not server authentication -------- */
@@ -4589,6 +4946,67 @@ function guardPermissions(event){
     alert('Профиль «' + currentProfile.name + '» не имеет права на это действие. Роли на этой статической странице ограничивают интерфейс.');
   }
 }
+/* ---------- resizable dock ---------------------------------------------- */
+const DOCK_WIDTH_KEY = 'planner.dockWidth';
+let dockWidthState = Number(localStorage.getItem(DOCK_WIDTH_KEY)) || 304;
+function dockWidthLimits(){
+  const viewport = window.innerWidth || 1280;
+  return { min:280, max:Math.max(280, Math.min(620, viewport - 420)) };
+}
+function setDockWidth(value, persist){
+  const limits = dockWidthLimits();
+  dockWidthState = Math.round(Math.max(limits.min, Math.min(limits.max, Number(value) || 304)));
+  document.documentElement.style.setProperty('--dock-width', dockWidthState + 'px');
+  const handle = w$('dockResizeHandle');
+  if(handle){
+    handle.setAttribute('aria-valuemin', limits.min);
+    handle.setAttribute('aria-valuemax', limits.max);
+    handle.setAttribute('aria-valuenow', dockWidthState);
+  }
+  if(persist){ try{ localStorage.setItem(DOCK_WIDTH_KEY, String(dockWidthState)); }catch(error){} }
+}
+function wireDockResize(){
+  setDockWidth(dockWidthState, false);
+  w$('dockNarrow').addEventListener('click', () => setDockWidth(dockWidthState - 32, true));
+  w$('dockWide').addEventListener('click', () => setDockWidth(dockWidthState + 32, true));
+  const handle = w$('dockResizeHandle');
+  handle.addEventListener('dblclick', () => setDockWidth(304, true));
+  handle.addEventListener('keydown', event => {
+    if(!['ArrowLeft', 'ArrowRight', 'Home'].includes(event.key)) return;
+    event.preventDefault(); event.stopPropagation();
+    if(event.key === 'Home') setDockWidth(304, true);
+    else setDockWidth(dockWidthState + (event.key === 'ArrowLeft' ? 24 : -24), true);
+  });
+  let drag = null, frame = 0;
+  handle.addEventListener('pointerdown', event => {
+    if(event.button !== 0) return;
+    event.preventDefault();
+    drag = { x:event.clientX, width:dockWidthState, latest:event.clientX, pointerId:event.pointerId };
+    handle.setPointerCapture(event.pointerId);
+    document.body.classList.add('dock-resizing');
+  });
+  handle.addEventListener('pointermove', event => {
+    if(!drag) return;
+    drag.latest = event.clientX;
+    if(frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      if(drag) setDockWidth(drag.width + drag.x - drag.latest, false);
+    });
+  });
+  const finish = event => {
+    if(!drag) return;
+    if(event.clientX != null) setDockWidth(drag.width + drag.x - event.clientX, false);
+    setDockWidth(dockWidthState, true);
+    if(handle.hasPointerCapture && handle.hasPointerCapture(drag.pointerId)) handle.releasePointerCapture(drag.pointerId);
+    drag = null;
+    if(frame){ cancelAnimationFrame(frame); frame = 0; }
+    document.body.classList.remove('dock-resizing');
+  };
+  handle.addEventListener('pointerup', finish);
+  handle.addEventListener('pointercancel', finish);
+  window.addEventListener('resize', () => setDockWidth(dockWidthState, false), { passive:true });
+}
 function wireWorkspace(){
   w$('dockPrev').addEventListener('click', () => setDockPanel(dockIndexState - 1));
   w$('dockNext').addEventListener('click', () => setDockPanel(dockIndexState + 1));
@@ -4610,18 +5028,37 @@ function wireWorkspace(){
     touchX = null;
   }, { passive:true });
   w$('btnDock').addEventListener('click', () => document.body.classList.toggle('dock-open'));
-  w$('loadPeriod').value = loadPeriodState;
+  wireDockResize();
   w$('loadPeriod').addEventListener('change', event => {
     loadPeriodState = event.target.value;
     try{ localStorage.setItem('planner.loadPeriod', loadPeriodState); }catch(error){}
     renderWorkspace(wActiveSite());
   });
-  w$('btnAddWidget').addEventListener('click', () => {
-    const id = w$('widgetPicker').value;
-    if(!WIDGET_CATALOG[id] || customWidgets.includes(id) || !wCan('widgets')) return;
-    customWidgets.push(id);
-    wStoreSet(WIDGET_KEY, customWidgets);
-    renderCustomWidgets(wActiveSite());
+  const changeLoadSelection = (period, value) => {
+    loadSelectionState[period] = value;
+    wStoreSet('planner.loadSelection.v1', loadSelectionState);
+    renderWorkspace(wActiveSite());
+  };
+  w$('loadDay').addEventListener('change', event => { if(wIsIsoDate(event.target.value)) changeLoadSelection('day', event.target.value); });
+  w$('loadWeek').addEventListener('change', event => { if(isoWeekStart(event.target.value)) changeLoadSelection('week', event.target.value); });
+  w$('loadMonth').addEventListener('change', event => { if(/^\d{4}-\d{2}$/.test(event.target.value)) changeLoadSelection('month', event.target.value); });
+  w$('loadCurrent').addEventListener('click', () => {
+    loadSelectionState = currentLoadSelection();
+    wStoreSet('planner.loadSelection.v1', loadSelectionState);
+    renderWorkspace(wActiveSite());
+  });
+  w$('widgetGroup').innerHTML = '<option value="">Все категории</option>' + WIDGET_GROUPS.map(group => '<option value="' + wEsc(group) + '">' + wEsc(group) + '</option>').join('');
+  w$('btnWidgetCatalog').addEventListener('click', () => {
+    renderWidgetCatalog();
+    w$('widgetCatalogModal').classList.add('open');
+  });
+  w$('widgetCatalogClose').addEventListener('click', () => w$('widgetCatalogModal').classList.remove('open'));
+  w$('widgetCatalogModal').addEventListener('click', event => { if(event.target === w$('widgetCatalogModal')) w$('widgetCatalogModal').classList.remove('open'); });
+  w$('widgetSearch').addEventListener('input', renderWidgetCatalog);
+  w$('widgetGroup').addEventListener('change', renderWidgetCatalog);
+  w$('widgetCatalogGrid').addEventListener('click', event => {
+    const button = event.target.closest('[data-catalog-add]');
+    if(button) addWidgetToPanel(button.dataset.catalogAdd);
   });
   w$('customWidgets').addEventListener('click', event => {
     const target = event.target.closest('button');
@@ -4631,9 +5068,16 @@ function wireWorkspace(){
       w$(map[target.dataset.widgetAction]).click();
       return;
     }
+    if(target.dataset.widgetView){ w$(target.dataset.widgetView).click(); return; }
     if(!wCan('widgets')) return;
     if(target.dataset.widgetRemove){
       customWidgets = customWidgets.filter(id => id !== target.dataset.widgetRemove);
+      collapsedWidgets = collapsedWidgets.filter(id => id !== target.dataset.widgetRemove);
+      wStoreSet(WIDGET_COLLAPSE_KEY, collapsedWidgets);
+    }else if(target.dataset.widgetCollapse){
+      const id = target.dataset.widgetCollapse;
+      collapsedWidgets = collapsedWidgets.includes(id) ? collapsedWidgets.filter(item => item !== id) : collapsedWidgets.concat(id);
+      wStoreSet(WIDGET_COLLAPSE_KEY, collapsedWidgets);
     }else if(target.dataset.widgetUp !== undefined){
       const index = Number(target.dataset.widgetUp);
       if(index > 0) [customWidgets[index - 1], customWidgets[index]] = [customWidgets[index], customWidgets[index - 1]];
@@ -4736,10 +5180,14 @@ function initWorkspace(){
 }
 if(typeof window !== 'undefined'){
   window.PLANNER_WORKSPACE = {
-    workloadPeriod, setDockPanel, prepareKimiRequest, applyKimiPlan,
-    renderWorkspace, initWorkspace, wCan,
+    workloadPeriod, selectedWorkload, isoWeekInfo, isoWeekStart, setDockPanel, setDockWidth,
+    prepareKimiRequest, applyKimiPlan, renderWorkspace, initWorkspace, wCan,
+    widgetBody, addWidgetToPanel, catalog:WIDGET_CATALOG,
     get profiles(){ return profiles; }, get currentProfile(){ return currentProfile; },
-    get pendingKimiRequest(){ return kimiPending; }
+    get pendingKimiRequest(){ return kimiPending; },
+    get customWidgets(){ return customWidgets.slice(); },
+    get loadPeriod(){ return loadPeriodState; },
+    get loadSelection(){ return {...loadSelectionState}; }
   };
   if(typeof document !== 'undefined' && document.addEventListener){
     document.addEventListener('DOMContentLoaded', initWorkspace);
