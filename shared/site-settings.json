@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": 1793335843586,
+  "updatedAt": 1793335909040,
   "categories": [
     "Заготовка",
     "Сборка",
@@ -394,7 +394,7 @@
       "category": "Сборка",
       "workers": 11,
       "perWorker": 0,
-      "fondMin": 30,
+      "fondMin": 35,
       "teamTotal": true,
       "workdays": [
         1,
