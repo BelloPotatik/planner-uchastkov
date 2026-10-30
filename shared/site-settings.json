@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": 1793336121977,
+  "updatedAt": 1793343491055,
   "categories": [
     "Заготовка",
     "Сборка",
@@ -404,6 +404,28 @@
         5
       ],
       "resourceConfirmed": true
+    },
+    "ops:операция": {
+      "id": "s_ops_10xbdsx",
+      "sourceOperation": "Операция",
+      "format": "ops-shared",
+      "unit": "мин",
+      "mappingNote": "Общая загрузка → Операция = «Операция». Строки КД/РБ исключены.",
+      "name": "Операция",
+      "group": "Прочее",
+      "category": "Прочее",
+      "workers": 1,
+      "perWorker": 450,
+      "fondMin": 450,
+      "teamTotal": false,
+      "workdays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "resourceConfirmed": false
     }
   },
   "deleted": [
