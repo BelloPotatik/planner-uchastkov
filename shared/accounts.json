@@ -1,12 +1,18 @@
 {
   "version": 1,
-  "updatedAt": 1793621549521,
+  "updatedAt": 1793621691456,
   "accounts": [
     {
       "id": "owner",
       "name": "Владелец",
       "role": "admin",
       "github": "BelloPotatik"
+    },
+    {
+      "id": "p-mvz81min-dw9ju",
+      "name": "Анна",
+      "role": "planner",
+      "github": "ANNANAS"
     }
   ]
 }
