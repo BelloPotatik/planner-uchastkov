@@ -7,7 +7,7 @@
 <title>PlanFlow — планировщик производственных участков</title>
 <meta name="application-name" content="PlanFlow">
 <link rel="icon" href="assets/beltehkom-mark.9932fe191cbc.png" type="image/png">
-<link rel="stylesheet" href="assets/potok.fb5fd1e6dec6.css">
+<link rel="stylesheet" href="assets/potok.e4b47ac0b657.css">
 </head>
 <body>
 <svg class="svg-defs" aria-hidden="true">
@@ -115,6 +115,14 @@
     <div class="view-container">
       <div class="layout" id="boardLayout">
         <main id="board"><div class="days" id="daysRow"></div></main>
+        <nav class="board-navigator" id="boardNavigator" aria-label="Навигация по дням">
+          <button class="board-nav-step" id="boardNavPrev" title="Предыдущий день" aria-label="Предыдущий день"><svg><use href="#i-chevron"/></svg></button>
+          <div class="board-nav-main">
+            <div class="board-nav-meta"><span id="boardNavRange">Все дни</span><span class="board-nav-hint">колесо · Shift + колесо · средняя кнопка</span></div>
+            <input class="board-nav-range" id="boardNavRangeInput" type="range" min="0" max="1000" value="0" step="1" aria-label="Прокрутка периода">
+          </div>
+          <button class="board-nav-step" id="boardNavNext" title="Следующий день" aria-label="Следующий день"><svg><use href="#i-chevron"/></svg></button>
+        </nav>
       </div>
       <div id="listView" hidden></div>
       <div id="shiftsView" hidden></div>
@@ -233,12 +241,22 @@
 <!-- modal: journal -->
 <div class="modal-wrap" id="logModal"><div class="modal modal-report"><h2>Журнал изменений</h2><div class="mbody"><div class="log-ctl">Период: <input type="date" id="logFrom"> — <input type="date" id="logTo"><select id="logSite"><option value="">все участки</option></select><button class="btn" id="logApply">Показать</button><div class="spacer"></div><button class="btn" id="logCsv">Скачать CSV</button><button class="btn" id="logClear">Очистить</button></div><div id="logBody"></div></div><div class="mfoot"><button class="btn primary" id="logClose">Закрыть</button></div></div></div>
 
-<!-- modal: profiles -->
-<div class="modal-wrap" id="profilesModal"><div class="modal modal-wide"><h2>Профили и доступ</h2><div class="mbody">
+<!-- modal: accounts and GitHub-verified permissions -->
+<div class="modal-wrap" id="profilesModal"><div class="modal modal-wide account-modal"><h2>Аккаунты и доступ</h2><div class="mbody">
   <div class="profile-current" id="profileCurrent"></div>
-  <div class="profile-create"><div class="fld"><label>Имя нового профиля</label><input type="text" id="newProfileName" placeholder="Например: мастер смены"></div><div class="fld"><label>Уровень прав</label><select id="newProfileRole"><option value="planner">Планировщик — план и ресурсы</option><option value="viewer">Наблюдатель — только просмотр</option><option value="admin">Администратор — полный доступ</option></select></div><button class="btn primary" id="btnCreateProfile">Создать профиль</button></div>
+  <section class="account-login" aria-labelledby="accountLoginTitle">
+    <div class="account-section-heading"><div><span class="eyebrow">Вход в рабочее пространство</span><h3 id="accountLoginTitle">Выберите аккаунт</h3></div><span class="account-security-badge">GitHub verified</span></div>
+    <div class="account-login-grid">
+      <div class="fld"><label for="loginProfile">Аккаунт</label><select id="loginProfile"></select></div>
+      <div class="fld login-token-field" id="loginTokenWrap"><label for="loginToken">GitHub-токен · обязателен</label><input type="password" id="loginToken" autocomplete="off" placeholder="fine-grained personal access token"><small>Contents: Read and write · только этот репозиторий</small></div>
+      <button class="btn primary" id="btnAccountLogin">Войти</button>
+    </div>
+    <div class="account-login-status" id="accountLoginStatus" role="status">Для наблюдателя токен не нужен. Для редактирования проверим логин и право записи.</div>
+  </section>
+  <div class="account-create-heading"><h3>Создать аккаунт</h3><span>Доступно администратору</span></div>
+  <div class="profile-create"><div class="fld"><label for="newProfileName">Имя</label><input type="text" id="newProfileName" placeholder="Например: мастер смены"></div><div class="fld"><label for="newProfileGithub">GitHub-логин</label><input type="text" id="newProfileGithub" placeholder="для редактирования"></div><div class="fld"><label for="newProfileRole">Права</label><select id="newProfileRole"><option value="planner">Планировщик</option><option value="viewer">Наблюдатель</option><option value="admin">Администратор</option></select></div><button class="btn primary" id="btnCreateProfile">Создать</button></div>
   <div id="profilesList" class="profiles-list"></div>
-  <div class="security-note"><b>Честно про права.</b> Это статическая страница: роли ограничивают действия в интерфейсе, но не заменяют серверную авторизацию. Ссылка не содержит секретов. Для защищённых совместных записей права задаются доступом к GitHub-репозиторию; без сервера криптографической защиты профиля нет.</div>
+  <div class="security-note"><b>Права на запись подтверждает GitHub.</b> Токен проверяется по логину аккаунта и разрешению в репозитории, затем хранится только в этом браузере. Ссылка-приглашение содержит только ID аккаунта — ни роли, ни токена. Наблюдатель читает общий план без токена и не может отправлять изменения.</div>
 </div><div class="mfoot"><button class="btn primary" id="profilesClose">Готово</button></div></div></div>
 
 <!-- modal: widget catalog -->
@@ -250,6 +268,6 @@
 <div class="cs-menu" id="csMenu" role="listbox"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 <script id="snapshot-data" src="assets/potok-data.b0d43f8b0abe.js"></script>
-<script src="assets/potok-app.aba2c630ad4b.js"></script>
+<script src="assets/potok-app.cd86c8cd1acf.js"></script>
 </body>
 </html>
