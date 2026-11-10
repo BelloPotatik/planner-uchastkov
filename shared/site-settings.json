@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": 1794296310950,
+  "updatedAt": 1794296315749,
   "categories": [
     "Заготовка",
     "Сборка",
@@ -392,7 +392,7 @@
       "name": "УПКП — план (live)",
       "group": "Сборка",
       "category": "Сборка",
-      "workers": 8,
+      "workers": 5,
       "perWorker": 0,
       "fondMin": 35,
       "teamTotal": true,
